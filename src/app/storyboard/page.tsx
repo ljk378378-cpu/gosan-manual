@@ -33,8 +33,8 @@ export default function StoryboardPage() {
       alert('저장 실패: ' + error.message)
       return
     }
+    setParts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))
     setEditing(null)
-    loadParts()
   }
 
   return (
