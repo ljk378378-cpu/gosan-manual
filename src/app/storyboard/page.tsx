@@ -27,9 +27,14 @@ export default function StoryboardPage() {
 
   async function updatePart(id: number, updates: Partial<Part>) {
     setSaving(true)
-    await supabase.from('parts').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id)
+    const { error } = await supabase.from('parts').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id)
     setSaving(false)
+    if (error) {
+      alert('저장 실패: ' + error.message)
+      return
+    }
     setEditing(null)
+    loadParts()
   }
 
   return (
@@ -123,17 +128,14 @@ function PartCard({ part, isEditing, onEdit, onSave, onCancel }: {
           <div className="mt-4 border-t pt-4 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-gray-600 mb-1 block">담당자</label>
-                <select
+                <label className="text-xs text-gray-600 mb-1 block">담당자 (직접 입력)</label>
+                <input
+                  type="text"
                   className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm"
+                  placeholder="이름 입력 (미정이면 공란)"
                   value={form.assignee}
                   onChange={e => setForm(f => ({ ...f, assignee: e.target.value }))}
-                >
-                  <option value="">미배정</option>
-                  {TEAM_MEMBERS.map(m => (
-                    <option key={m.name} value={m.name}>{m.name} ({m.role})</option>
-                  ))}
-                </select>
+                />
               </div>
               <div>
                 <label className="text-xs text-gray-600 mb-1 block">상태</label>
