@@ -45,13 +45,18 @@ export default function DailyPage() {
     e.preventDefault()
     if (!author || !content) return
     setSubmitting(true)
-    await supabase.from('daily_updates').insert({
+    const { error } = await supabase.from('daily_updates').insert({
       author,
       content,
       update_type: type,
       part_id: partId ? Number(partId) : null,
     })
-    setContent('')
+    if (error) {
+      alert('게시 실패: ' + error.message)
+    } else {
+      setContent('')
+      await loadUpdates()
+    }
     setSubmitting(false)
   }
 
