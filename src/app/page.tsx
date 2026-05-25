@@ -39,7 +39,7 @@ export default function Home() {
           <div className="flex items-start gap-4">
             <div className="text-5xl">🌿</div>
             <div>
-              <h1 className="text-2xl font-bold">주민이 그린 고산 환경리빙랩 매뉴얼</h1>
+              <h1 className="text-2xl font-bold">주민이 그린 고산<br />환경리빙랩 매뉴얼</h1>
               <p className="text-green-200 mt-1">주민이 만든 동네 자원순환, 3년의 기록과 실천 가이드</p>
               <p className="text-green-300 text-sm mt-2">A4 · 컬러 · 50부 · 약 50페이지 | 목표 발간일: 2026년 7월 15일</p>
             </div>
