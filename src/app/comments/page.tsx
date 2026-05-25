@@ -46,13 +46,18 @@ export default function CommentsPage() {
     e.preventDefault()
     if (!author || !content) return
     setSubmitting(true)
-    await supabase.from('comments').insert({
+    const { error } = await supabase.from('comments').insert({
       author,
       author_role: authorRole,
       content,
       part_id: partId ? Number(partId) : null,
     })
-    setContent('')
+    if (error) {
+      alert('게시 실패: ' + error.message)
+    } else {
+      setContent('')
+      await loadComments()
+    }
     setSubmitting(false)
   }
 

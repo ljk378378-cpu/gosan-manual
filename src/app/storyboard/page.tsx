@@ -35,6 +35,7 @@ export default function StoryboardPage() {
     }
     setParts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))
     setEditing(null)
+    loadParts()
   }
 
   return (
