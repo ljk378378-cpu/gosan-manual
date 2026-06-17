@@ -7,12 +7,24 @@ import { supabase, Part, STATUS_LABELS, STATUS_COLORS } from '@/lib/supabase'
 
 const WEEKS = [
   { label: '1주차', dates: '5/19~5/23', task: '준비', done: true },
-  { label: '2주차', dates: '5/26~5/30', task: '원고 집필 1라운드', done: false, current: true },
-  { label: '3주차', dates: '6/2~6/6', task: '원고 집필 2라운드', done: false },
-  { label: '4주차', dates: '6/9~6/13', task: '원고 확정+Canva', done: false },
-  { label: '5주차', dates: '6/16~6/20', task: '내부 검토+디자인', done: false },
-  { label: '6주차', dates: '6/23~6/27', task: '인쇄 발주', done: false },
+  { label: '2주차', dates: '5/26~5/30', task: '원고 집필 1라운드', done: true },
+  { label: '3주차', dates: '6/2~6/6', task: '원고 집필 2라운드', done: true },
+  { label: '4주차', dates: '6/9~6/13', task: '원고 확정+Canva', done: true },
+  { label: '5주차', dates: '6/16~6/20', task: '원고 완성+검토', done: false, current: true },
+  { label: '6주차', dates: '6/23~6/27', task: 'Canva 디자인+인쇄 발주', done: false },
   { label: '7월', dates: '7/1~7/15', task: '납품·배포 🎉', done: false },
+]
+
+const DAILY_SCHEDULE = [
+  { date: '6/17(화)', task: '글쓰기 가이드 팀원 배포 + 프롤로그 착수', done: false, today: true },
+  { date: '6/18(수)', task: '프롤로그 초안 완성 → 검토 제출', done: false },
+  { date: '6/19(목)', task: '1부·2부 팀원 초안 수집 + 피드백', done: false },
+  { date: '6/20(금)', task: '4부(이진규) 착수 + 3부 착수 지시', done: false },
+  { date: '6/23(월)', task: '4부 완성 + 전체 원고 현황 점검', done: false },
+  { date: '6/24(화)', task: '미완성 파트 집중 수정', done: false },
+  { date: '6/25(수)', task: '발간사 초안 작성', done: false },
+  { date: '6/26(목)', task: '전체 원고 1차 검토 완료', done: false },
+  { date: '6/27(금)', task: 'Canva 디자인 작업 착수', done: false },
 ]
 
 export default function Home() {
@@ -83,6 +95,30 @@ export default function Home() {
                 </div>
                 <div className="text-xs text-gray-500 mt-1">{w.dates}</div>
                 <div className={`text-xs mt-1 font-medium ${w.current ? 'text-yellow-800' : 'text-gray-600'}`}>{w.task}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 이번 주 작업 계획 */}
+        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 mb-6">
+          <h2 className="font-bold text-gray-800 mb-4">📌 이번 주 작업 계획 (이진규 과장)</h2>
+          <div className="space-y-2">
+            {DAILY_SCHEDULE.map((s, i) => (
+              <div
+                key={i}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
+                  s.today ? 'bg-yellow-50 border border-yellow-300' :
+                  s.done ? 'bg-green-50 border border-green-200' :
+                  'bg-gray-50 border border-gray-100'
+                }`}
+              >
+                <span className={`text-sm font-bold w-16 shrink-0 ${s.today ? 'text-yellow-700' : s.done ? 'text-green-700' : 'text-gray-400'}`}>
+                  {s.done ? '✅' : s.today ? '▶' : '○'} {s.date}
+                </span>
+                <span className={`text-sm ${s.today ? 'text-yellow-900 font-medium' : s.done ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+                  {s.task}
+                </span>
               </div>
             ))}
           </div>
