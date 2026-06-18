@@ -288,13 +288,20 @@ function PartCard({ part, guide, isEditing, onEdit, onSave, onCancel }: {
       if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
-    await supabase.from('part_files').insert({
+    const { error: dbError } = await supabase.from('part_files').insert({
       part_id: part.id,
       file_name: file.name,
       file_path: filePath,
       uploader: uploadName.trim(),
       file_size: file.size,
     })
+    if (dbError) {
+      alert('저장 실패: ' + dbError.message)
+      await supabase.storage.from('manuscripts').remove([filePath])
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
     setUploading(false)
     if (fileInputRef.current) fileInputRef.current.value = ''
     loadFiles()
