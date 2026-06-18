@@ -53,6 +53,16 @@ export const STATUS_LABELS: Record<string, string> = {
   done: '완료',
 }
 
+export type PartFile = {
+  id: number
+  part_id: number
+  file_name: string
+  file_path: string
+  uploader: string
+  file_size: number | null
+  uploaded_at: string
+}
+
 export const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-gray-100 text-gray-600',
   in_progress: 'bg-blue-100 text-blue-700',

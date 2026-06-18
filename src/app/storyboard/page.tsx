@@ -1,8 +1,8 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Nav from '@/components/Nav'
-import { supabase, Part, STATUS_LABELS, STATUS_COLORS } from '@/lib/supabase'
+import { supabase, Part, PartFile, STATUS_LABELS, STATUS_COLORS, TEAM_MEMBERS } from '@/lib/supabase'
 
 const STATUSES = ['pending', 'in_progress', 'review', 'done'] as const
 
@@ -244,10 +244,80 @@ function PartCard({ part, guide, isEditing, onEdit, onSave, onCancel }: {
 }) {
   const [activeTab, setActiveTab] = useState<'manage' | 'guide'>('manage')
   const [form, setForm] = useState({ progress: part.progress, status: part.status, assignee: part.assignee || '', notes: part.notes || '' })
+  const [files, setFiles] = useState<PartFile[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [uploadName, setUploadName] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setForm({ progress: part.progress, status: part.status, assignee: part.assignee || '', notes: part.notes || '' })
+    loadFiles()
   }, [part])
+
+  async function loadFiles() {
+    const { data } = await supabase
+      .from('part_files')
+      .select('*')
+      .eq('part_id', part.id)
+      .order('uploaded_at', { ascending: false })
+    if (data) setFiles(data)
+  }
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!uploadName.trim()) {
+      alert('이름을 먼저 선택하세요')
+      e.target.value = ''
+      return
+    }
+    const ext = file.name.split('.').pop()?.toLowerCase() || ''
+    if (!['hwp', 'hwpx'].includes(ext)) {
+      alert('HWP 또는 HWPX 파일만 업로드할 수 있습니다')
+      e.target.value = ''
+      return
+    }
+    setUploading(true)
+    const filePath = `part-${part.order_num}/${Date.now()}.${ext}`
+    const { error } = await supabase.storage
+      .from('manuscripts')
+      .upload(filePath, file, { upsert: false })
+    if (error) {
+      alert('업로드 실패: ' + error.message)
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+    await supabase.from('part_files').insert({
+      part_id: part.id,
+      file_name: file.name,
+      file_path: filePath,
+      uploader: uploadName.trim(),
+      file_size: file.size,
+    })
+    setUploading(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+    loadFiles()
+  }
+
+  async function deleteFile(pf: PartFile) {
+    if (!confirm(`"${pf.file_name}" 파일을 삭제할까요?`)) return
+    await supabase.storage.from('manuscripts').remove([pf.file_path])
+    await supabase.from('part_files').delete().eq('id', pf.id)
+    loadFiles()
+  }
+
+  function getDownloadUrl(filePath: string) {
+    const { data } = supabase.storage.from('manuscripts').getPublicUrl(filePath)
+    return data.publicUrl
+  }
+
+  function formatSize(bytes: number | null) {
+    if (!bytes) return ''
+    if (bytes < 1024) return `${bytes}B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`
+    return `${(bytes / 1024 / 1024).toFixed(1)}MB`
+  }
 
   return (
     <div className={`bg-white rounded-xl shadow-sm border transition-all ${isEditing ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-100'}`}>
@@ -298,65 +368,128 @@ function PartCard({ part, guide, isEditing, onEdit, onSave, onCancel }: {
 
       {/* 탭 콘텐츠 */}
       {activeTab === 'manage' && (
-        <div className="p-5 pt-4">
-          {part.notes && !isEditing && (
-            <p className="mb-3 text-xs text-gray-500 bg-gray-50 rounded p-2">💬 {part.notes}</p>
-          )}
-          {!isEditing ? (
-            <button onClick={onEdit} className="text-xs text-gray-400 hover:text-green-600 border border-gray-200 rounded px-3 py-1.5">
-              진행 상황 수정
-            </button>
-          ) : (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+        <div className="p-5 pt-4 space-y-4">
+          {/* 진행 상황 편집 */}
+          <div>
+            {part.notes && !isEditing && (
+              <p className="mb-3 text-xs text-gray-500 bg-gray-50 rounded p-2">💬 {part.notes}</p>
+            )}
+            {!isEditing ? (
+              <button onClick={onEdit} className="text-xs text-gray-400 hover:text-green-600 border border-gray-200 rounded px-3 py-1.5">
+                진행 상황 수정
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-600 mb-1 block">담당자</label>
+                    <input
+                      type="text"
+                      className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm"
+                      placeholder="이름 입력"
+                      value={form.assignee}
+                      onChange={e => setForm(f => ({ ...f, assignee: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600 mb-1 block">상태</label>
+                    <select
+                      className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm"
+                      value={form.status}
+                      onChange={e => setForm(f => ({ ...f, status: e.target.value as Part['status'] }))}
+                    >
+                      {STATUSES.map(s => (
+                        <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 <div>
-                  <label className="text-xs text-gray-600 mb-1 block">담당자</label>
+                  <label className="text-xs text-gray-600 mb-1 block">진행률 {form.progress}%</label>
                   <input
-                    type="text"
-                    className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm"
-                    placeholder="이름 입력"
-                    value={form.assignee}
-                    onChange={e => setForm(f => ({ ...f, assignee: e.target.value }))}
+                    type="range" min={0} max={100} step={5}
+                    value={form.progress}
+                    onChange={e => setForm(f => ({ ...f, progress: Number(e.target.value) }))}
+                    className="w-full accent-green-600"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-600 mb-1 block">상태</label>
-                  <select
-                    className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm"
-                    value={form.status}
-                    onChange={e => setForm(f => ({ ...f, status: e.target.value as Part['status'] }))}
-                  >
-                    {STATUSES.map(s => (
-                      <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-                    ))}
-                  </select>
+                  <label className="text-xs text-gray-600 mb-1 block">메모</label>
+                  <textarea
+                    className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm resize-none"
+                    rows={2}
+                    placeholder="진행 상황, 특이사항 등"
+                    value={form.notes}
+                    onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => onSave(form)} className="bg-green-700 text-white text-sm px-4 py-1.5 rounded hover:bg-green-800">저장</button>
+                  <button onClick={onCancel} className="text-gray-500 text-sm px-4 py-1.5 rounded border hover:bg-gray-50">취소</button>
                 </div>
               </div>
-              <div>
-                <label className="text-xs text-gray-600 mb-1 block">진행률 {form.progress}%</label>
+            )}
+          </div>
+
+          {/* 원고 파일 업로드 */}
+          <div className="border-t border-gray-100 pt-4">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">📎 원고 파일 (HWP)</p>
+
+            {/* 업로드된 파일 목록 */}
+            {files.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {files.map(pf => (
+                  <div key={pf.id} className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+                    <span className="text-blue-500 text-sm">📄</span>
+                    <div className="flex-1 min-w-0">
+                      <a
+                        href={getDownloadUrl(pf.file_path)}
+                        download={pf.file_name}
+                        className="text-xs font-medium text-blue-700 hover:underline truncate block"
+                      >
+                        {pf.file_name}
+                      </a>
+                      <p className="text-xs text-gray-400">
+                        {pf.uploader} · {new Date(pf.uploaded_at).toLocaleDateString('ko-KR')}
+                        {pf.file_size ? ` · ${formatSize(pf.file_size)}` : ''}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => deleteFile(pf)}
+                      className="text-xs text-red-400 hover:text-red-600 shrink-0"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 업로드 폼 */}
+            <div className="flex gap-2 items-center flex-wrap">
+              <select
+                className="border border-gray-200 rounded px-2 py-1.5 text-xs"
+                value={uploadName}
+                onChange={e => setUploadName(e.target.value)}
+              >
+                <option value="">이름 선택</option>
+                {TEAM_MEMBERS.map(m => (
+                  <option key={m.name} value={m.name}>{m.name}</option>
+                ))}
+              </select>
+              <label className={`cursor-pointer text-xs px-3 py-1.5 rounded border transition-colors ${uploading ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-green-700 border-green-300 hover:bg-green-50'}`}>
+                {uploading ? '업로드 중...' : '+ HWP 파일 올리기'}
                 <input
-                  type="range" min={0} max={100} step={5}
-                  value={form.progress}
-                  onChange={e => setForm(f => ({ ...f, progress: Number(e.target.value) }))}
-                  className="w-full accent-green-600"
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".hwp,.hwpx"
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={handleUpload}
                 />
-              </div>
-              <div>
-                <label className="text-xs text-gray-600 mb-1 block">메모</label>
-                <textarea
-                  className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm resize-none"
-                  rows={2}
-                  placeholder="진행 상황, 특이사항 등"
-                  value={form.notes}
-                  onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                />
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => onSave(form)} className="bg-green-700 text-white text-sm px-4 py-1.5 rounded hover:bg-green-800">저장</button>
-                <button onClick={onCancel} className="text-gray-500 text-sm px-4 py-1.5 rounded border hover:bg-gray-50">취소</button>
-              </div>
+              </label>
             </div>
-          )}
+          </div>
         </div>
       )}
 
