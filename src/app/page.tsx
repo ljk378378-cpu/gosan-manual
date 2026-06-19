@@ -20,9 +20,9 @@ const WEEKS = [
 ]
 
 const DAILY_SCHEDULE = [
-  { date: '6/17(화)', task: '글쓰기 가이드 배포 + 방향 공유', done: false, today: true },
-  { date: '6/18(수)', task: '팀원 재작성 D+1', done: false },
-  { date: '6/19(목)', task: '팀원 재작성 D+2', done: false },
+  { date: '6/17(화)', task: '글쓰기 가이드 배포 + 방향 공유', done: true },
+  { date: '6/18(수)', task: '팀원 재작성 D+1', done: true },
+  { date: '6/19(목)', task: '팀원 재작성 D+2', done: false, today: true },
   { date: '6/20(금)', task: '팀원 원고 제출 마감', done: false },
   { date: '6/23(월)', task: '전체 원고 수합 + 이진규 과장 검토', done: false },
   { date: '6/24(화)', task: '파트별 피드백 + 수정 지시', done: false },
