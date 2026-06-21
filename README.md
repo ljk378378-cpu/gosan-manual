@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 주민이 그린 고산 환경리빙랩 매뉴얼 — 제작 관리 플랫폼
 
-## Getting Started
+청곡종합사회복지관(대구 수성구 고산동)의 3개년 사업 **"주민이 그린 고산 환경리빙랩"** 매뉴얼 제작을 관리하는 웹 앱입니다.
 
-First, run the development server:
+---
 
+## 프로젝트 맥락 (AI 작업자 필독)
+
+### 이 앱이 존재하는 이유
+3년간의 종이팩 자원순환 환경리빙랩 사업을 매뉴얼(약 63p, A4 컬러 50부)로 만들고 있습니다.  
+**2026년 7월 23일(수) 성과공유회**에서 배포가 목표입니다.
+
+### 사업 구조
+| 차년도 | 기간 | 핵심 주제 |
+|--------|------|-----------|
+| 1차년도 | 2023.8 ~ 2024.7 | 문제를 발굴하다 |
+| 2차년도 | 2024.8 ~ 2025.7 | 모델을 만들다 |
+| 3차년도 | 2025.8 ~ 2026.7 | 플랫폼을 만들다 |
+
+> ⚠️ 차년도가 달력 연도와 다릅니다. 원고 작업 시 반드시 이 기간 기준으로 사건을 배치하세요.
+
+### 매뉴얼 파트 구성 (12파트 63p)
+| 순번 | 파트 제목 | 담당 | 분량 |
+|------|-----------|------|------|
+| 1 | 내지 표지 | — | 1p |
+| 2 | 목차 | — | 2p |
+| 3 | 발간사 | 이진규 (대필) | 2p |
+| 4 | 이 매뉴얼을 읽기 전에 (타임라인) | 이진규 | 2p |
+| 5 | 프롤로그 — 왜 주민이, 왜 종이팩인가? | 김연수 | 4p |
+| 6 | 1부: 문제를 발굴하다 (1차년도) | 이현직 | 8p |
+| 7 | 2부: 모델을 만들다 (2차년도) | 김정현 | 10p |
+| 8 | 3부: 플랫폼을 만들다 (3차년도) | 이진규 | 8p |
+| 9 | 4부: 이렇게 따라 하세요 (실행 가이드) | 이승원 | 12p |
+| 10 | 5부: 더 완전한 시스템을 향해 — 민관 협력으로 완성하는 자원순환 | 이진규 | 8p |
+| 11 | 에필로그 | 김연수 | 2p |
+| 12 | 부록 | 이승원 | 4p |
+
+### 팀원
+- **이진규** (과장, 총괄): 발간사·타임라인·3부·5부 담당
+- **이현직** (선임사회복지사): 1부
+- **김정현** (사회복지사): 2부
+- **이승원** (사회복지사): 4부·부록
+- **김연수** (전담인력): 프롤로그·에필로그
+
+### 핵심 일정
+| 날짜 | 마일스톤 |
+|------|----------|
+| 6/23(월) | 김연수(프롤로그+에필로그), 이현직(1부) 제출 |
+| 6/24(화) | 김정현(2부) 제출 |
+| 6/27(금) | 이승원(4부+부록) 제출 |
+| 7/1(화) | 이진규(타임라인+3부+5부) 제출 |
+| **7/3(목)** | **기획사 최종 원고 전달 ← 핵심 날짜** |
+| 7/14(월) | 인쇄 의뢰 |
+| **7/23(수)** | **성과공유회 배포** |
+
+### 3년 사업 핵심 성과 (매뉴얼 전체에서 드러나야 할 것들)
+1. **그린고산실천단 거버넌스**: 주민+지자체+전문기관이 함께 주민 아이디어를 현실화하는 구조
+2. **종이팩 자원순환 3모델**: 아파트·카페·학교 — 마을 단위 시스템
+3. **노인 일자리 창출**: 수거 업무를 노인 일자리와 연결 (복지관의 고유 강점)
+4. **MBC·TBN교통방송 패널 1년**: 환경 인식 확산
+5. **앱 + 매뉴얼**: 3년 실험의 플랫폼화 (온라인 + 오프라인)
+
+---
+
+## 앱 구성
+
+### 페이지
+| 경로 | 설명 |
+|------|------|
+| `/` | 홈 대시보드 (전체 진행률, 주간 현황, 일일 스케줄) |
+| `/storyboard` | 파트별 진행 관리 + 집필가이드 탭 + HWP 원고 업로드 |
+| `/daily` | 데일리 채널 (팀 공지·업데이트) |
+| `/comments` | 의견게시판 |
+| `/report` | 보고서 출력 (인쇄·PDF) |
+
+### 기술 스택
+- **프레임워크**: Next.js (App Router, `use client`)
+- **DB / 실시간**: Supabase (PostgreSQL + Realtime)
+- **스타일**: Tailwind CSS
+- **배포**: Vercel (GitHub push → 자동 재배포)
+
+### 로컬 실행
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/ljk378378-cpu/gosan-manual.git
+cd gosan-manual
+npm install
+# .env.local 파일 생성 후 Supabase 키 입력
+npm run dev   # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 환경변수 (.env.local)
+```
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### DB 스키마
+`supabase-schema.sql` 참고. 주요 테이블:
+- `parts`: 파트 목록 (title, subtitle, assignee, progress, status)
+- `part_files`: 파트별 HWP 원고 파일
+- `daily_updates`: 데일리 채널 게시물
+- `comments`: 의견게시판
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## AI 작업자 주의사항
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **5부 제목**: "더 완전한 시스템을 향해 — 민관 협력으로 완성하는 자원순환" (지자체 비판 없음)
+- **보조금 관계**: 청곡복지관은 수성구청으로부터 보조금을 받는 기관. 지자체를 직접 비판하는 표현 사용 금지
+- **차년도 기준**: 사업 기간이 달력 연도와 다름. 1차년도=2023.8~2024.7
+- **파트별 집필가이드**: `파트별집필가이드.md` 참고
+- **글쓰기 원칙**: `글쓰기가이드.md` 참고
