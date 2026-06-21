@@ -136,17 +136,18 @@ const PART_GUIDES: Record<number, GuideSection> = {
     ],
   },
   10: {
-    role: '복지관 담당자·구청 담당자·정책 담당자를 독자로 쓰는 파트. "주민이 아무리 잘해도 지자체가 안 움직이면 한계가 있다"는 현실을 직접적으로 다룬다.',
+    role: '다른 지역 복지관 담당자·지자체 담당자·중간지원조직을 독자로 쓰는 파트. "3년이 만든 시스템에 민관 협력이 더해지면 무엇이 가능한가"를 전국 사례와 고산동 경험으로 설득한다. 지자체 요구나 비판이 아닌, 이미 협력이 시작됐고 조금씩 확장되면 완전해진다는 가능성 중심 서술.',
     structure: [
-      { pages: '1~2p — 주민 실험의 한계', content: '청곡복지관과 주민이 부딪힌 행정적 벽 / 공공 건물 수거함 설치 허가 문제 / 예산 지원의 불연속성 (공동모금회 사업 종료 이후) / 종이팩이 공식 분리수거 품목이 아닌 문제' },
-      { pages: '3~5p — 수성구청과 협력한 것들', content: '협력의 시작: 누가 먼저 손을 내밀었나 / 어떤 형태로 협력했는가 (예산·공간·홍보) / 행정이 움직이게 된 계기 / 잘 됐을 때와 그렇지 않았을 때의 차이' },
-      { pages: '6~7p — 정책으로 이어지기 위한 조건', content: '복지관 담당자에게: 지자체 설득 방법 / 구청 담당자에게: 주민 실험을 정책으로 연결하는 방법 / 공동모금회·중간지원조직에게 제언 / 국내 유사 사례 1~2개' },
-      { pages: '8p — 정책 제언 3가지', content: '①종이팩을 공식 분리수거 품목으로 지정 / ②주민환경연구원 제도화 (자원봉사 인정·활동비 지원) / ③지역 환경리빙랩 지원 예산 상시화' },
+      { pages: '1~2p — 3년이 만든 것, 그리고 남은 가능성', content: '청곡복지관·주민환경연구원·그린고산실천단이 구축한 시스템의 현재 완성도 / 공공 인프라(분리수거 체계 편입·수거함 공간·예산 연속성)와 연결되면 달라지는 것 / 이것이 고산동만의 과제가 아닌 전국 공통 지점임을 명시' },
+      { pages: '3~5p — 전국 선행사례: 민관 협력이 완성한 자원순환 시스템', content: '사례 1: 주민 주도로 시작해 지자체 공식 사업으로 전환된 타 지역 사례 (성동구·수원 등) / 사례 2: 지자체가 주민 환경 실험을 제도로 수용한 사례 / 공통점: 성과를 먼저 쌓은 민간이 협력 주도권을 가졌고, 고산동이 이미 그 단계에 와 있다는 시사점' },
+      { pages: '6~7p — 이미 시작된 협력: 고산동과 수성구청이 함께한 것들', content: '컨소시엄 기관으로 참여한 수성구청 녹색환경과·고산1·2·3동 행정복지센터의 역할 / 협력의 구체적 내용(홍보 지원·공간 협조·거버넌스 참여) / 협력이 만들어낸 실제 변화 수치 또는 사례 / "이미 시작됐고 조금씩 확장되고 있다" 현재 진행형으로 서술' },
+      { pages: '8p — 다음 단계: 협력이 깊어지면 무엇이 가능한가', content: '앱+매뉴얼+거버넌스가 갖춰진 지금 공공 인프라가 더해질 때의 파급 효과 / 종이팩 공식 분리수거 편입·주민환경연구원 공공 제도 연결·예산 연속성 확보 시 고산동 모델 확산 속도 / "협력이 한 걸음씩 깊어진다면"으로 마무리 — 요구가 아닌 가능성 제시' },
     ],
     cautions: [
-      '행정 비판은 구체적 사실 근거로만 (감정적 표현 금지)',
-      '제언은 실현 가능한 수준에서',
-      '수성구청 담당자와 사전 내용 확인 권장',
+      '지자체를 향한 요구·비판 표현 일절 금지 — "함께하면 더 완전해진다"는 가능성 언어로만',
+      '수성구청이 이미 협력해온 것을 먼저, 충분히 강조하세요 (협력 파트너로 인정)',
+      '전국 사례는 비교가 아니라 "이 방향이 이미 검증됐다"는 근거로 활용',
+      '사례 수치·출처는 이진규 과장이 확인 후 기재 (집필 전 사례 조사 필요)',
     ],
   },
   11: {
@@ -243,14 +244,14 @@ function PartCard({ part, guide, isEditing, onEdit, onSave, onCancel }: {
   onCancel: () => void
 }) {
   const [activeTab, setActiveTab] = useState<'manage' | 'guide'>('manage')
-  const [form, setForm] = useState({ progress: part.progress, status: part.status, assignee: part.assignee || '', notes: part.notes || '' })
+  const [form, setForm] = useState({ title: part.title, subtitle: part.subtitle || '', progress: part.progress, status: part.status, assignee: part.assignee || '', notes: part.notes || '' })
   const [files, setFiles] = useState<PartFile[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadName, setUploadName] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    setForm({ progress: part.progress, status: part.status, assignee: part.assignee || '', notes: part.notes || '' })
+    setForm({ title: part.title, subtitle: part.subtitle || '', progress: part.progress, status: part.status, assignee: part.assignee || '', notes: part.notes || '' })
     loadFiles()
   }, [part])
 
@@ -387,6 +388,25 @@ function PartCard({ part, guide, isEditing, onEdit, onSave, onCancel }: {
               </button>
             ) : (
               <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-gray-600 mb-1 block">파트 제목</label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm"
+                    value={form.title}
+                    onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600 mb-1 block">부제목</label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm"
+                    placeholder="부제목 (선택)"
+                    value={form.subtitle}
+                    onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))}
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs text-gray-600 mb-1 block">담당자</label>
