@@ -66,7 +66,7 @@ export default function Home() {
             <div>
               <h1 className="text-2xl font-bold">주민이 그린 고산<br />환경리빙랩 매뉴얼</h1>
               <p className="text-green-200 mt-1">주민이 만든 동네 자원순환, 3년의 기록과 실천 가이드</p>
-              <p className="text-green-300 text-sm mt-2">A4 · 컬러 · 50부 · 63페이지 | 현대기획 납품: 6/30(화) · 책 수령: 7/22(화) · 성과공유회: 7/23(수)</p>
+              <p className="text-green-300 text-sm mt-2">A4 · 컬러 · 100부 · 63페이지 | 현대기획 납품: 6/30(화) · 책 수령: 7/22(화) · 성과공유회: 7/23(수)</p>
             </div>
           </div>
         </div>
