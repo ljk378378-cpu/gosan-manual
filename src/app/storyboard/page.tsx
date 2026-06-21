@@ -549,8 +549,8 @@ function PartCard({ part, guide, isEditing, onEdit, onSave, onCancel }: {
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">구조 · 무엇을 쓸 것인가</p>
             <div className="space-y-2">
               {guide.structure.map((s, i) => (
-                <div key={i} className="flex gap-3">
-                  <span className="text-xs bg-gray-100 text-gray-600 rounded px-2 py-1 shrink-0 h-fit font-mono">{s.pages}</span>
+                <div key={i} className="flex flex-col gap-1">
+                  <span className="text-xs bg-gray-100 text-gray-600 rounded px-2 py-1 w-fit font-mono">{s.pages}</span>
                   <p className="text-gray-700 text-xs leading-relaxed">{s.content}</p>
                 </div>
               ))}
