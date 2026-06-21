@@ -1,6 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Nav from '@/components/Nav'
 import { supabase, Part, PartFile, STATUS_LABELS, STATUS_COLORS, TEAM_MEMBERS } from '@/lib/supabase'
 
@@ -178,19 +178,21 @@ export default function StoryboardPage() {
   const [editing, setEditing] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
 
+  const loadParts = useCallback(async () => {
+    const { data } = await supabase.from('parts').select('*').order('order_num')
+    if (data) setParts(data)
+  }, [])
+
   useEffect(() => {
-    loadParts()
+    supabase.from('parts').select('*').order('order_num').then(({ data }) => {
+      if (data) setParts(data)
+    })
     const channel = supabase
       .channel('parts-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'parts' }, () => loadParts())
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [])
-
-  async function loadParts() {
-    const { data } = await supabase.from('parts').select('*').order('order_num')
-    if (data) setParts(data)
-  }
+  }, [loadParts])
 
   async function updatePart(id: number, updates: Partial<Part>) {
     setSaving(true)
@@ -250,18 +252,33 @@ function PartCard({ part, guide, isEditing, onEdit, onSave, onCancel }: {
   const [uploadName, setUploadName] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
+  const resetForm = useCallback(() => {
     setForm({ title: part.title, subtitle: part.subtitle || '', progress: part.progress, status: part.status, assignee: part.assignee || '', notes: part.notes || '' })
-    loadFiles()
   }, [part])
 
-  async function loadFiles() {
+  const loadFiles = useCallback(async () => {
     const { data } = await supabase
       .from('part_files')
       .select('*')
       .eq('part_id', part.id)
       .order('uploaded_at', { ascending: false })
     if (data) setFiles(data)
+  }, [part.id])
+
+  useEffect(() => {
+    supabase
+      .from('part_files')
+      .select('*')
+      .eq('part_id', part.id)
+      .order('uploaded_at', { ascending: false })
+      .then(({ data }) => {
+        if (data) setFiles(data)
+      })
+  }, [part.id])
+
+  function beginEdit() {
+    resetForm()
+    onEdit()
   }
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -383,7 +400,7 @@ function PartCard({ part, guide, isEditing, onEdit, onSave, onCancel }: {
               <p className="mb-3 text-xs text-gray-500 bg-gray-50 rounded p-2">💬 {part.notes}</p>
             )}
             {!isEditing ? (
-              <button onClick={onEdit} className="text-xs text-gray-400 hover:text-green-600 border border-gray-200 rounded px-3 py-1.5">
+              <button onClick={beginEdit} className="text-xs text-gray-400 hover:text-green-600 border border-gray-200 rounded px-3 py-1.5">
                 진행 상황 수정
               </button>
             ) : (
