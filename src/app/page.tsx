@@ -10,25 +10,31 @@ const WEEKS = [
   { label: '2주차', dates: '5/26~5/30', task: '원고 집필 1라운드', done: true },
   { label: '3주차', dates: '6/2~6/6', task: '원고 집필 2라운드', done: true },
   { label: '4주차', dates: '6/9~6/13', task: '원고 1차 수합', done: true },
-  { label: '5주차', dates: '6/17~6/20', task: '가이드 배포 + 팀원 재작성', done: false, current: true },
-  { label: '6주차', dates: '6/23~6/27', task: '원고 수합·완성 → 현대기획 납품', done: false },
-  { label: '7주차', dates: '6/30~7/4', task: '현대기획 디자인 작업', done: false },
-  { label: '8주차', dates: '7/7~7/11', task: '디자인 검토 + 퇴고·수정', done: false },
-  { label: '9주차', dates: '7/14~7/18', task: '최종 확정 + 인쇄 발주', done: false },
-  { label: '납품', dates: '7/22', task: '책 수령 🎉', done: false },
-  { label: '행사', dates: '7/23', task: '성과공유회', done: false },
+  { label: '5주차', dates: '6/17~6/20', task: '가이드 배포 + 팀원 재작성', done: true },
+  { label: '6주차', dates: '6/23~6/27', task: '원고 취합(6/23) + 전체 검토·수정', done: false, current: true },
+  { label: '7주차', dates: '6/30~7/4', task: '최종 교열 완성 → 6/30(화) 오후 현대기획 납품 ⚠️', done: false },
+  { label: '8주차', dates: '7/7~7/11', task: '현대기획 디자인 작업 (7/10 시안 빠른 수신 가능)', done: false },
+  { label: '9주차', dates: '7/14~7/18', task: '시안 수신(~7/14) → 교정 → 7/16(수) 오후 최종 컨펌 ⚠️', done: false },
+  { label: '납품', dates: '7/22(화)', task: '책 수령 🎉', done: false },
+  { label: '행사', dates: '7/23(수)', task: '성과공유회 배포', done: false },
 ]
 
 const DAILY_SCHEDULE = [
-  { date: '6/17(화)', task: '글쓰기 가이드 배포 + 방향 공유', done: true },
-  { date: '6/18(수)', task: '팀원 재작성 D+1', done: true },
-  { date: '6/19(목)', task: '팀원 재작성 D+2', done: false, today: true },
-  { date: '6/20(금)', task: '팀원 원고 제출 마감', done: false },
-  { date: '6/23(월)', task: '전체 원고 수합 + 이진규 과장 검토', done: false },
-  { date: '6/24(화)', task: '파트별 피드백 + 수정 지시', done: false },
-  { date: '6/25(수)', task: '수정본 수합 + 직접 집필 파트 완성', done: false },
-  { date: '6/26(목)', task: '전체 원고 최종 편집·정리', done: false },
-  { date: '6/27(금)', task: '현대기획 원고 납품', done: false },
+  { date: '6/23(월)', task: '팀원 원고 최종 취합 마감 — 전원 제출 확인', done: false, today: true },
+  { date: '6/24(화)', task: '전체 내용·흐름 검토 + 파트별 보완 지시', done: false },
+  { date: '6/25(수)', task: '보완·수정 반영 + 오탈자 1차 교정', done: false },
+  { date: '6/26(목)', task: '오탈자 2차 교정 + 전체 통일성 점검', done: false },
+  { date: '6/27(금)', task: '교정 3차 최종 확인 + 주말 재검토 준비', done: false },
+  { date: '6/30(화)', task: '⚠️ 최종 완성 원고 현대기획 납품 (오후) — 이후 수정 불가', done: false },
+]
+
+const CHECKLIST = [
+  { emoji: '🔴', title: '6/23(월) 원고 취합', desc: '미제출자 발생 시 당일 오전 독촉 — 오후까지 전원 수합 필수' },
+  { emoji: '🔴', title: '6/30(화) 납품 전 오탈자 완벽', desc: '납품 후 수정은 디자인 추가 비용 발생. 교정을 6/27까지 완료하고 6/30에 최종 1회 더 확인' },
+  { emoji: '🟠', title: '7/10(목) 시안 조기 수신 가능', desc: '현대기획이 빠르면 7/10에 시안 발송. 7/7부터 메일·연락 수시 확인 대기' },
+  { emoji: '🔴', title: '7/16(수) 오후 최종 컨펌 절대 사수', desc: '이 시간을 넘기면 인쇄 일정 밀려 7/22 책 수령 불가 → 7/23 성과공유회 배포 불가. 교정 기간은 최대 2일(7/14~7/16)' },
+  { emoji: '🟠', title: '교정 기간 사전 준비', desc: '7/14~7/16은 교정에만 집중할 수 있도록 다른 일정 비워두기. 교정 보조 인력 사전 협의 권장' },
+  { emoji: '🟡', title: '현대기획 연락 채널 확보', desc: '담당자 휴대폰 직통 번호 확인 — 시안 수신 후 빠른 피드백 위해 카톡 연락 가능 여부 사전 확인' },
 ]
 
 export default function Home() {
@@ -57,7 +63,7 @@ export default function Home() {
             <div>
               <h1 className="text-2xl font-bold">주민이 그린 고산<br />환경리빙랩 매뉴얼</h1>
               <p className="text-green-200 mt-1">주민이 만든 동네 자원순환, 3년의 기록과 실천 가이드</p>
-              <p className="text-green-300 text-sm mt-2">A4 · 컬러 · 50부 · 약 50페이지 | 목표 발간일: 2026년 7월 15일</p>
+              <p className="text-green-300 text-sm mt-2">A4 · 컬러 · 50부 · 약 63페이지 | 현대기획 납품: 6/30(화) · 책 수령: 7/22(화) · 성과공유회: 7/23(수)</p>
             </div>
           </div>
         </div>
@@ -123,6 +129,22 @@ export default function Home() {
                 <span className={`text-sm ${s.today ? 'text-yellow-900 font-medium' : s.done ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
                   {s.task}
                 </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 필수 확인사항 */}
+        <div className="bg-white rounded-xl p-5 shadow-sm border border-red-100 mb-6">
+          <h2 className="font-bold text-gray-800 mb-4">🚨 필수 확인사항</h2>
+          <div className="space-y-3">
+            {CHECKLIST.map((item, i) => (
+              <div key={i} className="flex gap-3 rounded-lg bg-gray-50 border border-gray-100 px-4 py-3">
+                <span className="text-lg shrink-0">{item.emoji}</span>
+                <div>
+                  <p className="text-sm font-bold text-gray-800">{item.title}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                </div>
               </div>
             ))}
           </div>
