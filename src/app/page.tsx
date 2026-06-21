@@ -11,33 +11,31 @@ const WEEKS = [
   { label: '3주차', dates: '6/2~6/6', task: '원고 집필 2라운드', done: true },
   { label: '4주차', dates: '6/9~6/13', task: '원고 1차 수합', done: true },
   { label: '5주차', dates: '6/17~6/20', task: '가이드 배포 + 팀원 재작성', done: true },
-  { label: '6주차', dates: '6/23~6/27', task: '팀원 원고 취합(6/23) + 전체 검토·수정', done: false, current: true },
-  { label: '7주차', dates: '6/30~7/4', task: '최종 교열 완성 → 6/30(화) 오후 현대기획 납품 ⚠️', done: false },
-  { label: '8주차', dates: '7/7~7/11', task: '현대기획 디자인 작업 (7/10 시안 조기 수신 가능)', done: false },
-  { label: '9주차', dates: '7/14~7/18', task: '시안 수신(~7/14) → 교정 → 7/16(수) 오후 최종 컨펌 ⚠️', done: false },
-  { label: '납품', dates: '7/22(화)', task: '책 수령 🎉', done: false },
-  { label: '행사', dates: '7/23(수)', task: '성과공유회 배포', done: false },
+  { label: '6주차', dates: '6/23~6/27', task: '팀원 원고 제출·수합', done: false, current: true },
+  { label: '7주차', dates: '6/30~7/4', task: '이진규 파트 완성 + 7/3 최종 전달', done: false },
+  { label: '8주차', dates: '7/7~7/11', task: '기획사 디자인 검토 + 퇴고', done: false },
+  { label: '9주차', dates: '7/14~7/18', task: '7/14 인쇄 의뢰 + 최종 확정', done: false },
+  { label: '납품', dates: '7/22(수)', task: '책 수령 🎉', done: false },
+  { label: '행사', dates: '7/23(목)', task: '성과공유회 배포', done: false },
 ]
 
 const DAILY_SCHEDULE = [
-  { date: '6/23(월)', task: '팀원 원고 최종 취합 마감 — 전원 제출 확인', done: false, today: true },
-  { date: '6/24(화)', task: '전체 내용·흐름 검토 + 파트별 보완 지시', done: false },
-  { date: '6/25(수)', task: '보완·수정 반영 + 오탈자 1차 교정', done: false },
-  { date: '6/26(목)', task: '오탈자 2차 교정 + 전체 통일성 점검', done: false },
-  { date: '6/27(금)', task: '교정 3차 확인 + 주말 최종 재검토 준비', done: false },
-  { date: '6/30(화)', task: '⚠️ 최종 완성 원고 현대기획 납품 (오후) — 이후 수정 불가', done: false },
-  { date: '7/14(월)', task: '현대기획 시안 수신 마감 → 즉시 교정 시작', done: false },
-  { date: '7/16(수)', task: '⚠️ 교정 완료 + 현대기획 최종 컨펌 (오후까지) — 절대 사수', done: false },
-  { date: '7/22(화)', task: '책 수령 🎉', done: false },
+  { date: '6/23(화)', task: '김연수 프롤로그·에필로그, 이현직 1부 제출 확인', done: false, today: true },
+  { date: '6/24(수)', task: '김정현 2부 제출 확인 + 1차 검토 의견 정리', done: false },
+  { date: '6/25(목)', task: '파트별 누락 수치·사진·인용문 보완 요청', done: false },
+  { date: '6/26(금)', task: '수정본 수합 + 이진규 파트 초안 정리', done: false },
+  { date: '6/27(토)', task: '이승원 4부·부록 제출 확인 + 전체 목차 재점검', done: false },
+  { date: '7/1(수)', task: '이진규 타임라인·3부·5부 제출', done: false },
+  { date: '7/2(목)', task: '최종 원고 교정 + 기획사 전달 파일 정리', done: false },
+  { date: '7/3(금)', task: '기획사 최종 원고 전달', done: false },
+  { date: '7/14(화)', task: '인쇄 의뢰', done: false },
 ]
 
 const CHECKLIST = [
-  { emoji: '🔴', title: '6/30(화) 오후 현대기획 납품 — 핵심 날짜', desc: '납품 후 수정은 디자인 추가 비용 발생. 오탈자는 반드시 6/30 이전에 완벽하게 마무리' },
-  { emoji: '🔴', title: '7/16(수) 오후 최종 컨펌 — 절대 사수', desc: '이 시간을 놓치면 인쇄 일정 밀려 7/22 책 수령 불가 → 7/23 성과공유회 배포 불가. 교정 기간은 최대 2일(7/14~7/16)' },
-  { emoji: '🟠', title: '7/10(목) 시안 조기 수신 가능 — 대기 필요', desc: '현대기획이 빠르면 7/10에 시안 발송. 7/7부터 메일·연락 수시 확인. 늦어도 7/14까지 수신' },
-  { emoji: '🟠', title: '6/23(월) 원고 미제출자 당일 독촉', desc: '전원 제출 확인 후 오후부터 검토 시작. 미제출 시 당일 오전 연락해 오후까지 수합' },
-  { emoji: '🟡', title: '7/14~7/16 교정 기간 사전 준비', desc: '2일 안에 교정 완료해야 함. 해당 기간 다른 일정 최소화. 교정 보조 인력 사전 협의 권장' },
-  { emoji: '🟡', title: '현대기획 담당자 직통 연락처 확보', desc: '시안 수신 후 빠른 피드백 위해 카카오톡 연락 가능 여부 사전 확인' },
+  { emoji: '🔴', title: '7/3(금) 기획사 최종 원고 전달', desc: 'README 기준 핵심 날짜. 7/1 이진규 파트 제출 후 7/2까지 교정·파일 정리를 끝내야 함' },
+  { emoji: '🟠', title: '12파트 63p 구성 유지', desc: '내지 표지·목차·부록까지 포함한 최종 구성 기준. 기존 9파트 초안과 혼동 금지' },
+  { emoji: '🟠', title: '7/14(화) 인쇄 의뢰', desc: '성과공유회 7/23 배포 역산 일정. 디자인 검토 지연 시 즉시 데일리 채널에 공유' },
+  { emoji: '🟡', title: '5부 표현 주의', desc: '수성구청 협력 파트너를 인정하는 가능성 언어 사용. 요구·비판 표현 금지' },
 ]
 
 export default function Home() {
@@ -66,7 +64,7 @@ export default function Home() {
             <div>
               <h1 className="text-2xl font-bold">주민이 그린 고산<br />환경리빙랩 매뉴얼</h1>
               <p className="text-green-200 mt-1">주민이 만든 동네 자원순환, 3년의 기록과 실천 가이드</p>
-              <p className="text-green-300 text-sm mt-2">A4 · 컬러 · 100부 · 63페이지 | 현대기획 납품: 6/30(화) · 책 수령: 7/22(화) · 성과공유회: 7/23(수)</p>
+              <p className="text-green-300 text-sm mt-2">A4 · 컬러 · 50부 · 약 63페이지 | 최종 원고 전달: 2026년 7월 3일 · 성과공유회 배포: 7월 23일</p>
             </div>
           </div>
         </div>
@@ -147,24 +145,6 @@ export default function Home() {
                 <div>
                   <p className="text-sm font-bold text-gray-800">{item.title}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 핵심 체크포인트 */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 mb-6">
-          <h2 className="font-bold text-gray-800 mb-4">⚠️ 핵심 체크포인트</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {CHECKLIST.map((item) => (
-              <div key={item.title} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
-                <div className="flex items-start gap-2">
-                  <span className="shrink-0">{item.emoji}</span>
-                  <div>
-                    <div className="text-sm font-bold text-gray-800">{item.title}</div>
-                    <div className="text-xs leading-relaxed text-gray-600 mt-1">{item.desc}</div>
-                  </div>
                 </div>
               </div>
             ))}
