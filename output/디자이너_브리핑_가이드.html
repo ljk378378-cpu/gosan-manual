@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>디자이너 브리핑 가이드 — 주민이 그린 고산 환경리빙랩 매뉴얼</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+    font-size: 14px;
+    line-height: 1.75;
+    background: #f5f5f5;
+    color: #1a1a1a;
+    word-break: keep-all;
+  }
+
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #1a1a1a;
+    color: #fff;
+    padding: 12px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .toolbar strong { font-size: 14px; letter-spacing: 0.3px; }
+  .toolbar button {
+    background: #fff;
+    color: #1a1a1a;
+    border: none;
+    padding: 7px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  .toolbar button:hover { background: #e8e8e8; }
+
+  .wrapper {
+    max-width: 960px;
+    margin: 32px auto;
+    padding: 0 20px 80px;
+  }
+
+  /* 문서 헤더 */
+  .doc-header {
+    background: #fff;
+    border: 2px solid #1a1a1a;
+    padding: 32px 36px;
+    margin-bottom: 32px;
+  }
+  .doc-header .label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 8px;
+  }
+  .doc-header h1 {
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .doc-header .meta {
+    font-size: 13px;
+    color: #555;
+    border-top: 1px solid #ddd;
+    padding-top: 12px;
+    margin-top: 12px;
+    display: flex;
+    gap: 24px;
+  }
+
+  /* 섹션 공통 */
+  .section {
+    background: #fff;
+    border: 1px solid #d8d8d8;
+    margin-bottom: 20px;
+  }
+  .section-header {
+    background: #1a1a1a;
+    color: #fff;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-header .badge {
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(255,255,255,0.2);
+    padding: 2px 8px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .section-header h2 {
+    font-size: 15px;
+    font-weight: 800;
+  }
+  .section-header .pages {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.8;
+    white-space: nowrap;
+  }
+  .section-body {
+    padding: 20px 24px;
+  }
+
+  /* 개요 박스 */
+  .overview {
+    background: #f8f8f8;
+    border-left: 3px solid #1a1a1a;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .overview strong { font-weight: 700; }
+
+  /* 레이아웃 그리드 */
+  .layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .layout-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+
+  .spec-box {
+    border: 1px solid #d0d0d0;
+    padding: 14px 16px;
+  }
+  .spec-box .spec-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    color: #555;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 6px;
+  }
+  .spec-box ul { list-style: none; }
+  .spec-box ul li {
+    font-size: 13px;
+    padding: 3px 0;
+    padding-left: 12px;
+    position: relative;
+    line-height: 1.55;
+  }
+  .spec-box ul li::before {
+    content: "·";
+    position: absolute;
+    left: 0;
+    font-weight: 700;
+  }
+
+  /* 페이지 레이아웃 다이어그램 */
+  .page-diagram {
+    border: 1px solid #c0c0c0;
+    background: #fafafa;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+  .page-diagram .pd-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #555;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  .page-layout {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .page-mock {
+    width: 100px;
+    height: 140px;
+    border: 1.5px solid #888;
+    background: #fff;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .page-mock .pm-label {
+    font-size: 10px;
+    color: #888;
+    padding: 4px;
+    text-align: center;
+  }
+  /* 페이지 내 요소 시뮬레이션 */
+  .pm-photo-top { background: #bbb; height: 42px; margin: 4px 4px 3px; }
+  .pm-photo-bottom { background: #bbb; height: 42px; margin: 3px 4px 4px; }
+  .pm-photo-side-right { background: #bbb; position: absolute; right: 4px; top: 4px; width: 36px; bottom: 4px; }
+  .pm-text { background: #e0e0e0; height: 7px; margin: 3px 4px; }
+  .pm-title { background: #444; height: 10px; margin: 5px 4px 3px; }
+  .pm-table { background: #d8d8d8; height: 35px; margin: 3px 4px; }
+  .pm-infographic { background: #999; height: 80px; margin: 4px; }
+  .pm-quote { background: #e8e8e8; border-left: 3px solid #999; height: 25px; margin: 3px 4px; }
+
+  /* 주의사항 */
+  .note {
+    background: #fffbf0;
+    border: 1px solid #e0c060;
+    padding: 11px 14px;
+    margin-top: 14px;
+    font-size: 13px;
+  }
+  .note strong { font-weight: 700; color: #7a5500; }
+
+  /* 사진 가이드 테이블 */
+  .photo-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+  .photo-table th {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 12px;
+  }
+  .photo-table td {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .photo-table tr:nth-child(even) td { background: #fafafa; }
+
+  /* 전체 사양 요약 */
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .summary-table th {
+    background: #1a1a1a;
+    color: #fff;
+    padding: 9px 14px;
+    text-align: left;
+    font-size: 12px;
+  }
+  .summary-table td {
+    border: 1px solid #d0d0d0;
+    padding: 9px 14px;
+    vertical-align: top;
+  }
+  .summary-table tr:nth-child(even) td { background: #f8f8f8; }
+
+  /* 타이포그래피 규정 */
+  .typo-sample {
+    border: 1px solid #d0d0d0;
+    padding: 16px 20px;
+    margin-bottom: 10px;
+  }
+  .typo-row {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 6px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .typo-row:last-child { border-bottom: none; }
+  .typo-name { font-size: 11px; color: #777; width: 120px; flex-shrink: 0; }
+  .typo-spec { font-size: 11px; color: #555; width: 140px; flex-shrink: 0; }
+
+  h3.sub { font-size: 13px; font-weight: 700; margin: 18px 0 8px; border-left: 3px solid #1a1a1a; padding-left: 8px; }
+
+  @media print {
+    .toolbar { display: none !important; }
+    body { background: #fff; }
+    .wrapper { margin: 0; padding: 20px; }
+    .section { page-break-inside: avoid; border: 1px solid #aaa; margin-bottom: 14px; }
+    .section-header { background: #222 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <strong>주민이 그린 고산 — 매뉴얼 디자이너 브리핑 가이드</strong>
+  <button onclick="window.print()">인쇄 / PDF 저장</button>
+</div>
+
+<div class="wrapper">
+
+  <!-- 문서 헤더 -->
+  <div class="doc-header">
+    <div class="label">Designer Briefing Document</div>
+    <h1>주민이 그린 고산 환경리빙랩 매뉴얼<br>페이지별 디자인 가이드</h1>
+    <div class="meta">
+      <span>발행: 청곡종합사회복지관 / 이진규 과장</span>
+      <span>기준일: 2026년 6월 29일</span>
+      <span>원고 전달 예정: 2026.7.3</span>
+      <span>매뉴얼 배포: 2026.7.23 성과공유회</span>
+    </div>
+  </div>
+
+  <!-- ===== 0. 전체 기본 규격 ===== -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge">전체 공통</span>
+      <h2>기본 규격 및 디자인 원칙</h2>
+    </div>
+    <div class="section-body">
+
+      <div class="layout-grid">
+        <div class="spec-box">
+          <div class="spec-title">판형 · 분량</div>
+          <ul>
+            <li>판형: A4 (210×297mm) 기준</li>
+            <li>총 페이지: 약 60p (표지·뒤표지 별도)</li>
+            <li>제본: 무선철 또는 스프링 제본</li>
+            <li>인쇄: 컬러 내지 + 무광 코팅 표지</li>
+          </ul>
+        </div>
+        <div class="spec-box">
+          <div class="spec-title">여백 (기본)</div>
+          <ul>
+            <li>상: 20mm</li>
+            <li>하: 20mm</li>
+            <li>내측(제본): 20mm</li>
+            <li>외측: 18mm</li>
+            <li>단수: 본문 1단 기본, 필요 시 2단</li>
+          </ul>
+        </div>
+        <div class="spec-box">
+          <div class="spec-title">색상 톤</div>
+          <ul>
+            <li>기조색: 녹색 계열 차분한 매뉴얼 톤</li>
+            <li>주조색(1): 짙은 녹색 (예: #1a5c38 수준)</li>
+            <li>주조색(2): 밝은 배경 크림/아이보리</li>
+            <li>강조색: 테이블 헤더·소제목 배경 사용</li>
+            <li>본문: 흑색 (#1a1a1a 수준)</li>
+            <li>주의: 원색·형광색 금지. 과한 채도 금지</li>
+          </ul>
+        </div>
+        <div class="spec-box">
+          <div class="spec-title">서체</div>
+          <ul>
+            <li>제목류: 나눔고딕ExtraBold 또는 Noto Sans KR Black</li>
+            <li>소제목: 나눔고딕Bold</li>
+            <li>본문: 나눔고딕Regular 또는 Noto Sans KR Regular</li>
+            <li>강조·인용: 이탤릭 또는 배경 처리</li>
+            <li>표 내: 본문 서체 -1pt 적용</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 class="sub">타이포그래피 위계</h3>
+      <div class="typo-sample">
+        <div class="typo-row">
+          <span class="typo-name">파트 번호/제목</span>
+          <span class="typo-spec">24pt / ExtraBold</span>
+          <span style="font-size:24px;font-weight:900;">2부. 모델을 만들다</span>
+        </div>
+        <div class="typo-row">
+          <span class="typo-name">대제목 (H1)</span>
+          <span class="typo-spec">18–20pt / Bold</span>
+          <span style="font-size:18px;font-weight:700;">2-1. 1차년도에서 2차년도로</span>
+        </div>
+        <div class="typo-row">
+          <span class="typo-name">소제목 (H2)</span>
+          <span class="typo-spec">14pt / Bold</span>
+          <span style="font-size:14px;font-weight:700;">아파트 회수 모델의 핵심 구조</span>
+        </div>
+        <div class="typo-row">
+          <span class="typo-name">소소제목 (H3)</span>
+          <span class="typo-spec">12pt / Bold</span>
+          <span style="font-size:12px;font-weight:700;">거점은 어디에 설치해야 할까?</span>
+        </div>
+        <div class="typo-row">
+          <span class="typo-name">본문</span>
+          <span class="typo-spec">10–10.5pt / Regular</span>
+          <span style="font-size:10.5pt;">주민이 종이팩을 씻고 말리고 펼쳐서 배출하는 구조입니다.</span>
+        </div>
+        <div class="typo-row">
+          <span class="typo-name">직접 인용 (인터뷰)</span>
+          <span class="typo-spec">10.5pt / 배경 박스</span>
+          <span style="font-size:10.5pt;background:#f0f0f0;padding:2px 8px;">"고산1동에서 배운 방법을 이웃에게 알려줬습니다."</span>
+        </div>
+        <div class="typo-row">
+          <span class="typo-name">표 내 텍스트</span>
+          <span class="typo-spec">9.5–10pt / Regular</span>
+          <span style="font-size:9.5pt;">2025년 3월~12월 / 아파트 회수량 / 632.7kg</span>
+        </div>
+        <div class="typo-row">
+          <span class="typo-name">편집 메모 (확인 필요)</span>
+          <span class="typo-spec">9pt / Italic, 회색</span>
+          <span style="font-size:9pt;color:#888;font-style:italic;">▶ 수치 확인 필요: 최종결과보고서 대조 후 확정</span>
+        </div>
+      </div>
+
+      <h3 class="sub">사진 배치 공통 원칙</h3>
+      <div class="layout-grid">
+        <div class="spec-box">
+          <div class="spec-title">사진 품질 기준</div>
+          <ul>
+            <li>최소 해상도: 300dpi (인쇄용)</li>
+            <li>선호 비율: 4:3 또는 3:2 가로형</li>
+            <li>세로형은 사이드 배치 시 활용</li>
+            <li>주민 얼굴 포함 사진: 동의 확인 후 사용</li>
+            <li>저화질 사진: 흑백·흐림처리 후 배치</li>
+          </ul>
+        </div>
+        <div class="spec-box">
+          <div class="spec-title">캡션 규격</div>
+          <ul>
+            <li>위치: 사진 아래 좌측 정렬</li>
+            <li>서체: 9pt Regular, 회색(#666)</li>
+            <li>내용: 날짜 + 장소 또는 활동명</li>
+            <li>예시: ▲ 2024.10 고산2동 아파트 수거함 설치</li>
+            <li>저작권 표기 필요 시 우측 끝에 추가</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 class="sub">표(테이블) 공통 원칙</h3>
+      <div class="spec-box">
+        <div class="spec-title">테이블 스타일</div>
+        <ul>
+          <li>헤더 행: 짙은 녹색 배경 + 흰색 텍스트 / Bold</li>
+          <li>짝수 행: 연한 크림 배경 (줄무늬 처리)</li>
+          <li>테두리: 0.5pt 회색선</li>
+          <li>셀 패딩: 상하 6pt, 좌우 10pt</li>
+          <li>수치 열(우측 정렬): 숫자는 항상 우측 정렬</li>
+          <li>합계 행: Bold + 상단 1pt 선 강조</li>
+        </ul>
+      </div>
+
+      <div class="note">
+        <strong>확인 필요 표기 처리:</strong> 원고 내 <em>&gt; 수치 확인 필요</em> 또는 <em>▶ [QR코드 삽입]</em> 표기 항목은 최종 인쇄본 전 교체 예정입니다. 작업 파일에 플레이스홀더로 남겨두고, 담당자(이진규 과장)에게 최종 자료를 받은 후 교체하세요. 확인 필요 메모는 인쇄본에서 삭제합니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 표지 ===== -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge">표지</span>
+      <h2>표지 / 뒤표지</h2>
+      <span class="pages">2p (별도)</span>
+    </div>
+    <div class="section-body">
+      <div class="overview">
+        <strong>역할:</strong> 매뉴얼의 첫인상. 전문성과 신뢰감 동시 표현. 사업명과 발행기관이 즉시 인지돼야 한다.
+      </div>
+      <div class="layout-grid">
+        <div class="spec-box">
+          <div class="spec-title">앞표지 구성 요소</div>
+          <ul>
+            <li>사업명(대): 주민이 그린 고산</li>
+            <li>사업명(소): 환경리빙랩 매뉴얼</li>
+            <li>부제: 종이팩 자원순환 주민 주도 실험 3년의 기록</li>
+            <li>발행: 청곡종합사회복지관 (로고 포함)</li>
+            <li>연도: 2026</li>
+            <li>지원: 대구사회복지공동모금회 로고</li>
+            <li>사진: 주민환경연구원 활동 전경 (1장, 풀블리드)</li>
+          </ul>
+        </div>
+        <div class="spec-box">
+          <div class="spec-title">뒤표지 구성 요소</div>
+          <ul>
+            <li>앱 QR코드 (크게, 중앙 배치)</li>
+            <li>앱 명칭: 주민이 그린 고산</li>
+            <li>플레이스토어 / 앱스토어 배지</li>
+            <li>발행기관: 청곡종합사회복지관</li>
+            <li>주소 · 연락처</li>
+            <li>인쇄연도: 2026</li>
+          </ul>
+        </div>
+      </div>
+      <div class="note">
+        <strong>사진 요청:</strong> 앞표지용 대표 사진 1장 (가로형, 300dpi 이상). 주민환경연구원 단체 활동 또는 수거 현장 이미지 권장. 얼굴 동의 확인 필요.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 발간사 ===== -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge">발간사</span>
+      <h2>관장 발간사 + 수성구청 국장 발간사</h2>
+      <span class="pages">2p</span>
+    </div>
+    <div class="section-body">
+      <div class="overview">
+        <strong>역할:</strong> 공식 발간 선언. 텍스트 중심. 권위와 신뢰감을 전달하는 절제된 레이아웃.
+      </div>
+      <div class="page-diagram">
+        <div class="pd-label">레이아웃 스케치 (관장 발간사 1p 기준)</div>
+        <div class="page-layout">
+          <div>
+            <div class="page-mock">
+              <div class="pm-photo-top" style="height:30px;"></div>
+              <div class="pm-title"></div>
+              <div class="pm-text"></div>
+              <div class="pm-text"></div>
+              <div class="pm-text"></div>
+              <div class="pm-text"></div>
+              <div class="pm-text" style="width:60%;"></div>
+              <div style="font-size:8px;color:#888;text-align:right;margin:2px 4px;">서명·직함</div>
+            </div>
+            <div style="font-size:11px;color:#666;margin-top:4px;text-align:center;">관장 발간사 (p.1)</div>
+          </div>
+          <div>
+            <div class="page-mock">
+              <div class="pm-photo-top" style="height:30px;"></div>
+              <div class="pm-title"></div>
+              <div class="pm-text"></div>
+              <div class="pm-text"></div>
+              <div class="pm-text"></div>
+              <div class="pm-text"></div>
+              <div class="pm-text" style="width:60%;"></div>
+              <div style="font-size:8px;color:#888;text-align:right;margin:2px 4px;">서명·직함</div>
+            </div>
+            <div style="font-size:11px;color:#666;margin-top:4px;text-align:center;">국장 발간사 (p.2)</div>
+          </div>
+        </div>
+      </div>
+      <div class="layout-grid">
+        <div class="spec-box">
+          <div class="spec-title">상단 사진 (선택)</div>
+          <ul>
+            <li>관장·국장 프로필 사진 (각 1컷) 또는</li>
+            <li>로고만 배치 (사진 없는 경우)</li>
+            <li>사진 있을 경우: 상단 좌측 배치, 50×60mm 이내</li>
+          </ul>
+        </div>
+        <div class="spec-box">
+          <div class="spec-title">텍스트 구성</div>
+          <ul>
+            <li>제목: "발간사" (대형)</li>
+            <li>본문: 약 550~620자 (10pt, 1단)</li>
+            <li>서명란: 직함 + 이름 (우측 정렬, 10.5pt Bold)</li>
+            <li>발간 연월: 2026년 7월</li>
+          </ul>
+        </div>
+      </div>
+      <div class="note">
+        <strong>특이사항:</strong> 수성구청 국장 발간사는 원고 작성 후 별도 수령. 7월 3일 기획사 전달 시 포함 여부 확인 필요. 미수령 시 빈 템플릿으로 전달.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 타임라인 ===== -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge">타임라인</span>
+      <h2>이 매뉴얼을 읽기 전에 — 3년의 여정</h2>
+      <span class="pages">2p</span>
+    </div>
+    <div class="section-body">
+      <div class="overview">
+        <strong>역할:</strong> 글보다 그림이 주인공. 독자가 본문 읽기 전에 3년 흐름을 한눈에 파악하는 인포그래픽 페이지.
+      </div>
+      <div class="page-diagram">
+        <div class="pd-label">레이아웃 스케치 (2p 스프레드)</div>
+        <div class="page-layout">
+          <div>
+            <div class="page-mock" style="width:120px;">
+              <div class="pm-infographic" style="height:50px;background:#c8c8c8;"></div>
+              <div class="pm-text" style="height:5px;"></div>
+              <div class="pm-text" style="height:5px;width:70%;"></div>
+              <div class="pm-text" style="height:5px;width:60%;"></div>
+              <div class="pm-text" style="height:5px;width:50%;"></div>
+            </div>
+            <div style="font-size:11px;color:#666;margin-top:4px;text-align:center;">1차년도 (p.3)</div>
+          </div>
+          <div>
+            <div class="page-mock" style="width:120px;">
+              <div class="pm-infographic" style="height:50px;background:#c8c8c8;"></div>
+              <div class="pm-text" style="height:5px;"></div>
+              <div class="pm-text" style="height:5px;width:70%;"></div>
+              <div class="pm-text" style="height:5px;width:60%;"></div>
+              <div class="pm-text" style="height:5px;width:50%;"></div>
+            </div>
+            <div style="font-size:11px;color:#666;margin-top:4px;text-align:center;">2·3차년도 (p.4)</div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-box" style="margin-bottom:14px;">
+        <div class="spec-title">인포그래픽 구성 (NotebookLM 시안 참고 → 재디자인)</div>
+        <ul>
+          <li>연도별 3단 구성: 1차(2023.8~2024.7) / 2차(2024.8~2025.7) / 3차(2025.8~2026.7)</li>
+          <li>각 연도별 핵심 성과 3가지씩 배치</li>
+          <li>참여 인원 변화: 주민환경연구원 20→30→40명 시각화</li>
+          <li>수거량 증가: 월 49kg→203kg 시각화 (2차년도)</li>
+          <li>마무리 문구: "고산동의 3년은 주민이 문제를 발견하고, 실행 모델을 만들고, 다음 지역이 참고할 수 있는 기반으로 남긴 과정입니다."</li>
+        </ul>
+      </div>
+      <table class="photo-table">
+        <tr>
+          <th>연도</th>
+          <th>기간</th>
+          <th>핵심 문구</th>
+          <th>성과 3가지</th>
+        </tr>
+        <tr>
+          <td>1차년도</td>
+          <td>2023.8 – 2024.7</td>
+          <td>문제를 발굴하다</td>
+          <td>주민 주도 환경 연구 체계 마련 / 종이팩 자원순환 핵심 과제 선정 / 리빙랩 기반 주민 역량 강화</td>
+        </tr>
+        <tr>
+          <td>2차년도</td>
+          <td>2024.8 – 2025.7</td>
+          <td>모델을 만들다</td>
+          <td>맞춤형 3대 수거 모델 구축 / 종이팩 수거 인프라 총 39개소 설치 / 월 회수량 49kg→203kg 증가</td>
+        </tr>
+        <tr>
+          <td>3차년도</td>
+          <td>2025.8 – 2026.7</td>
+          <td>플랫폼을 만들다</td>
+          <td>'주민이 그린 고산' 모바일 앱 출시 / 환경리빙랩 매뉴얼 제작 / 지속 가능한 자원순환 거버넌스 기반 마련</td>
+        </tr>
+      </table>
+      <div class="note">
+        <strong>디자인 주의:</strong> '414%', '비약적 증가', '급증' 표현 금지. 203kg 기준 시점은 2025년 6월 기준. 거버넌스는 '완성'이 아닌 '기반 마련'으로 표기. NotebookLM 워터마크 제거.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 프롤로그 ===== -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge">프롤로그</span>
+      <h2>왜 주민이, 왜 종이팩인가</h2>
+      <span class="pages">4p</span>
+    </div>
+    <div class="section-body">
+      <div class="overview">
+        <strong>역할:</strong> 독자가 "왜 이걸 읽어야 하는가"를 납득하게 만드는 도입부. 데이터 + 현장 이야기 혼합.
+      </div>
+      <table class="photo-table">
+        <tr>
+          <th>페이지</th>
+          <th>내용</th>
+          <th>레이아웃</th>
+          <th>사진 배치</th>
+        </tr>
+        <tr>
+          <td>P-1, P-2 (2p)</td>
+          <td>왜 종이팩인가<br>종이팩 재활용 현황·수치·자원순환 경로</td>
+          <td>1단 본문 + 수치 강조 박스</td>
+          <td>종이팩 이미지 1컷 (상단 또는 우측 사이드 배치)<br>인포 수치: "7만 톤 배출 / 14.8% 회수율" 강조 박스</td>
+        </tr>
+        <tr>
+          <td>P-3, P-4 (2p)</td>
+          <td>왜 주민인가<br>리빙랩 개념 + 주민환경연구원 시작 이야기</td>
+          <td>1단 본문 + 인용문 박스</td>
+          <td>발대식 또는 주민 모임 사진 1컷 (하단 또는 우측)<br>신철주 주민 인용문 박스 별도 처리</td>
+        </tr>
+      </table>
+      <div class="layout-grid">
+        <div class="spec-box">
+          <div class="spec-title">인용문 박스 처리</div>
+          <ul>
+            <li>배경: 연한 크림 또는 연한 녹색</li>
+            <li>좌측 수직선: 짙은 녹색 3mm</li>
+            <li>인용 부호(") 크게 배치</li>
+            <li>이름/역할 명기: 신철주 주민환경연구원</li>
+          </ul>
+        </div>
+        <div class="spec-box">
+          <div class="spec-title">수치 강조 처리</div>
+          <ul>
+            <li>종이팩 배출량 7만 톤, 회수율 14.8% 등 수치는 글자 크기 대비 2배 이상 강조</li>
+            <li>작은 박스 또는 사이드바 인포그래픽으로 처리</li>
+          </ul>
+        </div>
+      </div>
+      <div class="spec-box" style="margin-top:12px;">
+        <div class="spec-title">사진 요청 목록 (프롤로그)</div>
+        <ul>
+          <li>종이팩 이미지 (우유팩·두유팩·주스팩 실물): 1컷</li>
+          <li>주민환경연구원 발대식 또는 첫 모임: 1컷</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 1부 ===== -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge">1부</span>
+      <h2>문제를 발굴하다 — 1차년도 이야기 (2023)</h2>
+      <span class="pages">8p</span>
+    </div>
+    <div class="section-body">
+      <div class="overview">
+        <strong>역할:</strong> 3년 서사의 출발점. 주민이 직접 문제를 발굴하는 과정을 생생하게 보여준다. 동별 구분을 시각적으로 명확히 해야 한다.
+      </div>
+      <table class="photo-table">
+        <tr>
+          <th>페이지</th>
+          <th>소제목</th>
+          <th>레이아웃</th>
+          <th>사진·그래픽</th>
+        </tr>
+        <tr>
+          <td>1~2p</td>
+          <td>고산동은 어떤 동네인가<br>(1-1)</td>
+          <td>1단 본문<br>지도 이미지 우측 사이드</td>
+          <td>고산동 지도 또는 항공 이미지 (우측 배치)<br>아파트·공원·상가 혼재 풍경 사진 1컷</td>
+        </tr>
+        <tr>
+          <td>3~4p</td>
+          <td>주민환경연구원이 탄생하다<br>(1-2)</td>
+          <td>1단 본문<br>발대식 사진 하단 or 상단 풀</td>
+          <td>2023.9.12 발대식 사진 (중요: 크게 배치)<br>20명 단체 사진 또는 첫 모임 장면</td>
+        </tr>
+        <tr>
+          <td>5~6p</td>
+          <td>동별 3가지 환경 문제<br>(1-3)</td>
+          <td>동별 3분할 박스 또는 탭 구성</td>
+          <td>고산1동 우유팩 캠페인 / 고산2동 쓰레갖기 / 고산3동 공원 사진 각 1컷<br>동별 색상 구분 (3색)</td>
+        </tr>
+        <tr>
+          <td>7~8p</td>
+          <td>종이팩 자원순환을 핵심으로 선택<br>(1-4)</td>
+          <td>1단 본문<br>결정 근거 3항목 시각화</td>
+          <td>종이팩 씻기·말리기·펼치기 순서 이미지 또는 일러스트<br>관심도 변화 수치 막대 또는 표</td>
+        </tr>
+      </table>
+      <div class="layout-grid">
+        <div class="spec-box">
+          <div class="spec-title">동별 구분 처리</div>
+          <ul>
+            <li>고산1동: 색상 A (녹색 계열)</li>
+            <li>고산2동: 색상 B (청녹 계열)</li>
+            <li>고산3동: 색상 C (황록 계열)</li>
+            <li>동별 아이콘 또는 넘버링 태그 활용</li>
+          </ul>
+        </div>
+        <div class="spec-box">
+          <div class="spec-title">타임라인 테이블 처리</div>
+          <ul>
+            <li>원고 내 시기·사건 표: 그대로 표 형식 유지</li>
+            <li>날짜 열: 좌측, Bold</li>
+            <li>내용 열: 간결하게 줄 간격 확보</li>
+          </ul>
+        </div>
+      </div>
+      <div class="spec-box" style="margin-top:12px;">
+        <div class="spec-title">사진 요청 목록 (1부)</div>
+        <ul>
+          <li>2023.9.12 주민환경연구원 발대식 전경: 1컷 (중요)</li>
+          <li>고산1동 우유백패킹 캠페인 (2024.5.14 신매광장): 1컷</li>
+          <li>고산2동 쓰레갖기 활동: 1컷</li>
+          <li>고산3동 매호공원 식재 또는 공원 생태 활동: 1컷</li>
+          <li>고산동 지도 이미지 (가능 시): 1컷</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 2부 ===== -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge">2부</span>
+      <h2>모델을 만들다 — 2차년도 이야기 (2024)</h2>
+      <span class="pages">10p</span>
+    </div>
+    <div class="section-body">
+      <div class="overview">
+        <strong>역할:</strong> 매뉴얼에서 성과가 가장 집중된 파트. 3가지 자원순환 모델, 거버넌스, 노인일자리, 방송 패널까지 담는다. 독자가 "이게 진짜구나"를 느껴야 한다.
+      </div>
+      <table class="photo-table">
+        <tr>
+          <th>페이지</th>
+          <th>소제목</th>
+          <th>레이아웃</th>
+          <th>사진·그래픽</th>
+        </tr>
+        <tr>
+          <td>1~2p</td>
+          <td>1차→2차년도 전환<br>세 팀 구성 (2-1, 2-2)</td>
+          <td>1단 본문<br>팀 역할 박스 3개</td>
+          <td>2024.9.10 2차년도 발대식 또는 팀 활동 사진: 1컷</td>
+        </tr>
+        <tr>
+          <td>3~5p</td>
+          <td>아파트·카페·학교 회수 모델<br>(2-3, 2-4, 2-5)</td>
+          <td>모델별 1페이지씩 또는 3분할<br>모델 구조 다이어그램 포함</td>
+          <td>각 모델별 현장 사진 1컷씩 (수거함 설치 현장)<br>수거 흐름 다이어그램 (수거→보관→납품 화살표)</td>
+        </tr>
+        <tr>
+          <td>6~7p</td>
+          <td>그린고산실천단 거버넌스<br>(2-6)</td>
+          <td>거버넌스 구조도 (조직도 형태)</td>
+          <td>거버넌스 기관 조직도 인포그래픽<br>실천단 회의 사진 1컷</td>
+        </tr>
+        <tr>
+          <td>8p</td>
+          <td>노인일자리 연계 수거<br>(2-7)</td>
+          <td>1단 본문<br>수거 사진 우측 배치</td>
+          <td>어르신 수거단 활동 사진: 1컷 (중요)</td>
+        </tr>
+        <tr>
+          <td>9~10p</td>
+          <td>방송·캠페인 확산<br>2차년도 성과 정리 (2-8)</td>
+          <td>성과 수치 인포그래픽 배치</td>
+          <td>MBC 또는 TBN 방송 출연 사진/자막 캡처: 1컷<br>수거량 증가 그래프 (49kg→203kg)</td>
+        </tr>
+      </table>
+      <div class="layout-grid">
+        <div class="spec-box">
+          <div class="spec-title">3가지 모델 구조도</div>
+          <ul>
+            <li>아파트: 수거함→주민배출→복지관수거→행정복지센터→천마산업</li>
+            <li>카페: 수거함→노인일자리수거단→행정복지센터→천마산업</li>
+            <li>학교: 학생챌린지→교내수거→복지관수거→천마산업</li>
+            <li>화살표 다이어그램으로 시각화</li>
+          </ul>
+        </div>
+        <div class="spec-box">
+          <div class="spec-title">핵심 수치 인포그래픽</div>
+          <ul>
+            <li>수거함 39개소 (아파트21·카페14·학교4)</li>
+            <li>월 회수량 49kg→203kg (2025.3→2025.6)</li>
+            <li>누계 참여주민 4,349명</li>
+            <li>협력 네트워크 11개 기관</li>
+            <li>아이콘 + 숫자 조합으로 표현</li>
+          </ul>
+        </div>
+      </div>
+      <div class="spec-box" style="margin-top:12px;">
+        <div class="spec-title">사진 요청 목록 (2부)</div>
+        <ul>
+          <li>아파트 단지 수거함 설치 현장: 1컷</li>
+          <li>카페 수거함 및 카페 협력 장면: 1컷</li>
+          <li>학교·교육기관 수거 또는 교육: 1컷</li>
+          <li>어르신 수거단 활동 (노인일자리 연계): 1컷 (필수)</li>
+          <li>MBC 라디오 또는 TBN 방송 출연 관련 이미지: 1컷</li>
+          <li>그린고산실천단 거버넌스 회의 또는 협약 사진: 1컷</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 3부 ===== -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge">3부</span>
+      <h2>플랫폼을 만들다 — 3차년도 이야기 (2025)</h2>
+      <span class="pages">8p</span>
+    </div>
+    <div class="section-body">
+      <div class="overview">
+        <strong>역할:</strong> 3년 서사의 완결. 앱(온라인 플랫폼)과 매뉴얼(오프라인 플랫폼)을 만든 이유와 구조. 독자가 "이 매뉴얼을 손에 든 내가 이미 그 플랫폼의 사용자"임을 느끼게 한다.
+      </div>
+      <table class="photo-table">
+        <tr>
+          <th>페이지</th>
+          <th>소제목</th>
+          <th>레이아웃</th>
+          <th>사진·그래픽</th>
+        </tr>
+        <tr>
+          <td>1~2p</td>
+          <td>모델 완성 → 다음 질문<br>온오프 플랫폼 필요성 (3-1 도입)</td>
+          <td>1단 본문<br>핵심 질문 인용 박스 강조</td>
+          <td>3차년도 주민환경연구원 회의 또는 앱 기획 회의 사진: 1컷</td>
+        </tr>
+        <tr>
+          <td>3~5p</td>
+          <td>주민이 그린 고산 앱<br>(3-2)</td>
+          <td>앱 스크린샷 배치<br>기능별 설명 2단 구성</td>
+          <td>앱 스크린샷 3종 필수: 수거 거점 지도 / 배출방법 안내 / 참여 기록·리워드<br>실제 기기(폰) 목업 이미지 권장</td>
+        </tr>
+        <tr>
+          <td>6~7p</td>
+          <td>주민이 그린 고산 매뉴얼<br>(3-3)</td>
+          <td>1단 본문<br>앱↔매뉴얼 비교 다이어그램</td>
+          <td>매뉴얼 제작 과정 또는 원고 작업 장면: 1컷 (선택)</td>
+        </tr>
+        <tr>
+          <td>8p</td>
+          <td>플랫폼이 완성된다는 것<br>(3-4)</td>
+          <td>1단 본문, 짧게 마무리</td>
+          <td>사진 없이 텍스트로 마무리 또는 상징적 이미지 1컷</td>
+        </tr>
+      </table>
+      <div class="layout-grid">
+        <div class="spec-box">
+          <div class="spec-title">앱 스크린샷 배치</div>
+          <ul>
+            <li>3장 이상 제공 시: 나란히 3열 배치</li>
+            <li>기기 목업(Phone 프레임) 사용 권장</li>
+            <li>캡션: 기능명 명기 (예: 수거 거점 지도)</li>
+            <li>앱 QR코드: 해당 페이지 또는 3-2 끝에 배치</li>
+          </ul>
+        </div>
+        <div class="spec-box">
+          <div class="spec-title">앱↔매뉴얼 비교 박스</div>
+          <ul>
+            <li>앱: 지금 고산동 참여 주민용 / 온라인 / 수거 거점·배출법·참여기록</li>
+            <li>매뉴얼: 다음 기관 담당자용 / 오프라인 / 3년 방법론·실행 순서</li>
+            <li>2열 박스로 대비 구성</li>
+          </ul>
+        </div>
+      </div>
+      <div class="note">
+        <strong>앱 자료 요청:</strong> 구글 플레이스토어 및 앱스토어 QR코드, 앱 스크린샷 최소 3장 (고해상도). 앱 출시 여부 및 iOS 앱스토어 제공 여부 최종 확인 필요.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 4부 ===== -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge">4부</span>
+      <h2>이렇게 따라 하세요 — 종이팩 자원순환 환경리빙랩 실행 가이드</h2>
+      <span class="pages">12p</span>
+    </div>
+    <div class="section-body">
+      <div class="overview">
+        <strong>역할:</strong> 가장 실용적인 파트. "우리 지역에서도 해보고 싶다"는 독자가 첫 번째로 펼칠 페이지. 앞 파트 스토리 몰라도 이것만 보고 시작할 수 있어야 한다.
+      </div>
+      <table class="photo-table">
+        <tr>
+          <th>페이지</th>
+          <th>소제목</th>
+          <th>레이아웃</th>
+          <th>사진·그래픽</th>
+        </tr>
+        <tr>
+          <td>1~2p</td>
+          <td>환경리빙랩이란? 우리 기관에서 가능할까?<br>준비 체크리스트 (4-0)</td>
+          <td>Q&amp;A 박스 + 체크리스트 표</td>
+          <td>사진 없음. 체크박스 아이콘 사용 권장</td>
+        </tr>
+        <tr>
+          <td>3~4p</td>
+          <td>1단계: 주민환경연구원 모집<br>(4-1)</td>
+          <td>단계별 번호 타이틀 강조<br>선발기준 박스 처리</td>
+          <td>모집 홍보물 사진 또는 면담 장면: 1컷</td>
+        </tr>
+        <tr>
+          <td>5~6p</td>
+          <td>2단계: 수거 거점 구축<br>(4-2)</td>
+          <td>거점 선정 기준표<br>수거 현장 사진 배치</td>
+          <td>수거함 설치 또는 협의 현장 사진: 1컷</td>
+        </tr>
+        <tr>
+          <td>7~8p</td>
+          <td>3단계: 세척·집하·납품<br>(4-3)</td>
+          <td>단계별 표 (씻기→말리기→펼치기→배출)<br>이미지 또는 아이콘 순서도</td>
+          <td>종이팩 씻기·말리기·펼치기 순서 사진 (4단계): 필수 4컷</td>
+        </tr>
+        <tr>
+          <td>9~10p</td>
+          <td>4단계: 거버넌스 구축<br>(4-4)</td>
+          <td>참여 주체 역할 분담표<br>컨소시엄 제안 방법 박스</td>
+          <td>거버넌스 회의 또는 협약 사진: 1컷</td>
+        </tr>
+        <tr>
+          <td>11~12p</td>
+          <td>현장에서 자주 막히는 문제들<br>(4-5)</td>
+          <td>문제-해결 2열 박스<br>FAQ 형식</td>
+          <td>사진 없음. 아이콘·픽토그램 활용 권장</td>
+        </tr>
+      </table>
+      <div class="layout-grid">
+        <div class="spec-box">
+          <div class="spec-title">단계별 번호 타이틀</div>
+          <ul>
+            <li>STEP 01 / 02 / 03 / 04 형식으로 번호 크게 강조</li>
+            <li>색상 배경 배너 또는 원형 아이콘으로 시각화</li>
+            <li>각 단계마다 페이지 상단 또는 좌측에 배치</li>
+          </ul>
+        </div>
+        <div class="spec-box">
+          <div class="spec-title">체크리스트 처리</div>
+          <ul>
+            <li>□ 체크박스 기호 또는 아이콘 사용</li>
+            <li>인쇄 후 직접 체크할 수 있도록 박스 크기 확보</li>
+            <li>표 형식보다 리스트 형식이 실용적</li>
+          </ul>
+        </div>
+      </div>
+      <div class="spec-box" style="margin-top:12px;">
+        <div class="spec-title">사진 요청 목록 (4부) — 가장 많은 실물 사진 필요</div>
+        <ul>
+          <li>종이팩 씻기 장면: 1컷 (필수)</li>
+          <li>종이팩 말리기 장면: 1컷 (필수)</li>
+          <li>종이팩 펼치기 장면: 1컷 (필수)</li>
+          <li>수거함에 배출하는 장면: 1컷 (필수)</li>
+          <li>주민환경연구원 모집 홍보물 또는 모집 현장: 1컷</li>
+          <li>수거함 설치 협의 또는 설치 현장: 1컷</li>
+          <li>아파트 관리사무소 협의 장면 (가능 시): 1컷</li>
+        </ul>
+      </div>
+      <div class="note">
+        <strong>4부 편집 주의:</strong> 예산 규모표, 수거함 점검표, 월별 수거량 기록표, 역할 분담표 등 양식이 많다. 표를 자연스러운 크기로 배치하되 인쇄 후 실제 기입 가능한 행 높이를 유지할 것.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 5부 ===== -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge">5부</span>
+      <h2>더 완전한 시스템을 향해 — 민관 협력으로 완성하는 자원순환</h2>
+      <span class="pages">8p</span>
+    </div>
+    <div class="section-body">
+      <div class="overview">
+        <strong>역할:</strong> 타 복지관·지자체 담당자·중간지원조직이 주 독자. "공공 인프라가 더해지면 무엇이 가능한가"를 데이터와 사례로 설득하는 파트.
+      </div>
+      <table class="photo-table">
+        <tr>
+          <th>페이지</th>
+          <th>소제목</th>
+          <th>레이아웃</th>
+          <th>사진·그래픽</th>
+        </tr>
+        <tr>
+          <td>1~2p</td>
+          <td>3년의 성과와 남은 과제<br>지역주민 환경감수성 향상 3년 성과<br>(5-1)</td>
+          <td>성과 수치 인포그래픽<br>병행활동 참여인원 표</td>
+          <td>환경감수성향상 활동 현장 사진: 1~2컷<br>참여인원 누계 그래프 또는 표</td>
+        </tr>
+        <tr>
+          <td>3~4p</td>
+          <td>지속 운영을 위한 세 가지 과제<br>(5-1 계속)</td>
+          <td>과제 3가지 박스 구성</td>
+          <td>천마산업 방문 또는 수거 공정 사진: 1컷 (있을 경우)</td>
+        </tr>
+        <tr>
+          <td>5~6p</td>
+          <td>유사사례와 정책 흐름<br>(5-2)</td>
+          <td>2열: 사례1(초록열매) / 사례2(체인지어스)<br>하단: 정책 흐름 타임라인</td>
+          <td>사진 없음 (타 기관 사진 저작권 문제). 아이콘·로고 사용 가능 시 활용</td>
+        </tr>
+        <tr>
+          <td>7~8p</td>
+          <td>수성구청과의 협력 경과 + 결론<br>(5-3, 5-4, 5-5)</td>
+          <td>협력 타임라인<br>마무리 텍스트</td>
+          <td>2026.6.23 수성구청 협의 회의 또는 세미나 토론 사진: 1컷 (있을 경우)</td>
+        </tr>
+      </table>
+      <div class="layout-grid">
+        <div class="spec-box">
+          <div class="spec-title">3년 병행활동 성과 표</div>
+          <ul>
+            <li>팝업환경도서관 / 환경교육아카데미 / 환경감수성향상챌린지 / 찾아가는 교육 4행</li>
+            <li>1차/2차/3차/누계 4열</li>
+            <li>합계 행 Bold 강조</li>
+            <li>6,824명 수치 인포그래픽으로도 별도 표현 권장</li>
+          </ul>
+        </div>
+        <div class="spec-box">
+          <div class="spec-title">지속 운영 과제 박스</div>
+          <ul>
+            <li>과제 1: 지속성 (예산·인력 연속성)</li>
+            <li>과제 2: 확장 속도 (공공체계 연결 시 간소화)</li>
+            <li>과제 3: 품질 관리와 책임 주체</li>
+            <li>3개 박스 또는 아이콘+텍스트 조합</li>
+          </ul>
+        </div>
+      </div>
+      <div class="spec-box" style="margin-top:12px;">
+        <div class="spec-title">사진 요청 목록 (5부)</div>
+        <ul>
+          <li>환경감수성향상챌린지 참여 현장: 1컷</li>
+          <li>팝업환경도서관 운영 장면: 1컷</li>
+          <li>환경교육아카데미 강의 또는 참여자: 1컷</li>
+          <li>2차년도 성과 세미나 또는 토론 장면: 1컷 (있을 경우)</li>
+          <li>천마산업 방문 현장: 1컷 (2025.4.4)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 에필로그 ===== -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge">에필로그</span>
+      <h2>다음 사람에게 건네는 말</h2>
+      <span class="pages">2p</span>
+    </div>
+    <div class="section-body">
+      <div class="overview">
+        <strong>역할:</strong> 매뉴얼의 마지막 목소리. "우리가 끝냈다"가 아닌 "다음 사람에게 건넨다"는 톤. 절제되고 여백 있는 레이아웃.
+      </div>
+      <div class="layout-grid">
+        <div class="spec-box">
+          <div class="spec-title">레이아웃 원칙</div>
+          <ul>
+            <li>텍스트 중심 (800자 이내), 사진 없음</li>
+            <li>넉넉한 여백으로 독자가 잠시 머물게</li>
+            <li>마지막 문장: 크게 또는 별도 처리</li>
+            <li>분량: 1단, 여백 포함 2페이지</li>
+          </ul>
+        </div>
+        <div class="spec-box">
+          <div class="spec-title">선택적 사진 처리</div>
+          <ul>
+            <li>사진 사용 시: 1컷만, 하단 또는 우측 단 배치</li>
+            <li>주민환경연구원 활동 또는 수거 현장 전경</li>
+            <li>흑백 처리도 무방 (에필로그 분위기에 맞음)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 부록 ===== -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge">부록</span>
+      <h2>A-0~A-8 용어설명·참여현황·기관목록·양식·소감·QR</h2>
+      <span class="pages">4p</span>
+    </div>
+    <div class="section-body">
+      <div class="overview">
+        <strong>역할:</strong> 참조 자료 모음. 표와 목록 중심. 본문과 동일한 디자인 톤 유지하되 더 조밀하게 구성.
+      </div>
+      <table class="photo-table">
+        <tr>
+          <th>섹션</th>
+          <th>내용</th>
+          <th>처리 방식</th>
+        </tr>
+        <tr>
+          <td>A-0 용어 설명</td>
+          <td>리빙랩·주민환경연구원·종이팩·거버넌스 등 11개 용어</td>
+          <td>2열 표 (용어 / 설명). 용어열 Bold.</td>
+        </tr>
+        <tr>
+          <td>A-1 참여 현황</td>
+          <td>연도별 주민환경연구원·기관·수거거점·활동 수치</td>
+          <td>표 형식 (4열)</td>
+        </tr>
+        <tr>
+          <td>A-2 기관 목록</td>
+          <td>1·2·3차년도 컨소시엄·협력기관</td>
+          <td>연도별 구분, 표 형식</td>
+        </tr>
+        <tr>
+          <td>A-3 운영 자료</td>
+          <td>수거함 설치 수치·회수량</td>
+          <td>표 형식</td>
+        </tr>
+        <tr>
+          <td>A-4 실행 양식</td>
+          <td>신청서·협조요청서·점검표·기록표·안내문</td>
+          <td>각 양식 한 섹션씩 배치 (인쇄 후 사용 가능하도록)</td>
+        </tr>
+        <tr>
+          <td>A-5 명단</td>
+          <td>역대 주민환경연구원 56명 명단</td>
+          <td>3~4열 목록 형식</td>
+        </tr>
+        <tr>
+          <td>A-6 소감</td>
+          <td>주민환경연구원 10인 소감문</td>
+          <td>1단 또는 2단 편집. 이름 Bold.</td>
+        </tr>
+        <tr>
+          <td>A-7 마치며</td>
+          <td>마무리 글</td>
+          <td>1단 본문</td>
+        </tr>
+        <tr>
+          <td>A-8 QR코드</td>
+          <td>앱 다운로드 QR + 문의처</td>
+          <td>QR 크게 (최소 30×30mm), 중앙 배치</td>
+        </tr>
+      </table>
+      <div class="note">
+        <strong>부록 확인 필요 항목:</strong> A-5 명단은 1·2·3차년도 중복 제외 전체 명단인지 연도별 명단인지 확인 후 표기. A-8 QR코드는 앱스토어 제공 여부 확인 후 해당 플랫폼 배지 삽입.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 전체 사진 요청 종합 ===== -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge">종합</span>
+      <h2>전체 사진 요청 목록 및 납품 일정</h2>
+    </div>
+    <div class="section-body">
+      <table class="summary-table">
+        <tr>
+          <th>파트</th>
+          <th>필요 사진</th>
+          <th>컷 수</th>
+          <th>중요도</th>
+        </tr>
+        <tr>
+          <td>표지</td>
+          <td>주민환경연구원 활동 대표 사진 (가로형)</td>
+          <td>1컷</td>
+          <td>필수</td>
+        </tr>
+        <tr>
+          <td>발간사</td>
+          <td>관장·국장 프로필 사진 (선택)</td>
+          <td>0~2컷</td>
+          <td>선택</td>
+        </tr>
+        <tr>
+          <td>프롤로그</td>
+          <td>종이팩 실물 / 발대식 첫 모임</td>
+          <td>2컷</td>
+          <td>필수</td>
+        </tr>
+        <tr>
+          <td>1부</td>
+          <td>발대식 전경 / 동별 활동 3컷 / 지도</td>
+          <td>5컷</td>
+          <td>필수</td>
+        </tr>
+        <tr>
+          <td>2부</td>
+          <td>3가지 수거현장 / 어르신 수거단 / 방송 / 거버넌스 회의</td>
+          <td>6컷</td>
+          <td>필수</td>
+        </tr>
+        <tr>
+          <td>3부</td>
+          <td>앱 스크린샷 3장 / 3차년도 활동</td>
+          <td>4컷</td>
+          <td>필수</td>
+        </tr>
+        <tr>
+          <td>4부</td>
+          <td>씻기·말리기·펼치기·배출 4단계 사진 / 모집·설치 현장</td>
+          <td>6컷</td>
+          <td>필수</td>
+        </tr>
+        <tr>
+          <td>5부</td>
+          <td>챌린지·도서관·아카데미 활동 / 천마산업 방문 / 협의 장면</td>
+          <td>5컷</td>
+          <td>권장</td>
+        </tr>
+        <tr>
+          <td>에필로그</td>
+          <td>선택 (1컷)</td>
+          <td>0~1컷</td>
+          <td>선택</td>
+        </tr>
+        <tr>
+          <td><strong>합계</strong></td>
+          <td></td>
+          <td><strong>약 29~35컷</strong></td>
+          <td></td>
+        </tr>
+      </table>
+
+      <div class="note" style="margin-top:16px;">
+        <strong>사진 납품 형식:</strong> JPG 또는 PNG, 300dpi 이상, 최소 단변 1,500px. 파일명에 파트번호 포함 (예: 1부_발대식_20230912.jpg). 주민 얼굴 포함 사진은 초상권 동의 여부 확인 후 납품.
+      </div>
+
+      <div class="note" style="margin-top:10px;">
+        <strong>작업 일정:</strong> 원고·사진 기획사 전달 2026.7.3 → 디자인 시안 검토 7월 2~3주 → 최종 인쇄 발주 7.18 전후 → 성과공유회 배포 2026.7.23.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 삽입 예정 자료 현황 ===== -->
+  <div class="section">
+    <div class="section-header">
+      <span class="badge">확인 필요</span>
+      <h2>최종 인쇄 전 확인 필요 항목</h2>
+    </div>
+    <div class="section-body">
+      <table class="summary-table">
+        <tr>
+          <th>항목</th>
+          <th>현황</th>
+          <th>담당</th>
+        </tr>
+        <tr>
+          <td>앱 QR코드 (구글 플레이스토어)</td>
+          <td>확인 필요</td>
+          <td>이진규 과장</td>
+        </tr>
+        <tr>
+          <td>앱스토어(iOS) 제공 여부 및 QR코드</td>
+          <td>확인 필요</td>
+          <td>이진규 과장</td>
+        </tr>
+        <tr>
+          <td>2차년도 환경감수성향상챌린지 1,493명 원자료 대조</td>
+          <td>최종결과보고서 대조 필요</td>
+          <td>담당자</td>
+        </tr>
+        <tr>
+          <td>주민환경연구원 명단 (A-5): 전체/연도별 구분</td>
+          <td>확인 필요</td>
+          <td>이진규 과장</td>
+        </tr>
+        <tr>
+          <td>카페 수거 기록 단위: 6,654.5개 (kg 환산 필요)</td>
+          <td>확인 필요</td>
+          <td>담당자</td>
+        </tr>
+        <tr>
+          <td>수성구청 국장 발간사 원고</td>
+          <td>별도 수령 예정</td>
+          <td>이진규 과장</td>
+        </tr>
+        <tr>
+          <td>인포그래픽 타임라인: NotebookLM 시안 → 재디자인</td>
+          <td>기획사 재작업</td>
+          <td>기획사</td>
+        </tr>
+        <tr>
+          <td>표지 대표 사진 선정</td>
+          <td>미정</td>
+          <td>이진규 과장</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /wrapper -->
+
+<script>
+  document.querySelector('.toolbar button').addEventListener('click', function() {
+    window.print();
+  });
+</script>
+</body>
+</html>
