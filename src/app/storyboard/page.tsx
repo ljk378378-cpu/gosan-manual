@@ -46,14 +46,9 @@ function FullDraftSection() {
   }
 
   async function handleDownload(fileName: string, displayName: string) {
-    const { data, error } = await supabase.storage.from('manuscripts').createSignedUrl(`full-draft/${fileName}`, 60)
+    const { data, error } = await supabase.storage.from('manuscripts').createSignedUrl(`full-draft/${fileName}`, 60, { download: displayName })
     if (error || !data) { alert('다운로드 링크 생성 실패: ' + error?.message); return }
-    const a = document.createElement('a')
-    a.href = data.signedUrl
-    a.download = displayName
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
+    window.location.href = data.signedUrl
   }
 
   function formatSize(bytes: number) {
