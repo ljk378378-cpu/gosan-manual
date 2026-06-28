@@ -11,8 +11,8 @@ const WEEKS = [
   { label: '3주차', dates: '6/2~6/6', task: '원고 집필 2라운드', done: true },
   { label: '4주차', dates: '6/9~6/13', task: '원고 1차 수합', done: true },
   { label: '5주차', dates: '6/17~6/20', task: '가이드 배포 + 팀원 재작성', done: true },
-  { label: '6주차', dates: '6/23~6/27', task: '팀원 원고 제출·수합', done: false, current: true },
-  { label: '7주차', dates: '6/30~7/4', task: '이진규 파트 완성 + 7/3 최종 전달', done: false },
+  { label: '6주차', dates: '6/23~6/27', task: '팀원 원고 제출·수합', done: true },
+  { label: '7주차', dates: '6/30~7/4', task: '수치 검증·사진 취합·디자이너 가이드·문체 다듬기', done: false, current: true },
   { label: '8주차', dates: '7/7~7/11', task: '기획사 디자인 검토 + 퇴고', done: false },
   { label: '9주차', dates: '7/14~7/18', task: '7/14 인쇄 의뢰 + 최종 확정', done: false },
   { label: '납품', dates: '7/22(수)', task: '책 수령 🎉', done: false },
@@ -20,21 +20,24 @@ const WEEKS = [
 ]
 
 const DAILY_SCHEDULE = [
-  { date: '6/23(화)', task: '김연수 프롤로그·에필로그, 이현직 1부 제출 확인', done: false, today: true },
-  { date: '6/24(수)', task: '김정현 2부 제출 확인 + 1차 검토 의견 정리', done: false },
-  { date: '6/25(목)', task: '파트별 누락 수치·사진·인용문 보완 요청', done: false },
-  { date: '6/26(금)', task: '수정본 수합 + 이진규 파트 초안 정리', done: false },
-  { date: '6/27(토)', task: '이승원 4부·부록 제출 확인 + 전체 목차 재점검', done: false },
-  { date: '7/1(수)', task: '이진규 타임라인·3부·5부 제출', done: false },
-  { date: '7/2(목)', task: '최종 원고 교정 + 기획사 전달 파일 정리', done: false },
-  { date: '7/3(금)', task: '기획사 최종 원고 전달', done: false },
+  { date: '6/30(월)', task: '1~3차년도 최종결과보고서 업로드 + 수치 전수 대조 시작', done: false, today: true },
+  { date: '6/30(월)', task: '파트별 사진 취합 할당표 작성 + 팀원 공지', done: false, today: true },
+  { date: '7/1(화)', task: '부록 실제 양식지 스캔·정리 + 합본에 첨부', done: false },
+  { date: '7/1(화)', task: '디자이너 가이드 초안 작성 (파트별 사진·글 배치)', done: false },
+  { date: '7/2(수)', task: '전체 원고 문체 다듬기 (AI표현·어색한 문장 제거)', done: false },
+  { date: '7/2(수)', task: '수치 검증 완료 + 합본 반영', done: false },
+  { date: '7/3(목)', task: '디자이너 가이드 최종 정리 + 기획사 전달 파일 패키징', done: false },
+  { date: '7/3(목)', task: '기획사 최종 원고 + 디자이너 가이드 전달', done: false },
   { date: '7/14(화)', task: '인쇄 의뢰', done: false },
 ]
 
 const CHECKLIST = [
-  { emoji: '🔴', title: '7/3(금) 기획사 최종 원고 전달', desc: 'README 기준 핵심 날짜. 7/1 이진규 파트 제출 후 7/2까지 교정·파일 정리를 끝내야 함' },
-  { emoji: '🟠', title: '12파트 63p 구성 유지', desc: '내지 표지·목차·부록까지 포함한 최종 구성 기준. 기존 9파트 초안과 혼동 금지' },
-  { emoji: '🟠', title: '7/14(화) 인쇄 의뢰', desc: '성과공유회 7/23 배포 역산 일정. 디자인 검토 지연 시 즉시 데일리 채널에 공유' },
+  { emoji: '🔴', title: '7/3(목) 기획사 최종 원고 전달', desc: '원고 + 디자이너 가이드(파트별 사진·글 배치) 함께 전달. 7/2까지 수치 검증·문체 다듬기 완료 필요' },
+  { emoji: '🔴', title: '수치 전수 검증 (1~3차년도 결과보고서 대조)', desc: '최종결과보고서 업로드 후 합본 원고의 모든 수치를 원자료와 대조. 불일치 항목 즉시 수정' },
+  { emoji: '🟠', title: '파트별 사진 취합 (팀원 할당)', desc: '각 파트 담당자가 대표 사진 3~5장씩 제출. 6/30 할당 → 7/2까지 제출 마감' },
+  { emoji: '🟠', title: '부록 실제 양식지 첨부', desc: '실제 활동에서 사용한 양식지(주민환경연구원 활동일지 등)를 스캔하여 부록에 포함' },
+  { emoji: '🟠', title: '디자이너 가이드 제작', desc: '파트별(가능하면 페이지별) 사진 배치·글 배치 가이드 작성. 디자이너가 바로 실행할 수 있는 수준으로' },
+  { emoji: '🟡', title: '문체 다듬기 (AI표현 제거)', desc: '문맥이 어색하거나 AI스러운 표현을 자연스러운 한국어 문어체로 교체' },
   { emoji: '🟡', title: '5부 표현 주의', desc: '수성구청 협력 파트너를 인정하는 가능성 언어 사용. 요구·비판 표현 금지' },
 ]
 
@@ -181,27 +184,55 @@ export default function Home() {
           )}
         </div>
 
+        {/* 7주차 팀원 할 일 */}
+        <div className="bg-amber-50 rounded-xl p-5 shadow-sm border border-amber-200 mb-6">
+          <h2 className="font-bold text-amber-800 mb-1">📣 팀원 공지 — 7주차 (6/30~7/3)</h2>
+          <p className="text-xs text-amber-600 mb-4">아래 항목을 담당 파트별로 7/2(수)까지 완료해 주세요.</p>
+          <div className="space-y-3">
+            <div className="bg-white rounded-lg border border-amber-100 px-4 py-3">
+              <p className="text-sm font-bold text-gray-800">📸 파트별 대표 사진 제출</p>
+              <p className="text-xs text-gray-500 mt-1">각자 담당 파트의 대표 사진 3~5장을 골라 데일리 채널에 올려주세요. 파일명에 파트번호 포함 (예: 2부_수거모델_01.jpg)</p>
+              <p className="text-xs text-red-500 font-bold mt-1">마감: 7/2(수)</p>
+            </div>
+            <div className="bg-white rounded-lg border border-amber-100 px-4 py-3">
+              <p className="text-sm font-bold text-gray-800">✍️ 원고 수정 의견 제출</p>
+              <p className="text-xs text-gray-500 mt-1">자기 파트에서 어색하거나 수정이 필요한 문장이 있으면 의견 게시판에 남겨주세요. 파트명·페이지 위치 함께 적어주시면 반영이 빠릅니다.</p>
+              <p className="text-xs text-red-500 font-bold mt-1">마감: 7/2(수)</p>
+            </div>
+            <div className="bg-white rounded-lg border border-amber-100 px-4 py-3">
+              <p className="text-sm font-bold text-gray-800">📄 활동 양식지 제출 (이승원)</p>
+              <p className="text-xs text-gray-500 mt-1">부록에 첨부할 실제 활동 양식지를 스캔 또는 사진 촬영하여 제출해 주세요.</p>
+              <p className="text-xs text-red-500 font-bold mt-1">마감: 7/1(화)</p>
+            </div>
+          </div>
+        </div>
+
         {/* 바로가기 카드 */}
         <div className="grid grid-cols-2 gap-4">
           <Link href="/daily" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
             <div className="text-2xl mb-2">📝</div>
             <div className="font-bold text-gray-800">데일리 채널</div>
-            <div className="text-sm text-gray-500 mt-1">오늘의 작업 현황과 피드백 공유</div>
+            <div className="text-sm text-gray-500 mt-1">오늘의 작업 현황·사진 제출</div>
           </Link>
           <Link href="/comments" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
             <div className="text-2xl mb-2">💬</div>
             <div className="font-bold text-gray-800">의견 게시판</div>
-            <div className="text-sm text-gray-500 mt-1">팀원·주민환경연구원 누구나 의견 게재</div>
+            <div className="text-sm text-gray-500 mt-1">원고 수정 의견 누구나 게재</div>
           </Link>
           <Link href="/storyboard" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
             <div className="text-2xl mb-2">📋</div>
             <div className="font-bold text-gray-800">스토리보드</div>
             <div className="text-sm text-gray-500 mt-1">파트별 담당자·진행률·메모 관리</div>
           </Link>
-          <Link href="/storyboard" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
-            <div className="text-2xl mb-2">📋</div>
-            <div className="font-bold text-gray-800">스토리보드</div>
-            <div className="text-sm text-gray-500 mt-1">파트별 담당자·진행률·메모 관리</div>
+          <Link href="/designer" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
+            <div className="text-2xl mb-2">🎨</div>
+            <div className="font-bold text-gray-800">디자이너 브리핑</div>
+            <div className="text-sm text-gray-500 mt-1">파트별 사진·글 배치 가이드</div>
+          </Link>
+          <Link href="/photo-guide" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
+            <div className="text-2xl mb-2">📷</div>
+            <div className="font-bold text-gray-800">사진 가이드</div>
+            <div className="text-sm text-gray-500 mt-1">파트별 사진 취합 현황</div>
           </Link>
           <Link href="/report" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
             <div className="text-2xl mb-2">🖨️</div>
