@@ -4,6 +4,89 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Nav from '@/components/Nav'
 import { supabase, Part, PartFile, STATUS_LABELS, STATUS_COLORS, TEAM_MEMBERS } from '@/lib/supabase'
 
+type DraftFile = { name: string; id: string; updated_at: string; metadata: { size: number } }
+
+function FullDraftSection() {
+  const [files, setFiles] = useState<DraftFile[]>([])
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const loadFiles = useCallback(async () => {
+    const { data } = await supabase.storage.from('manuscripts').list('full-draft', { sortBy: { column: 'updated_at', order: 'desc' } })
+    if (data) setFiles(data as DraftFile[])
+  }, [])
+
+  useEffect(() => { loadFiles() }, [loadFiles])
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    const ext = file.name.split('.').pop()?.toLowerCase() || ''
+    const filePath = `full-draft/${Date.now()}_${file.name}`
+    const { error } = await supabase.storage.from('manuscripts').upload(filePath, file, { upsert: false })
+    if (error) { alert('업로드 실패: ' + error.message) }
+    else { await loadFiles() }
+    setUploading(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  async function handleDelete(fileName: string) {
+    if (!confirm(`"${fileName}" 파일을 삭제할까요?`)) return
+    await supabase.storage.from('manuscripts').remove([`full-draft/${fileName}`])
+    loadFiles()
+  }
+
+  function getUrl(fileName: string) {
+    const { data } = supabase.storage.from('manuscripts').getPublicUrl(`full-draft/${fileName}`)
+    return data.publicUrl
+  }
+
+  function formatSize(bytes: number) {
+    if (bytes < 1024) return `${bytes}B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`
+    return `${(bytes / 1024 / 1024).toFixed(1)}MB`
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-green-200 p-5 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="font-bold text-gray-800">📄 전체 합본 파일</h2>
+          <p className="text-xs text-gray-500 mt-0.5">한글(.hwp, .hwpx) 또는 PDF 파일을 올려두세요</p>
+        </div>
+        <label className={`cursor-pointer text-xs px-4 py-2 rounded-lg border transition-colors font-medium ${uploading ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-green-700 text-white border-green-700 hover:bg-green-800'}`}>
+          {uploading ? '업로드 중...' : '+ 파일 올리기'}
+          <input ref={fileInputRef} type="file" accept=".hwp,.hwpx,.pdf,.docx,.doc" className="hidden" disabled={uploading} onChange={handleUpload} />
+        </label>
+      </div>
+
+      {files.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-6">업로드된 파일이 없습니다</p>
+      ) : (
+        <div className="space-y-2">
+          {files.map(f => (
+            <div key={f.id} className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-3">
+              <span className="text-lg">📄</span>
+              <div className="flex-1 min-w-0">
+                <a href={getUrl(f.name)} download={f.name} target="_blank" rel="noreferrer"
+                  className="text-sm font-medium text-blue-700 hover:underline truncate block">
+                  {f.name.replace(/^\d+_/, '')}
+                </a>
+                <p className="text-xs text-gray-400">
+                  {new Date(f.updated_at).toLocaleDateString('ko-KR')}
+                  {f.metadata?.size ? ` · ${formatSize(f.metadata.size)}` : ''}
+                </p>
+              </div>
+              <button onClick={() => handleDelete(f.name)} className="text-xs text-red-400 hover:text-red-600 shrink-0">삭제</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const STATUSES = ['pending', 'in_progress', 'review', 'done'] as const
 
 type GuideSection = {
@@ -218,6 +301,8 @@ export default function StoryboardPage() {
           </div>
           {saving && <span className="text-sm text-green-600">저장 중...</span>}
         </div>
+
+        <FullDraftSection />
 
         <div className="space-y-4">
           {parts.map((part) => (
