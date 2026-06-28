@@ -22,11 +22,17 @@ function FullDraftSection() {
     const file = e.target.files?.[0]
     if (!file) return
     setUploading(true)
-    const ext = file.name.split('.').pop()?.toLowerCase() || ''
     const filePath = `full-draft/${Date.now()}_${file.name}`
-    const { error } = await supabase.storage.from('manuscripts').upload(filePath, file, { upsert: false })
-    if (error) { alert('업로드 실패: ' + error.message) }
-    else { await loadFiles() }
+    const { error } = await supabase.storage.from('manuscripts').upload(filePath, file, {
+      upsert: true,
+      contentType: 'application/octet-stream',
+    })
+    if (error) {
+      alert(`업로드 실패\n원인: ${error.message}\n\n※ Supabase 대시보드 → Storage → manuscripts 버킷이 존재하는지 확인하세요.`)
+      console.error('upload error:', error)
+    } else {
+      await loadFiles()
+    }
     setUploading(false)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
