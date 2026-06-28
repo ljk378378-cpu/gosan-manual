@@ -22,7 +22,12 @@ function FullDraftSection() {
     const file = e.target.files?.[0]
     if (!file) return
     setUploading(true)
-    const filePath = `full-draft/${Date.now()}_${file.name}`
+    const safeName = file.name
+      .replace(/[()（）\[\]{}&$@=;:+,?!*'"^`<>]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/\.hwp\.hwp$/i, '.hwp')
+      .replace(/\.hwpx\.hwpx$/i, '.hwpx')
+    const filePath = `full-draft/${Date.now()}_${safeName}`
     const { error } = await supabase.storage.from('manuscripts').upload(filePath, file, {
       upsert: true,
       contentType: 'application/octet-stream',
