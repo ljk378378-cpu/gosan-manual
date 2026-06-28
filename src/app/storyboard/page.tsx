@@ -22,12 +22,9 @@ function FullDraftSection() {
     const file = e.target.files?.[0]
     if (!file) return
     setUploading(true)
-    const safeName = file.name
-      .replace(/[()（）\[\]{}&$@=;:+,?!*'"^`<>]/g, '')
-      .replace(/\s+/g, '_')
-      .replace(/\.hwp\.hwp$/i, '.hwp')
-      .replace(/\.hwpx\.hwpx$/i, '.hwpx')
-    const filePath = `full-draft/${Date.now()}_${safeName}`
+    const ext = file.name.split('.').filter(Boolean).slice(-1)[0]?.toLowerCase() ?? 'hwp'
+    const safeExt = ['hwp', 'hwpx', 'pdf', 'docx', 'doc'].includes(ext) ? ext : 'hwp'
+    const filePath = `full-draft/${Date.now()}.${safeExt}`
     const { error } = await supabase.storage.from('manuscripts').upload(filePath, file, {
       upsert: true,
       contentType: 'application/octet-stream',
@@ -82,10 +79,10 @@ function FullDraftSection() {
               <div className="flex-1 min-w-0">
                 <a href={getUrl(f.name)} download={f.name} target="_blank" rel="noreferrer"
                   className="text-sm font-medium text-blue-700 hover:underline truncate block">
-                  {f.name.replace(/^\d+_/, '')}
+                  전체합본_{new Date(f.updated_at).toLocaleDateString('ko-KR').replace(/\. /g, '-').replace('.', '')}.{f.name.split('.').pop()}
                 </a>
                 <p className="text-xs text-gray-400">
-                  {new Date(f.updated_at).toLocaleDateString('ko-KR')}
+                  {new Date(f.updated_at).toLocaleString('ko-KR')}
                   {f.metadata?.size ? ` · ${formatSize(f.metadata.size)}` : ''}
                 </p>
               </div>
