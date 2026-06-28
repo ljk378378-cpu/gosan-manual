@@ -198,7 +198,12 @@ export default function Home() {
             <div className="font-bold text-gray-800">스토리보드</div>
             <div className="text-sm text-gray-500 mt-1">파트별 담당자·진행률·메모 관리</div>
           </Link>
-          <Link href="/report" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
+          <Link href="/manuscript" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
+            <div className="text-2xl mb-2">📖</div>
+            <div className="font-bold text-gray-800">전체 원고 합본</div>
+            <div className="text-sm text-gray-500 mt-1">발간사~부록 전체 원고 열람·검색·인쇄</div>
+          </Link>
+          <Link href="/report" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors col-span-2">
             <div className="text-2xl mb-2">🖨️</div>
             <div className="font-bold text-gray-800">보고서 출력</div>
             <div className="text-sm text-gray-500 mt-1">진행현황 보고서 PDF 출력</div>
