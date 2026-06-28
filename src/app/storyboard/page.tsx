@@ -45,9 +45,15 @@ function FullDraftSection() {
     loadFiles()
   }
 
-  function getUrl(fileName: string) {
-    const { data } = supabase.storage.from('manuscripts').getPublicUrl(`full-draft/${fileName}`)
-    return data.publicUrl
+  async function handleDownload(fileName: string, displayName: string) {
+    const { data, error } = await supabase.storage.from('manuscripts').createSignedUrl(`full-draft/${fileName}`, 60)
+    if (error || !data) { alert('다운로드 링크 생성 실패: ' + error?.message); return }
+    const a = document.createElement('a')
+    a.href = data.signedUrl
+    a.download = displayName
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
   }
 
   function formatSize(bytes: number) {
@@ -77,10 +83,11 @@ function FullDraftSection() {
             <div key={f.id} className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-3">
               <span className="text-lg">📄</span>
               <div className="flex-1 min-w-0">
-                <a href={getUrl(f.name)} download={f.name} target="_blank" rel="noreferrer"
-                  className="text-sm font-medium text-blue-700 hover:underline truncate block">
+                <button
+                  onClick={() => handleDownload(f.name, `전체합본_${new Date(f.updated_at).toLocaleDateString('ko-KR').replace(/\. /g, '-').replace('.', '')}.${f.name.split('.').pop()}`)}
+                  className="text-sm font-medium text-blue-700 hover:underline truncate block text-left w-full">
                   전체합본_{new Date(f.updated_at).toLocaleDateString('ko-KR').replace(/\. /g, '-').replace('.', '')}.{f.name.split('.').pop()}
-                </a>
+                </button>
                 <p className="text-xs text-gray-400">
                   {new Date(f.updated_at).toLocaleString('ko-KR')}
                   {f.metadata?.size ? ` · ${formatSize(f.metadata.size)}` : ''}
