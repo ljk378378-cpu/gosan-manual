@@ -7,7 +7,7 @@ const navItems = [
   { href: '/storyboard', label: '스토리보드', icon: '📋' },
   { href: '/daily', label: '데일리 채널', icon: '📝' },
   { href: '/comments', label: '의견 게시판', icon: '💬' },
-  { href: '/photo-guide', label: '사진 가이드', icon: '📸' },
+  { href: '/designer', label: '디자인 브리핑', icon: '🎨' },
   { href: '/report', label: '보고서 출력', icon: '🖨️' },
 ]
 
