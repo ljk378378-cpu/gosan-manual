@@ -39,8 +39,8 @@ html = f"""<!DOCTYPE html>
     text-align: left;
     vertical-align: top;
   }}
-  th {{ background: #e8e8e8; font-weight: bold; }}
-  tr:nth-child(even) td {{ background: #f9f9f9; }}
+  th {{ font-weight: bold; }}
+
   p {{ margin: 0.6em 0; }}
   ul, ol {{ margin: 0.5em 0; padding-left: 1.6em; }}
   li {{ margin: 0.3em 0; }}
