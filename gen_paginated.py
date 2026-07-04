@@ -178,11 +178,11 @@ PLACEHOLDER_TEXT = {
 }
 
 TOC_HTML = """
-<p class="item"><span class="num">04</span><span class="t">발간사</span></p>
-<p class="item"><span class="num">05</span><span class="t">이 매뉴얼을 읽기 전에 — 3년의 여정 타임라인</span></p>
+<p class="item"><span class="num">4</span><span class="t">발간사</span></p>
+<p class="item"><span class="num">5</span><span class="t">이 매뉴얼을 읽기 전에 — 3년의 여정 타임라인</span></p>
 <div class="head">프롤로그 「왜 주민이, 왜 종이팩인가」</div>
-<p class="item"><span class="num">08</span><span class="t">P-1. 왜 종이팩인가</span></p>
-<p class="item"><span class="num">09</span><span class="t">P-2. 왜 주민인가</span></p>
+<p class="item"><span class="num">8</span><span class="t">P-1. 왜 종이팩인가</span></p>
+<p class="item"><span class="num">9</span><span class="t">P-2. 왜 주민인가</span></p>
 <div class="head">1부. 문제를 발굴하다</div>
 <p class="item"><span class="num">12</span><span class="t">1-1. 고산동은 어떤 동네인가</span></p>
 <p class="item"><span class="num">13</span><span class="t">1-2. 주민환경연구원이 탄생하다</span></p>
@@ -235,7 +235,7 @@ TOC_HTML_2 = """
 
 
 def render_page(inner_html, page_no, show_number):
-    footer = f'<div class="pnum">{page_no:02d}</div>' if show_number else ""
+    footer = f'<div class="pnum">{page_no}</div>' if show_number else ""
     return f'<section class="page">{inner_html}{footer}</section>\n'
 
 
