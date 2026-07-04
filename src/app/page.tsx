@@ -234,6 +234,11 @@ export default function Home() {
             <div className="font-bold text-gray-800">사진 가이드</div>
             <div className="text-sm text-gray-500 mt-1">파트별 사진 취합 현황</div>
           </Link>
+          <Link href="/photo-brief" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
+            <div className="text-2xl mb-2">🖼️</div>
+            <div className="font-bold text-gray-800">사진 배치 가이드 v2</div>
+            <div className="text-sm text-gray-500 mt-1">실사진 기반 베스트픽 · PDF 저장</div>
+          </Link>
           <Link href="/report" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
             <div className="text-2xl mb-2">🖨️</div>
             <div className="font-bold text-gray-800">보고서 출력</div>

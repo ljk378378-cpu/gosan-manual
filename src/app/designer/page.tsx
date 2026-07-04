@@ -376,6 +376,20 @@ export default function DesignerPage() {
           <p className="text-sm text-gray-500">섹션별 원고 발췌 · 배치 방식 · 사진 가이드 · 사진 파일 첨부 — 이 페이지 URL을 디자이너에게 공유하세요</p>
         </div>
 
+        {/* 실사진 반영 가이드 링크 */}
+        <a
+          href="/photo-brief"
+          className="block bg-green-700 text-white rounded-xl p-4 mb-5 hover:bg-green-800 transition-colors"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="font-bold">📷 사진 배치 가이드 v2 (실사진 반영) 보기</div>
+              <div className="text-sm text-green-100 mt-0.5">아래 업로드된 사진 105장을 전수 검토해 섹션별 베스트픽을 선정한 최종본입니다. PDF 저장 가능.</div>
+            </div>
+            <span className="shrink-0 text-sm">열기 →</span>
+          </div>
+        </a>
+
         {/* 진행률 */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 flex gap-5 items-center">
           <div className="flex-1">
