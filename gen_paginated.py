@@ -152,11 +152,10 @@ ITEMS = [
     ("a6", "부록 · A-6. 주민환경연구원 소감", 71, 3, "content",
      "## A-6. 주민환경연구원 소감", "## A-7. 제언 — 3년간 진행된 환경리빙랩 활동에 관해"),
     ("a7", "부록 · A-7. 제언", 74, 1, "content",
-     "## A-7. 제언 — 3년간 진행된 환경리빙랩 활동에 관해", "## A-8. 마치며"),
-    ("a8", "부록 · A-8. 마치며", 75, 1, "content",
-     "## A-8. 마치며", "## A-9. 사진으로 추억하는 주민이 그린 고산 3년"),
-    ("a9", "부록 · A-9. 사진으로 추억하는 주민이 그린 고산 3년", 76, 3, "placeholder", None, None),
-    ("a10", "부록 · A-10. 앱 QR코드 및 문의처", 79, 1, "placeholder", None, None),
+     "## A-7. 제언 — 3년간 진행된 환경리빙랩 활동에 관해", "## A-8. 사진으로 추억하는 주민이 그린 고산 3년"),
+    ("a8", "부록 · A-8. 사진으로 추억하는 주민이 그린 고산 3년", 75, 3, "placeholder", None, None),
+    ("a9", "부록 · A-9. 앱 QR코드 및 문의처", 78, 1, "placeholder", None, None),
+    ("blank", None, 79, 1, "blank", None, None),
     ("backcover", None, 80, 1, "backcover", None, None),
 ]
 
@@ -173,8 +172,8 @@ DIVIDER_INFO = {
 
 PLACEHOLDER_TEXT = {
     "timeline": "인포그래픽 삽입 예정<br>주민이 그린 고산 환경리빙랩 3년의 여정<br><span class='ph-note'>(연도별 3단 구성 · NotebookLM 참고 시안 별도 전달 · 기획사가 책자 톤으로 재구성)</span>",
-    "a9": "사진 삽입 예정<br>3년간 활동 사진 모음<br><span class='ph-note'>(디자인가이드 photo-brief.html 섹션별 베스트픽 참고)</span>",
-    "a10": "QR코드 삽입 예정<br>주민이 그린 고산 앱 · 웹진 · 인스타그램<br><span class='ph-note'>문의: 청곡종합사회복지관</span>",
+    "a8": "사진 삽입 예정<br>3년간 활동 사진 모음<br><span class='ph-note'>(디자인가이드 photo-brief.html 섹션별 베스트픽 참고)</span>",
+    "a9": "QR코드 삽입 예정<br>주민이 그린 고산 앱 · 웹진 · 인스타그램<br><span class='ph-note'>문의: 청곡종합사회복지관</span>",
 }
 
 TOC_HTML = """
@@ -228,9 +227,8 @@ TOC_HTML_2 = """
 <p class="item"><span class="num">70</span><span class="t">A-5. 주민환경연구원 명단</span></p>
 <p class="item"><span class="num">71</span><span class="t">A-6. 주민환경연구원 소감</span></p>
 <p class="item"><span class="num">74</span><span class="t">A-7. 제언</span></p>
-<p class="item"><span class="num">75</span><span class="t">A-8. 마치며</span></p>
-<p class="item"><span class="num">76</span><span class="t">A-9. 사진으로 추억하는 주민이 그린 고산 3년</span></p>
-<p class="item"><span class="num">79</span><span class="t">A-10. 앱 QR코드 및 문의처</span></p>
+<p class="item"><span class="num">75</span><span class="t">A-8. 사진으로 추억하는 주민이 그린 고산 3년</span></p>
+<p class="item"><span class="num">78</span><span class="t">A-9. 앱 QR코드 및 문의처</span></p>
 """.strip()
 
 
@@ -276,6 +274,9 @@ for item_id, footer_title, start_page, num_pages, kind, sa, ea in ITEMS:
             header = f'<div class="page-kicker">{footer_title}</div>' if i == 0 else ""
             inner = f'<div class="content-page">{header}{body_html}</div>'
             pages_html.append(render_page(inner, start_page + i, True))
+
+    elif kind == "blank":
+        pages_html.append(render_page('<div class="content-page"></div>', start_page, False))
 
     elif kind == "backcover":
         inner = """
