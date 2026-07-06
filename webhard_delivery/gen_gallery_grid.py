@@ -40,7 +40,20 @@ STYLE = r"""<!DOCTYPE html>
   .cell.big .cap{font-size:11px;padding:16px 8px 6px;}
   .note{max-width:900px;margin:0 auto 24px;padding:16px 20px;background:#fff;border:1px solid var(--line);border-radius:4px;font-size:13px;color:#444;line-height:1.7;}
   .note b{color:#111;}
-  @media print{.print-bar,.note{display:none;}body{background:#fff;}.page{box-shadow:none;margin:0;page-break-after:always;}}
+  @page{size:A4;margin:0;}
+  @media print{
+    .print-bar,.note{display:none;}
+    body{background:#fff;}
+    .wrap{max-width:none;margin:0;padding:0;}
+    .page{
+      width:210mm;height:297mm;aspect-ratio:auto;
+      box-shadow:none;margin:0;padding:14mm;
+      break-after:page;page-break-after:always;
+      break-inside:avoid;page-break-inside:avoid;
+    }
+    .page:last-child{break-after:auto;page-break-after:auto;}
+    .grid{break-inside:avoid;page-break-inside:avoid;}
+  }
 </style>
 </head>
 <body>
