@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3차년도 주민이 Green 고산 환경리빙랩 매뉴얼 제작비 지급건</title>
+  <style>
+    :root { --ink:#111; --soft:#f3f3f3; --accent:#174f3b; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#e9ecea; color:var(--ink); font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif; font-size:14px; line-height:1.75; word-break:keep-all; overflow-wrap:break-word; }
+    .toolbar { position:sticky; top:0; z-index:10; display:flex; gap:8px; justify-content:center; padding:10px; background:#fff; border-bottom:1px solid #ccc; }
+    button { border:0; padding:10px 16px; background:var(--accent); color:#fff; font-weight:700; cursor:pointer; }
+    .page { width:210mm; min-height:297mm; margin:18px auto; padding:20mm 18mm; background:#fff; box-shadow:0 2px 16px rgba(0,0,0,.12); }
+    .document-head { display:grid; grid-template-columns:24mm 1fr; border-top:2px solid var(--ink); border-bottom:2px solid var(--ink); }
+    .document-head div { padding:7px 9px; border-bottom:1px solid #aaa; }
+    .document-head div:nth-last-child(-n+2) { border-bottom:0; }
+    .label { background:var(--soft); font-weight:700; text-align:center; }
+    p { margin:6px 0; }
+    .indent { padding-left:22px; }
+    .deep { padding-left:44px; }
+    .attachments { margin-top:24px; }
+    .end { font-weight:700; }
+    .check { margin-top:28px; padding:12px 15px; border-left:4px solid var(--accent); background:#f4f7f5; font-size:12px; color:#333; }
+    @page { size:A4 portrait; margin:15mm; }
+    @media print {
+      body { background:#fff; }
+      .toolbar, .check { display:none; }
+      .page { width:auto; min-height:auto; margin:0; padding:0; box-shadow:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button onclick="window.print()">인쇄·PDF 저장</button>
+    <button onclick="copyDocument()">본문 전체 복사</button>
+  </div>
+
+  <main class="page" id="document">
+    <div class="document-head">
+      <div class="label">수신처</div><div>내부결재</div>
+      <div class="label">(경유)</div><div></div>
+      <div class="label">제목</div><div><strong>3차년도 「주민이 Green 고산」 환경리빙랩 매뉴얼 제작비 지급건</strong></div>
+    </div>
+
+    <p style="margin-top:25px;">1. 관련근거: 3차년도 「주민이 Green 고산」 환경리빙랩 매뉴얼 제작 실시건</p>
+    <p>2. 위와 관련하여 주민이 Green 고산 환경리빙랩 매뉴얼 제작이 완료됨에 따라 아래와 같이 제작비를 지급하고자 합니다.</p>
+
+    <p class="indent">가. 제작명: 3차년도 주민이 Green 고산 환경리빙랩 매뉴얼</p>
+    <p class="indent">나. 제작내용: 주민 주도 환경리빙랩 3개년 기록 및 종이팩 자원순환 실행 가이드</p>
+    <p class="indent">다. 규격·면수·색도: A4, 80쪽, 표지·내지 컬러</p>
+    <p class="indent">라. 제작수량: 100부</p>
+    <p class="indent">마. 납품일자: 2026. 7. 22.(수)</p>
+    <p class="indent">바. 배부처: 주민환경연구원, Green고산실천단, 유관기관 및 협력기관, 지역 내 사회복지·환경 관련 기관</p>
+    <p class="indent">사. 지출금액: 금2,900,000원(금이백구십만원) / 부가세 포함</p>
+    <p class="deep">1) 지출처: 현대기획(대표: 최경식)</p>
+    <p class="deep">2) 지출방법: 체크카드 결제(주민이 Green 고산 체크카드)</p>
+    <p class="deep">3) 지출항목: (관)사업비 (항)사업비 (목)지역조직화기능(주민이 Green 고산/환경리빙랩 매뉴얼 제작)</p>
+    <p class="deep">4) 지출일자: 2026. 7. 22.(수)</p>
+    <p class="deep">5) 산출근거: 붙임 참조</p>
+
+    <div class="attachments">
+      <p>붙임 1. 사업자등록증 사본 1부.</p>
+      <p class="indent">2. 견적서 1부 및 타견적서 2부.</p>
+      <p class="indent">3. 계약이행 통합서약서 1부.</p>
+      <p class="indent">4. 최종 시안 1부.</p>
+      <p class="indent">5. 거래명세서 1부. <span class="end">끝.</span></p>
+    </div>
+
+    <div class="check">한글 문서로 옮길 때 제작 실시건의 시행문서번호, 실제 납품·결제일, 거래명세서 발행 여부를 확인하여 최종 입력합니다.</div>
+  </main>
+
+  <script>
+    async function copyDocument() {
+      const text = document.getElementById('document').innerText;
+      await navigator.clipboard.writeText(text);
+      alert('기안 본문을 복사했습니다.');
+    }
+  </script>
+</body>
+</html>
