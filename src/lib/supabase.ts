@@ -53,6 +53,24 @@ export const STATUS_LABELS: Record<string, string> = {
   done: '완료',
 }
 
+export type DesignReviewItem = {
+  id: number
+  severity: 'critical' | 'photo' | 'content' | 'format'
+  page_ref: string | null
+  title: string
+  description: string
+  author: string
+  is_done: boolean
+  created_at: string
+}
+
+export const SEVERITY_INFO: Record<DesignReviewItem['severity'], { label: string; color: string; dot: string }> = {
+  critical: { label: '🔴 최우선', color: 'bg-red-50 border-red-200 text-red-800', dot: 'bg-red-600' },
+  photo: { label: '🟠 사진', color: 'bg-orange-50 border-orange-200 text-orange-800', dot: 'bg-orange-500' },
+  content: { label: '🟡 내용 확인', color: 'bg-amber-50 border-amber-200 text-amber-800', dot: 'bg-amber-500' },
+  format: { label: '⚪ 서식/기타', color: 'bg-gray-50 border-gray-200 text-gray-700', dot: 'bg-gray-400' },
+}
+
 export type PartFile = {
   id: number
   part_id: number
