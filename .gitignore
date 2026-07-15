@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local working files (temp exports, video source assets, backup edits)
+/tmp/
+/video-guide-assets/
+*.award-edit
+*.dashboard-edit
