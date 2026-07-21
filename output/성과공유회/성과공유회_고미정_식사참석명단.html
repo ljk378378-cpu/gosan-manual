@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>주민이 Green 고산 성과공유회 식사 참석 명단</title>
+  <style>
+    :root {
+      --green: #0a664d;
+      --mint: #eaf5f0;
+      --line: #aebdb7;
+      --ink: #17201d;
+      --muted: #5c6964;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: #edf1ef; color: var(--ink); font-family: "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+    body { padding: 24px; }
+    .toolbar { width: 210mm; margin: 0 auto 12px; display: flex; justify-content: flex-end; }
+    button { border: 0; background: var(--green); color: #fff; padding: 10px 16px; font: inherit; font-weight: 700; cursor: pointer; }
+    .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 14mm 14mm 12mm; background: #fff; }
+    header { border-top: 7px solid var(--green); border-bottom: 1px solid var(--line); padding: 14px 0 12px; }
+    h1 { margin: 0 0 7px; font-size: 25px; letter-spacing: 0; }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px 22px; color: var(--muted); font-size: 12px; }
+    .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin: 12px 0; }
+    .summary div { border: 1px solid var(--line); padding: 9px 8px; text-align: center; font-size: 11px; }
+    .summary b { display: block; margin-top: 2px; color: var(--green); font-size: 19px; }
+    .rooms { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+    .room { border: 1px solid var(--line); padding: 8px; }
+    .room h2 { margin: 0 0 6px; }
+    .room-photos { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .room-photos.one { grid-template-columns: 1fr; }
+    figure { margin: 0; }
+    figure img { display: block; width: 100%; height: 112px; object-fit: cover; border: 1px solid #d5ddd9; }
+    figcaption { margin-top: 4px; color: var(--muted); font-size: 9px; }
+    h2 { margin: 14px 0 6px; color: var(--green); font-size: 15px; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; }
+    th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; line-height: 1.55; word-break: keep-all; overflow-wrap: break-word; }
+    th { background: var(--mint); text-align: left; }
+    .category { width: 25mm; font-weight: 700; }
+    .count { width: 14mm; text-align: center; font-weight: 700; }
+    .payment-table .basis { width: 20%; }
+    .payment-table .amount { width: 22%; text-align: center; font-weight: 700; white-space: nowrap; }
+    .numbered { counter-reset: person; }
+    .person { display: inline; white-space: nowrap; }
+    .person:not(:last-child)::after { content: ", "; white-space: normal; }
+    .note { margin-top: 10px; padding: 9px 10px; background: #f4f7f5; border-left: 4px solid var(--green); font-size: 11px; line-height: 1.55; }
+    .cost { margin-top: 9px; display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); font-size: 11px; }
+    .cost div { padding: 8px 10px; }
+    .cost div:nth-child(odd) { border-right: 1px solid var(--line); }
+    .cost div:nth-child(n+3) { border-top: 1px solid var(--line); }
+    .cost strong { color: var(--green); }
+    footer { margin-top: 10px; padding-top: 7px; border-top: 1px solid var(--line); color: var(--muted); font-size: 9px; text-align: right; }
+    @media (max-width: 760px) {
+      body { padding: 0; }
+      .toolbar, .page { width: 100%; }
+      .page { min-height: 0; padding: 18px 14px; }
+      .rooms { grid-template-columns: 1fr; }
+      .summary { grid-template-columns: 1fr 1fr; }
+    }
+    @page { size: A4 portrait; margin: 0; }
+    @media print {
+      html, body { background: #fff; }
+      body { padding: 0; }
+      .toolbar { display: none; }
+      .page { width: 210mm; height: 297mm; min-height: 0; margin: 0; padding: 6mm 8mm 5mm; box-shadow: none; overflow: hidden; }
+      header { border-top-width: 4px; padding: 5px 0 4px; }
+      h1 { margin-bottom: 3px; font-size: 17px; }
+      .meta { gap: 4px 14px; font-size: 8px; }
+      .summary { gap: 3px; margin: 5px 0; }
+      .summary div { padding: 3px 4px; font-size: 7px; }
+      .summary b { margin-top: 0; font-size: 12px; }
+      .rooms { grid-template-columns: repeat(4, 1fr); gap: 3px; margin: 5px 0; }
+      .room { padding: 3px; }
+      .room h2, h2 { margin: 4px 0 3px; font-size: 9px; }
+      .room-photos { gap: 2px; }
+      figure img { height: 39px; }
+      figcaption { margin-top: 1px; font-size: 5.5px; }
+      table { font-size: 6.7px; }
+      th, td { padding: 2px 3px; line-height: 1.22; }
+      .category { width: 18mm; }
+      .count { width: 10mm; }
+      .note { margin-top: 3px; padding: 3px 4px; border-left-width: 2px; font-size: 6.5px; line-height: 1.25; }
+      .cost { margin-top: 4px; font-size: 6.8px; }
+      .cost div { padding: 3px 5px; }
+      .payment-table .amount { font-size: 7px; }
+      footer { margin-top: 3px; padding-top: 2px; font-size: 6px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar"><button type="button" onclick="window.print()">인쇄 · PDF 저장</button></div>
+  <main class="page">
+    <header>
+      <h1>주민이 Green 고산 성과공유회 식사 참석 명단</h1>
+      <div class="meta">
+        <span><b>일시</b> 2026. 7. 23.(목) 행사 종료 후</span>
+        <span><b>장소</b> 고미정</span>
+        <span><b>작성 기준</b> 2026. 7. 22.</span>
+      </div>
+    </header>
+
+    <section class="summary" aria-label="식사 인원 요약">
+      <div>현재 배치 인원<b>69명</b></div>
+      <div>공동모금회 기준<b>52명</b></div>
+      <div>기준 초과 인원<b>17명</b></div>
+      <div>1인 식사비<b>20,000원</b></div>
+    </section>
+
+    <section class="rooms" aria-label="고미정 식사실 구분">
+      <article class="room">
+        <h2>40인실 · 사진 1·2의 연결 공간</h2>
+        <div class="room-photos">
+          <figure><img src="assets/gomijeong/40인실_입구쪽.jpeg" alt="고미정 40인실 입구 쪽"><figcaption>입구 쪽 공간</figcaption></figure>
+          <figure><img src="assets/gomijeong/40인실_안쪽.jpeg" alt="고미정 40인실 안쪽"><figcaption>칸막이 안쪽 공간</figcaption></figure>
+        </div>
+        <div class="note"><b>배치 40명</b><br>주민환경연구원 29명 + 실천단·유관기관 4명 + 지정 직원 7명<br><span style="color:#0a664d;font-weight:700">40인 정원에 맞춰 배치</span></div>
+      </article>
+      <article class="room">
+        <h2>내빈 독립실 · 사진 3</h2>
+        <div class="room-photos one">
+          <figure><img src="assets/gomijeong/내빈_독립실.jpeg" alt="고미정 내빈 독립실"><figcaption>내빈과 주요 협력기관 관계자 배치</figcaption></figure>
+        </div>
+        <div class="note"><b>배치 7명</b><br>김순애 관장·동장 3명·황운용 관장·황선우 운영위원장·정철 센터장</div>
+      </article>
+      <article class="room">
+        <h2>별도 방 · 유관기관·직원</h2>
+        <div class="note"><b>배치 10명</b><br>유관기관 7명 + 김형석 부장·이진규·정은해<br><span style="color:#5c6964">실제 방 위치와 정원은 고미정에 확인</span></div>
+      </article>
+      <article class="room">
+        <h2>나머지 방 · 실습생·직원</h2>
+        <div class="note"><b>배치 12명</b><br>하계실습생 10명 + 실습담당 김재훈 + 직원 1명<br><span style="color:#5c6964">실제 방 위치와 정원은 고미정에 확인</span></div>
+      </article>
+    </section>
+
+    <h2>고미정 실별 식사 배치안</h2>
+    <table>
+      <thead><tr><th class="category">식사실·구분</th><th>성명</th><th class="count">인원</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="category">독립실<br>내빈</td>
+          <td><b>김순애 관장, 이정순 동장, 이병정 동장, 신희철 동장, 황운용 관장, 황선우 운영위원장, 정철 센터장</b></td>
+          <td class="count">7명</td>
+        </tr>
+        <tr>
+          <td class="category">40인실<br>주민환경연구원</td>
+          <td>남기룡, 남혜신, 도윤화, 박수경, 박종숙, 송두순, 송흥례, 신철주, 이하준, 장미경, 최미화, 곽윤향, 김동은, 김경은, 김상희, 김신희, 김용순, 백재현, 손숙희, 김성순, 곽성희, 김교상, 노은하, 서명숙, 이승준, 이시영, 이은선, 정상섭, 우미영</td>
+          <td class="count">29명</td>
+        </tr>
+        <tr>
+          <td class="category">40인실<br>실천단·유관기관</td>
+          <td>윤수진 팀장, 배영미 팀장, 전희택 대표, 이지연 주임</td>
+          <td class="count">4명</td>
+        </tr>
+        <tr>
+          <td class="category">40인실<br>지정 직원</td>
+          <td>김정현, 이현직, 김연수, 이승원, 박정훈, 강승원, 박지윤</td>
+          <td class="count">7명</td>
+        </tr>
+        <tr>
+          <td class="category">별도 방<br>실천단·유관기관</td>
+          <td>배순향 팀장, 구희정 주무관, 정수일 주무관, 이은주 주무관, 조하련 복지팀장, 장윤진 복지팀장, 정창호 주무관</td>
+          <td class="count">7명</td>
+        </tr>
+        <tr>
+          <td class="category">별도 방<br>복지관 직원</td>
+          <td>김형석 부장, 이진규, 정은해</td>
+          <td class="count">3명</td>
+        </tr>
+        <tr>
+          <td class="category">나머지 방<br>하계실습생</td>
+          <td>하계실습생 1~10</td>
+          <td class="count">10명</td>
+        </tr>
+        <tr>
+          <td class="category">나머지 방<br>직원</td>
+          <td>김재훈 <span style="color:#5c6964">(실습담당)</span>, 김혜린</td>
+          <td class="count">2명</td>
+        </tr>
+        <tr>
+          <th colspan="2">합계</th>
+          <th class="count">69명</th>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note"><b>독립실:</b> 내빈 7명입니다.<br><b>40인실:</b> 주민환경연구원 29명, 유관기관 4명, 지정 직원 7명으로 총 40명입니다.<br><b>별도 방:</b> 유관기관 7명과 김형석 부장·이진규·정은해, 총 10명입니다.<br><b>나머지 방:</b> 하계실습생 10명과 실습담당 김재훈·김혜린, 총 12명입니다.</div>
+
+    <div class="cost">
+      <div><b>총 식사비</b><br>20,000원 × 69명<br><strong>1,380,000원</strong></div>
+      <div><b>공동모금회 지원금</b><br>15,000원 × 52명<br><strong>780,000원</strong></div>
+      <div><b>성과공유회 식대 자부담</b><br>5,000원 × 52명<br><strong>260,000원</strong></div>
+      <div><b>실습 중간평가비 자부담</b><br>20,000원 × 초과 17명<br><strong>340,000원</strong></div>
+    </div>
+
+    <h2>결제·증빙 구분</h2>
+    <table class="payment-table">
+      <colgroup><col style="width:27%"><col class="basis"><col class="amount"><col style="width:31%"></colgroup>
+      <thead><tr><th>결제 구분</th><th>산출 기준</th><th class="amount">금액</th><th>현장 준비</th></tr></thead>
+      <tbody>
+        <tr><td>공동모금회 지원금</td><td>52명 × 15,000원</td><td class="amount">780,000원</td><td>공동모금회 지원금 결제수단·영수증 별도</td></tr>
+        <tr><td>성과공유회 식대 자부담</td><td>52명 × 5,000원</td><td class="amount">260,000원</td><td>성과공유회 자부담 카드 별도 지참</td></tr>
+        <tr><td>실습 중간평가비 자부담</td><td>17명 × 20,000원</td><td class="amount">340,000원</td><td>실습 중간평가비 자부담 결제수단·영수증 별도</td></tr>
+        <tr><th colspan="2">합계</th><th class="amount">1,380,000원</th><th>3개 재원별 분할 결제</th></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><b>결제 전 고미정 전달사항</b> 총 69명의 식사비를 780,000원·260,000원·340,000원으로 나누어 결제하고, 영수증도 재원별로 각각 발급받습니다. 계산 전 담당 직원이 카드와 결제금액을 다시 대조합니다.</div>
+
+    <footer>주민이 Green 고산 3개년 성과공유회</footer>
+  </main>
+</body>
+</html>
