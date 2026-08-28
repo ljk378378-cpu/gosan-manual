@@ -1,37 +1,23 @@
-.git
-.next
-node_modules
+# Ignore everything by default because this workspace also contains large
+# local reports, scans, and temporary PDF-processing outputs.
+*
 
-# Local work products and source documents
-output
-tmp
-assets
-samples
-evaluation_2027
-newsletter_review
-webhard_delivery
-video-guide-assets
+# Keep app source and static assets.
+!src
+!src/**
+!public
+!public/**
+
+# Exclude old generated report files from the deployed app.
 public/reports
+public/reports/**
 
-# Root-level office/scanned/media files are working materials, not app assets.
-/*.pdf
-/*.hwp
-/*.hwpx
-/*.doc
-/*.docx
-/*.xls
-/*.xlsx
-/*.zip
-/*.jpg
-/*.jpeg
-/*.png
-/*.heic
-/*.mp4
-/*.mov
-
-# Legacy Korean-named work folders
-/메뉴얼 사진
-/메뉴얼 사진2
-/주민이그린고산 잘나온사진
-/주민이그린고산 자료사진
-/성과공유회
+# Keep build and package configuration.
+!package.json
+!package-lock.json
+!next.config.ts
+!tsconfig.json
+!postcss.config.mjs
+!eslint.config.mjs
+!.vercelignore
+!README.md
