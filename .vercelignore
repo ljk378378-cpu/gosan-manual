@@ -1,0 +1,37 @@
+.git
+.next
+node_modules
+
+# Local work products and source documents
+output
+tmp
+assets
+samples
+evaluation_2027
+newsletter_review
+webhard_delivery
+video-guide-assets
+public/reports
+
+# Root-level office/scanned/media files are working materials, not app assets.
+/*.pdf
+/*.hwp
+/*.hwpx
+/*.doc
+/*.docx
+/*.xls
+/*.xlsx
+/*.zip
+/*.jpg
+/*.jpeg
+/*.png
+/*.heic
+/*.mp4
+/*.mov
+
+# Legacy Korean-named work folders
+/메뉴얼 사진
+/메뉴얼 사진2
+/주민이그린고산 잘나온사진
+/주민이그린고산 자료사진
+/성과공유회
