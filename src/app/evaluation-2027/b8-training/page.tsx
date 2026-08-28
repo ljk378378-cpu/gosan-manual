@@ -1,0 +1,35 @@
+'use client'
+import Link from 'next/link'
+import { useEffect, useMemo, useState } from 'react'
+
+type Decision='인정'|'일부 인정'|'미인정'|'확인 필요'
+type Row={id:string;employee:string;title:string;date:string;host:string;actual:number;accepted:number;decision:Decision;reason:string;evidence:string}
+const KEY='evaluation-2027-b8-training-v1'
+const blank=():Row=>({id:crypto.randomUUID(),employee:'',title:'',date:'',host:'',actual:0,accepted:0,decision:'확인 필요',reason:'',evidence:''})
+const grade=(h:number)=>h>16?['탁월','1점','emerald']:h>10?['우수','0.8점','blue']:h>5?['양호','0.6점','amber']:h>1?['미흡','0.4점','orange']:['매우 미흡','0점','red']
+
+export default function Page(){
+ const [rows,setRows]=useState<Row[]>([])
+ useEffect(()=>{const v=localStorage.getItem(KEY);if(v)setRows(JSON.parse(v))},[])
+ const save=(v:Row[])=>{setRows(v);localStorage.setItem(KEY,JSON.stringify(v))}
+ const edit=(id:string,k:keyof Row,v:string|number)=>save(rows.map(r=>r.id===id?{...r,[k]:v}:r))
+ const staff=useMemo(()=>{const m=new Map<string,{actual:number;accepted:number;missing:number;pending:number}>();rows.filter(r=>r.employee.trim()).forEach(r=>{const n=r.employee.trim(),v=m.get(n)??{actual:0,accepted:0,missing:0,pending:0};v.actual+=+r.actual||0;v.accepted+=+r.accepted||0;if(!r.evidence.trim())v.missing++;if(r.decision==='확인 필요')v.pending++;m.set(n,v)});return [...m].map(([name,v])=>({name,...v,g:grade(v.accepted),short:Math.max(0,16.01-v.accepted)})).sort((a,b)=>a.accepted-b.accepted)},[rows])
+ return <main className="min-h-screen bg-slate-50 text-slate-900">
+  <header className="bg-[#123c2c] text-white"><div className="mx-auto max-w-[1500px] px-6 py-6"><Link href="/evaluation-2027" className="text-xs font-bold text-emerald-200">← 전체 평가 대시보드</Link><h1 className="mt-2 text-2xl font-black">B8 직원 역량 강화 · 교육시간 관리</h1><p className="mt-1 text-sm text-emerald-100">대상기간 2026.1.1.~2026.12.31.</p></div></header>
+  <div className="mx-auto max-w-[1500px] space-y-5 px-6 py-6">
+   <section className="grid grid-cols-2 gap-3 md:grid-cols-4">{[['교육 등록',rows.length],['관리 직원',staff.length],['16시간 이하',staff.filter(s=>s.accepted<=16).length],['증빙 누락',rows.filter(r=>!r.evidence.trim()).length]].map(([k,v])=><div key={String(k)} className="rounded-xl border bg-white p-4"><p className="text-xs font-bold text-slate-500">{k}</p><p className="mt-1 text-2xl font-black">{v}</p></div>)}</section>
+   <section className="rounded-2xl border bg-white p-5"><h2 className="text-lg font-black">인정기준 요약</h2><div className="mt-4 grid gap-4 lg:grid-cols-3">
+    <Guide title="인정 가능" tone="text-emerald-800" items={['외부 주최 직무·전문성 교육','외부강사를 초빙한 시설 주최 교육','증빙이 명확한 온라인·오프라인 교육','수료증 기재시간 우선','시간 미기재: 1일 최대 8시간, 반일 최대 4시간']}/>
+    <Guide title="미인정" tone="text-red-700" items={['법정의무·인권·자격 보수교육','다른 평가지표에 포함되는 교육','평가지표·사업지침 설명회','신입직원 및 대학·대학원 교육','기관방문·해외연수·이동시간','총회·연찬회 등 교육이 주목적이 아닌 행사','직원 간 전달교육']}/>
+    <Guide title="위험 경고" tone="text-amber-800" items={['정확히 16시간은 0.8점','1명이라도 1시간 이하이면 0점 위험','교육 제목보다 목적·커리큘럼 확인','시간과 증빙 불일치 시 보수적 판정','안전한 관리목표: 직원별 18시간 이상']}/>
+   </div></section>
+   <section className="overflow-hidden rounded-2xl border bg-white"><div className="flex items-center justify-between border-b p-4"><div><h2 className="font-black">교육 입력표</h2><p className="text-xs text-slate-500">실제시간과 인정시간을 구분합니다.</p></div><button onClick={()=>save([...rows,blank()])} className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-bold text-white">＋ 교육 추가</button></div><div className="overflow-x-auto"><table className="w-full min-w-[1420px] text-sm"><thead className="bg-slate-100 text-left text-xs"><tr>{['직원명','교육명','일자','주최기관','실제','인정','판정','판정·제외사유','확인 증빙',''].map(h=><th key={h} className="p-3">{h}</th>)}</tr></thead><tbody>{rows.map(r=><tr key={r.id} className="border-t"><Cell value={r.employee} onChange={v=>edit(r.id,'employee',v)} w="w-28"/><Cell value={r.title} onChange={v=>edit(r.id,'title',v)} w="w-56"/><td className="p-2"><input type="date" value={r.date} onChange={e=>edit(r.id,'date',e.target.value)} className="rounded border p-2"/></td><Cell value={r.host} onChange={v=>edit(r.id,'host',v)} w="w-40"/><Num value={r.actual} onChange={v=>edit(r.id,'actual',v)}/><Num value={r.accepted} onChange={v=>edit(r.id,'accepted',v)}/><td className="p-2"><select value={r.decision} onChange={e=>edit(r.id,'decision',e.target.value)} className="w-28 rounded border p-2">{(['인정','일부 인정','미인정','확인 필요'] as Decision[]).map(x=><option key={x}>{x}</option>)}</select></td><Cell value={r.reason} onChange={v=>edit(r.id,'reason',v)} w="w-64"/><Cell value={r.evidence} onChange={v=>edit(r.id,'evidence',v)} w="w-56" warn/><td><button onClick={()=>save(rows.filter(x=>x.id!==r.id))} className="p-2 text-xs font-bold text-red-600">삭제</button></td></tr>)}</tbody></table>{!rows.length&&<p className="p-10 text-center text-sm text-slate-500">교육 추가를 눌러 시작하세요.</p>}</div></section>
+   <section className="overflow-hidden rounded-2xl border bg-white"><div className="border-b p-4"><h2 className="font-black">직원별 인정시간 집계</h2><p className="text-xs text-slate-500">최고점은 16시간 초과입니다.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[850px] text-sm"><thead className="bg-slate-100 text-left text-xs"><tr>{['직원','실제시간','인정시간','예상등급','최고점 부족시간','증빙 누락','확인 필요'].map(h=><th key={h} className="p-3">{h}</th>)}</tr></thead><tbody>{staff.map(s=><tr key={s.name} className="border-t"><td className="p-3 font-bold">{s.name}</td><td className="p-3">{s.actual}시간</td><td className="p-3 text-base font-black">{s.accepted}시간</td><td className="p-3 font-bold">{s.g[0]} · {s.g[1]}</td><td className="p-3 font-bold text-red-700">{s.short?`${s.short.toFixed(1)}시간 이상`:'없음'}</td><td className="p-3">{s.missing}건</td><td className="p-3">{s.pending}건</td></tr>)}</tbody></table></div></section>
+   <section className="rounded-2xl border bg-white p-5"><h2 className="font-black">입·퇴사 및 증원 보정</h2><div className="mt-3 grid gap-3 md:grid-cols-2"><p className="rounded-xl bg-slate-50 p-4 text-sm leading-6"><b>퇴직·휴직 후임</b><br/>퇴직자 또는 휴직자와 그 후임의 시간을 1명으로 합산합니다.</p><p className="rounded-xl bg-slate-50 p-4 text-sm leading-6"><b>순수 증원</b><br/>1분기 실제 / 2분기 실제＋2 / 3분기 ×2 / 4분기 ×3. 11~12월 입사 증원은 제외합니다.</p></div></section>
+   <p className="text-xs text-slate-500">입력값은 현재 브라우저에만 저장되며 최종 판정은 정오표 반영본과 증빙을 대조해야 합니다.</p>
+  </div>
+ </main>
+}
+function Guide({title,tone,items}:{title:string;tone:string;items:string[]}){return <div><h3 className={`font-black ${tone}`}>{title}</h3><ul className="mt-2 space-y-1 text-sm leading-6 text-slate-600">{items.map(x=><li key={x}>· {x}</li>)}</ul></div>}
+function Cell({value,onChange,w,warn}:{value:string;onChange:(v:string)=>void;w:string;warn?:boolean}){return <td className="p-2"><input value={value} onChange={e=>onChange(e.target.value)} className={`${w} rounded border p-2 ${warn&&!value?'border-amber-400 bg-amber-50':''}`}/></td>}
+function Num({value,onChange}:{value:number;onChange:(v:number)=>void}){return <td className="p-2"><input type="number" min="0" step="0.5" value={value} onChange={e=>onChange(+e.target.value)} className="w-20 rounded border p-2"/></td>}
