@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { CRITERIA_SOURCE, evaluationCriteriaDetails } from '@/data/evaluation2027Criteria'
+import { supabase, type Evaluation2027Item } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
 
 type Status = '미착수' | '확인 중' | '충족' | '부분 충족' | '미충족' | '보완 완료'
 type Year = 2024 | 2025 | 2026
@@ -19,7 +21,7 @@ type Indicator = {
 
 const YEARS: Year[] = [2024, 2025, 2026]
 const STATUSES: Status[] = ['미착수', '확인 중', '충족', '부분 충족', '미충족', '보완 완료']
-const STORAGE_KEY = 'gosan-evaluation-2027-status-v1'
+const STORAGE_KEY = 'cheonggok-evaluation-2027-status-v1'
 
 const indicators: Indicator[] = [
   { code:'A1', title:'시설 안전관리 노력', area:'A. 시설 및 환경', priority:false, applies:YEARS, requirement:'시설 특성에 맞는 안전관리계획, 자체 모의훈련, 예방교육, 안전점검 후 조치, 소방시설 의무 준수를 확인한다.', evidence:['안전관리계획서','연 2회 모의훈련','예방교육','안전점검·조치','소방시설 자료'], nextAction:'연도별 안전계획과 훈련 결과보고를 우선 수집한다.' },
@@ -61,6 +63,24 @@ const indicators: Indicator[] = [
 ]
 
 type StatusMap = Record<string, Partial<Record<Year, Status>>>
+type EvidenceMap = Record<string, boolean>
+type NoteMap = Record<string, string>
+type DetailMap = Record<string, {
+  owner?: string
+  due?: string
+  location?: string
+  rationale?: string
+  missing?: string
+}>
+type ViewFilter = '전체' | '중요지표' | '미비서류' | '2026신규' | '메모있음'
+
+const EVIDENCE_KEY = 'cheonggok-evaluation-2027-evidence-v1'
+const NOTE_KEY = 'cheonggok-evaluation-2027-notes-v1'
+const DETAIL_KEY = 'cheonggok-evaluation-2027-details-v1'
+
+function evidenceKey(code: string, year: Year, evidence: string) {
+  return `${code}:${year}:${evidence}`
+}
 
 function statusTone(status: Status) {
   if (status === '충족' || status === '보완 완료') return 'border-emerald-200 bg-emerald-50 text-emerald-800'
@@ -71,24 +91,204 @@ function statusTone(status: Status) {
 
 export default function Evaluation2027Page() {
   const [statuses, setStatuses] = useState<StatusMap>({})
+  const [evidenceChecks, setEvidenceChecks] = useState<EvidenceMap>({})
+  const [notes, setNotes] = useState<NoteMap>({})
+  const [details, setDetails] = useState<DetailMap>({})
+  const [user, setUser] = useState<User | null>(null)
+  const [email, setEmail] = useState('')
+  const [cloudStatus, setCloudStatus] = useState('로컬 저장')
+  const [cloudError, setCloudError] = useState('')
   const [query, setQuery] = useState('')
   const [area, setArea] = useState('전체')
+  const [viewFilter, setViewFilter] = useState<ViewFilter>('전체')
   const [sourceReady, setSourceReady] = useState(false)
 
   useEffect(() => {
+    loadLocal()
+    supabase.auth.getSession().then(({ data }) => {
+      const sessionUser = data.session?.user ?? null
+      setUser(sessionUser)
+      if (sessionUser) loadCloud(sessionUser.id)
+    })
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const sessionUser = session?.user ?? null
+      setUser(sessionUser)
+      if (sessionUser) loadCloud(sessionUser.id)
+      else setCloudStatus('로컬 저장')
+    })
+    return () => data.subscription.unsubscribe()
+  }, [])
+
+  function loadLocal() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) setStatuses(JSON.parse(raw))
-  }, [])
+    const evidenceRaw = localStorage.getItem(EVIDENCE_KEY)
+    if (evidenceRaw) setEvidenceChecks(JSON.parse(evidenceRaw))
+    const noteRaw = localStorage.getItem(NOTE_KEY)
+    if (noteRaw) setNotes(JSON.parse(noteRaw))
+    const detailRaw = localStorage.getItem(DETAIL_KEY)
+    if (detailRaw) setDetails(JSON.parse(detailRaw))
+  }
+
+  async function loadCloud(userId: string) {
+    setCloudStatus('클라우드 불러오는 중')
+    setCloudError('')
+    const { data, error } = await supabase
+      .from('evaluation_2027_items')
+      .select('*')
+      .eq('user_id', userId)
+      .order('code')
+
+    if (error) {
+      setCloudStatus('로컬 저장')
+      setCloudError(`클라우드 저장 준비 필요: ${error.message}`)
+      return
+    }
+
+    const rows = (data ?? []) as Evaluation2027Item[]
+    if (!rows.length) {
+      setCloudStatus('클라우드 연결됨 · 저장자료 없음')
+      return
+    }
+
+    const nextStatuses: StatusMap = {}
+    const nextEvidence: EvidenceMap = {}
+    const nextNotes: NoteMap = {}
+    const nextDetails: DetailMap = {}
+
+    rows.forEach(row => {
+      nextStatuses[row.code] = row.status_by_year as Partial<Record<Year, Status>>
+      Object.entries(row.evidence_checks ?? {}).forEach(([key, value]) => {
+        nextEvidence[`${row.code}:${key}`] = !!value
+      })
+      nextNotes[row.code] = row.note ?? ''
+      nextDetails[row.code] = {
+        owner: row.owner ?? '',
+        due: row.due ?? '',
+        location: row.location ?? '',
+        rationale: row.rationale ?? '',
+        missing: row.missing ?? '',
+      }
+    })
+
+    setStatuses(nextStatuses)
+    setEvidenceChecks(nextEvidence)
+    setNotes(nextNotes)
+    setDetails(nextDetails)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextStatuses))
+    localStorage.setItem(EVIDENCE_KEY, JSON.stringify(nextEvidence))
+    localStorage.setItem(NOTE_KEY, JSON.stringify(nextNotes))
+    localStorage.setItem(DETAIL_KEY, JSON.stringify(nextDetails))
+    setCloudStatus('클라우드 동기화됨')
+  }
+
+  async function signIn() {
+    if (!email.trim()) return
+    setCloudError('')
+    setCloudStatus('로그인 메일 발송 중')
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { emailRedirectTo: window.location.href },
+    })
+    if (error) {
+      setCloudStatus('로컬 저장')
+      setCloudError(error.message)
+    } else {
+      setCloudStatus('메일함에서 로그인 링크 확인')
+    }
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut()
+    setUser(null)
+    setCloudStatus('로컬 저장')
+  }
+
+  async function uploadLocalToCloud() {
+    if (!user) return
+    setCloudStatus('로컬 자료 업로드 중')
+    for (const item of indicators) {
+      await saveCloudItem(item.code, statuses, evidenceChecks, notes, details)
+    }
+    setCloudStatus('로컬 자료 클라우드 반영됨')
+  }
+
+  function itemEvidenceForCloud(code: string, evidenceState: EvidenceMap) {
+    const result: Record<string, boolean> = {}
+    Object.entries(evidenceState).forEach(([key, value]) => {
+      const prefix = `${code}:`
+      if (key.startsWith(prefix)) result[key.slice(prefix.length)] = !!value
+    })
+    return result
+  }
+
+  async function saveCloudItem(code: string, nextStatuses: StatusMap, nextEvidence: EvidenceMap, nextNotes: NoteMap, nextDetails: DetailMap) {
+    if (!user) return
+    const row = nextDetails[code] ?? {}
+    setCloudStatus('클라우드 저장 중')
+    const { error } = await supabase.from('evaluation_2027_items').upsert({
+      user_id: user.id,
+      code,
+      status_by_year: nextStatuses[code] ?? {},
+      evidence_checks: itemEvidenceForCloud(code, nextEvidence),
+      note: nextNotes[code] ?? '',
+      owner: row.owner ?? '',
+      due: row.due || null,
+      location: row.location ?? '',
+      rationale: row.rationale ?? '',
+      missing: row.missing ?? '',
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,code' })
+
+    if (error) {
+      setCloudStatus('로컬 저장')
+      setCloudError(`클라우드 저장 실패: ${error.message}`)
+    } else {
+      setCloudStatus('클라우드 저장됨')
+      setCloudError('')
+    }
+  }
 
   const updateStatus = (code: string, year: Year, status: Status) => {
     setStatuses(previous => {
       const next = { ...previous, [code]: { ...previous[code], [year]: status } }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      saveCloudItem(code, next, evidenceChecks, notes, details)
+      return next
+    })
+  }
+
+  const toggleEvidence = (code: string, year: Year, evidence: string) => {
+    setEvidenceChecks(previous => {
+      const key = evidenceKey(code, year, evidence)
+      const next = { ...previous, [key]: !previous[key] }
+      localStorage.setItem(EVIDENCE_KEY, JSON.stringify(next))
+      saveCloudItem(code, statuses, next, notes, details)
+      return next
+    })
+  }
+
+  const updateNote = (code: string, value: string) => {
+    setNotes(previous => {
+      const next = { ...previous, [code]: value }
+      localStorage.setItem(NOTE_KEY, JSON.stringify(next))
+      saveCloudItem(code, statuses, evidenceChecks, next, details)
+      return next
+    })
+  }
+
+  const updateDetail = (code: string, key: keyof DetailMap[string], value: string) => {
+    setDetails(previous => {
+      const next = { ...previous, [code]: { ...previous[code], [key]: value } }
+      localStorage.setItem(DETAIL_KEY, JSON.stringify(next))
+      saveCloudItem(code, statuses, evidenceChecks, notes, next)
       return next
     })
   }
 
   const applicableCells = indicators.reduce((sum, item) => sum + item.applies.length, 0)
+  const evidenceCells = indicators.reduce((sum, item) => sum + (item.applies.length * item.evidence.length), 0)
+  const checkedEvidence = indicators.reduce((sum, item) => sum + item.applies.reduce((yearSum, year) => yearSum + item.evidence.filter(evidence => evidenceChecks[evidenceKey(item.code, year, evidence)]).length, 0), 0)
   const counts = useMemo(() => {
     const result: Record<Status, number> = { '미착수':0, '확인 중':0, '충족':0, '부분 충족':0, '미충족':0, '보완 완료':0 }
     indicators.forEach(item => item.applies.forEach(year => result[statuses[item.code]?.[year] ?? '미착수']++))
@@ -96,9 +296,26 @@ export default function Evaluation2027Page() {
   }, [statuses])
   const completed = counts['충족'] + counts['보완 완료']
   const progress = Math.round((completed / applicableCells) * 100)
+  const evidenceProgress = Math.round((checkedEvidence / evidenceCells) * 100)
+  const priorityRiskCount = indicators.filter(item => item.priority && item.applies.some(year => {
+    const status = statuses[item.code]?.[year] ?? '미착수'
+    return status !== '충족' && status !== '보완 완료'
+  })).length
   const filtered = indicators.filter(item => {
     const text = `${item.code} ${item.title} ${item.requirement} ${item.evidence.join(' ')} ${item.nextAction}`.toLowerCase()
-    return (area === '전체' || item.area === area) && text.includes(query.toLowerCase())
+    const itemTotal = item.applies.length * item.evidence.length
+    const itemDone = item.applies.reduce((sum, year) => sum + item.evidence.filter(evidence => evidenceChecks[evidenceKey(item.code, year, evidence)]).length, 0)
+    const hasIncompleteStatus = item.applies.some(year => {
+      const status = statuses[item.code]?.[year] ?? '미착수'
+      return status === '미착수' || status === '확인 중' || status === '부분 충족' || status === '미충족'
+    })
+    const matchesView =
+      viewFilter === '전체' ||
+      (viewFilter === '중요지표' && item.priority) ||
+      (viewFilter === '미비서류' && (itemDone < itemTotal || hasIncompleteStatus)) ||
+      (viewFilter === '2026신규' && item.applies.length === 1 && item.applies[0] === 2026) ||
+      (viewFilter === '메모있음' && (!!notes[item.code]?.trim() || !!details[item.code]?.missing?.trim()))
+    return matchesView && (area === '전체' || item.area === area) && text.includes(query.toLowerCase())
   })
 
   return (
@@ -106,27 +323,173 @@ export default function Evaluation2027Page() {
       <header className="border-b border-emerald-950/10 bg-[#123c2c] text-white">
         <div className="mx-auto max-w-[1500px] px-5 py-7 md:px-8">
           <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-            <div><p className="text-xs font-bold tracking-[.2em] text-emerald-200">CHEONGGOK · EVALUATION CONTROL</p><h1 className="mt-2 text-2xl font-black md:text-3xl">2027년 사회복지관평가 준비 대시보드</h1><p className="mt-2 text-sm text-emerald-100">평가기간 2024. 1. 1. ~ 2026. 12. 31. · 현재 전체 미착수</p></div>
-            <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm"><b>전체 준비율 {progress}%</b><div className="mt-2 h-2 w-56 overflow-hidden rounded-full bg-black/20"><div className="h-full bg-emerald-300" style={{width:`${progress}%`}} /></div></div>
+            <div><p className="text-xs font-bold tracking-[.2em] text-emerald-200">CHEONGGOK · EVALUATION SPECIAL TEAM</p><h1 className="mt-2 text-2xl font-black md:text-3xl">27년 사회복지관 평가 대비 특별반</h1><p className="mt-2 text-sm text-emerald-100">평가기간 2024. 1. 1. ~ 2026. 12. 31. · 현재 전체 미착수</p></div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <button onClick={() => window.print()} className="no-print rounded-lg border border-white/30 bg-white px-4 py-2 text-sm font-black text-emerald-950 shadow-sm">점검표 출력</button>
+              <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm"><b>전체 준비율 {progress}%</b><div className="mt-2 h-2 w-56 overflow-hidden rounded-full bg-black/20"><div className="h-full bg-emerald-300" style={{width:`${progress}%`}} /></div></div>
+            </div>
           </div>
         </div>
       </header>
 
       <div className="mx-auto max-w-[1500px] px-5 py-6 md:px-8">
-        <div className="mb-5 flex gap-2"><button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white">2027 사회복지관평가</button><button disabled className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-400">수성구청 지도점검 · 별도 관리</button></div>
+        <div className="mb-5 flex gap-2"><button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white">27년 평가 특별반</button><button disabled className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-400">수성구청 지도점검 · 별도 관리</button></div>
 
         <section className={`mb-5 rounded-xl border p-4 ${sourceReady ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
           <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center"><div><p className="font-black">기준자료 상태: {sourceReady ? '정오표 반영본 확인 표시' : CRITERIA_SOURCE.status}</p><p className="mt-1 text-sm text-slate-600">현재 상세기준: {CRITERIA_SOURCE.title} · 원문 읽기 전용</p><p className="mt-1 text-xs text-slate-500">최종 기준 예정: evaluation_2027/source/2027년_사회복지관_평가지표_260608_정오표반영.pdf</p></div><button onClick={()=>setSourceReady(v=>!v)} className="rounded-lg border border-current px-3 py-2 text-xs font-bold">{sourceReady ? '확인 표시 취소' : '정오표 파일 동기화 후 확인'}</button></div>
         </section>
 
-        <section className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
-          {[['관리 항목',indicators.length],['적용 셀',applicableCells],['미착수',counts['미착수']],['확인 중',counts['확인 중']],['부분 충족',counts['부분 충족']],['미충족',counts['미충족']],['충족·완료',completed]].map(([label,value])=><div key={String(label)} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-xs font-bold text-slate-500">{label}</p><p className="mt-1 text-2xl font-black">{value}</p></div>)}
+        <section className="no-print mb-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
+            <div>
+              <p className="font-black text-slate-900">저장 방식: {cloudStatus}</p>
+              <p className="mt-1 text-sm text-slate-600">
+                {user ? `${user.email} 계정으로 로그인됨 · 맥/윈도우에서 같은 계정으로 접속하면 이어서 관리 가능` : '로그인 전에는 현재 브라우저에만 저장됩니다.'}
+              </p>
+              {cloudError && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{cloudError}</p>}
+            </div>
+            {user ? (
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => loadCloud(user.id)} className="rounded-lg border border-emerald-700 px-3 py-2 text-xs font-black text-emerald-800">클라우드 다시 불러오기</button>
+                <button onClick={uploadLocalToCloud} className="rounded-lg bg-emerald-800 px-3 py-2 text-xs font-black text-white">현재 로컬값 올리기</button>
+                <button onClick={signOut} className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-black text-slate-600">로그아웃</button>
+              </div>
+            ) : (
+              <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={event => setEmail(event.target.value)}
+                  placeholder="이메일 입력"
+                  className="min-w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-700"
+                />
+                <button onClick={signIn} className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-black text-white">로그인 링크 받기</button>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
+          {[['관리 항목',indicators.length],['적용 셀',applicableCells],['지표 진행률',`${progress}%`],['증빙 진행률',`${evidenceProgress}%`],['확인 중',counts['확인 중']],['부분 충족',counts['부분 충족']],['미충족',counts['미충족']],['중요 미완료',priorityRiskCount]].map(([label,value])=><div key={String(label)} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-xs font-bold text-slate-500">{label}</p><p className="mt-1 text-2xl font-black">{value}</p></div>)}
         </section>
 
         <div className="mb-4 flex flex-col justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 md:flex-row md:items-center"><div><p className="font-black text-emerald-950">B8 직원교육시간을 정리하고 있나요?</p><p className="mt-1 text-sm text-emerald-800">교육별 인정·미인정 판정, 직원별 합계, 부족시간과 증빙 누락을 별도 관리할 수 있습니다.</p></div><Link href="/evaluation-2027/b8-training" className="rounded-lg bg-emerald-800 px-4 py-2 text-center text-sm font-black text-white">B8 교육시간 관리 열기</Link></div>
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-slate-200 p-4 md:flex-row"><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="지표·인정요건·증빙 검색" className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-700"/><select value={area} onChange={e=>setArea(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm"><option>전체</option>{[...new Set(indicators.map(i=>i.area))].map(a=><option key={a}>{a}</option>)}</select></div>
-          <div className="overflow-x-auto"><table className="w-full min-w-[1280px] border-collapse text-sm"><thead className="bg-slate-100 text-left text-xs text-slate-600"><tr><th className="p-3">지표</th><th className="p-3">핵심 인정요건·필수 증빙</th>{YEARS.map(y=><th key={y} className="p-3">{y}</th>)}<th className="p-3">첫 조치</th></tr></thead><tbody>{filtered.map(item=><tr key={item.code} className="border-t border-slate-100 align-top"><td className="p-4"><span className="text-base font-black text-emerald-800">{item.code}</span><p className="mt-1 w-48 font-bold">{item.title}</p><p className="mt-2 text-xs text-slate-500">{item.area}</p>{item.priority&&<span className="mt-2 inline-block rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black text-amber-800">중요 지표</span>}</td><td className="max-w-2xl p-4"><p className="leading-6 text-slate-700">{item.requirement}</p><div className="mt-3 flex flex-wrap gap-1.5">{item.evidence.map(e=><span key={e} className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">{e}</span>)}</div><details className="mt-4 overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/50"><summary className="cursor-pointer px-4 py-3 text-xs font-black text-emerald-900">평가지표 원문 상세기준 펼치기</summary><div className="border-t border-emerald-200 bg-white p-4"><p className="mb-3 text-xs font-bold text-slate-500">평가목표 · 평가내용 · 배점기준 · 대상기간 · 인정/미인정 범위 · 평가자료 · 참고사항</p><pre className="whitespace-pre-wrap break-words font-sans text-xs leading-6 text-slate-700">{evaluationCriteriaDetails[item.code] ?? '상세 원문을 확인 중입니다.'}</pre></div></details></td>{YEARS.map(year=><td key={year} className="w-36 p-4">{item.applies.includes(year)?<select aria-label={`${item.code} ${year} 상태`} value={statuses[item.code]?.[year] ?? '미착수'} onChange={e=>updateStatus(item.code,year,e.target.value as Status)} className={`w-full rounded-lg border px-2 py-2 text-xs font-bold ${statusTone(statuses[item.code]?.[year] ?? '미착수')}`}>{STATUSES.map(s=><option key={s}>{s}</option>)}</select>:<span className="inline-block rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-400">비적용</span>}</td>)}<td className="w-64 p-4 leading-6 text-amber-900">{item.nextAction}</td></tr>)}</tbody></table></div>
+          <div className="flex flex-col gap-3 border-b border-slate-200 p-4 md:flex-row">
+            <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="지표·인정요건·증빙 검색" className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-700"/>
+            <select value={area} onChange={e=>setArea(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm"><option>전체</option>{[...new Set(indicators.map(i=>i.area))].map(a=><option key={a}>{a}</option>)}</select>
+            <select value={viewFilter} onChange={e=>setViewFilter(e.target.value as ViewFilter)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+              {(['전체','중요지표','미비서류','2026신규','메모있음'] as ViewFilter[]).map(filter => <option key={filter}>{filter}</option>)}
+            </select>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1320px] border-collapse text-sm">
+              <thead className="bg-slate-100 text-left text-xs text-slate-600">
+                <tr>
+                  <th className="p-3">지표</th>
+                  <th className="p-3">준비 작업대</th>
+                  {YEARS.map(y=><th key={y} className="p-3">{y}</th>)}
+                  <th className="p-3">첫 조치</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(item => {
+                  const itemTotal = item.applies.length * item.evidence.length
+                  const itemDone = item.applies.reduce((sum, year) => sum + item.evidence.filter(evidence => evidenceChecks[evidenceKey(item.code, year, evidence)]).length, 0)
+                  const itemProgress = itemTotal ? Math.round((itemDone / itemTotal) * 100) : 0
+                  return (
+                    <tr key={item.code} className="border-t border-slate-100 align-top">
+                      <td className="p-4">
+                        <span className="text-base font-black text-emerald-800">{item.code}</span>
+                        <p className="mt-1 w-48 font-bold">{item.title}</p>
+                        <p className="mt-2 text-xs text-slate-500">{item.area}</p>
+                        {item.priority&&<span className="mt-2 inline-block rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black text-amber-800">중요 지표</span>}
+                      </td>
+                      <td className="max-w-3xl p-4">
+                        <p className="leading-6 text-slate-700">{item.requirement}</p>
+                        <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-xs font-black text-slate-700">증빙 준비율 {itemProgress}% · {itemDone}/{itemTotal}</p>
+                            <div className="h-2 w-40 overflow-hidden rounded-full bg-slate-200">
+                              <div className="h-full bg-emerald-600" style={{width:`${itemProgress}%`}} />
+                            </div>
+                          </div>
+                          <details className="mt-3">
+                            <summary className="cursor-pointer text-xs font-black text-emerald-900">연도별 증빙 체크 열기</summary>
+                            <div className="mt-3 grid gap-3 lg:grid-cols-3">
+                              {YEARS.map(year => (
+                                <div key={year} className={`rounded-lg border p-3 ${item.applies.includes(year) ? 'border-white bg-white' : 'border-slate-200 bg-slate-100 opacity-60'}`}>
+                                  <p className="mb-2 text-xs font-black text-slate-700">{year}</p>
+                                  {item.applies.includes(year) ? item.evidence.map(evidence => (
+                                    <label key={evidence} className="mb-2 flex items-start gap-2 text-xs leading-5 text-slate-700">
+                                      <input
+                                        type="checkbox"
+                                        checked={!!evidenceChecks[evidenceKey(item.code, year, evidence)]}
+                                        onChange={() => toggleEvidence(item.code, year, evidence)}
+                                        className="mt-1"
+                                      />
+                                      <span>{evidence}</span>
+                                    </label>
+                                  )) : <p className="text-xs text-slate-400">비적용</p>}
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                          <textarea
+                            value={notes[item.code] ?? ''}
+                            onChange={event => updateNote(item.code, event.target.value)}
+                            placeholder="짧은 진행 메모"
+                            className="mt-3 min-h-20 w-full rounded-lg border border-slate-200 bg-white p-3 text-xs leading-5 outline-none focus:border-emerald-700"
+                          />
+                          <div className="mt-3 grid gap-2 md:grid-cols-2">
+                            <input
+                              value={details[item.code]?.owner ?? ''}
+                              onChange={event => updateDetail(item.code, 'owner', event.target.value)}
+                              placeholder="담당자 / 확인 요청 대상"
+                              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-emerald-700"
+                            />
+                            <input
+                              type="date"
+                              value={details[item.code]?.due ?? ''}
+                              onChange={event => updateDetail(item.code, 'due', event.target.value)}
+                              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-emerald-700"
+                            />
+                            <input
+                              value={details[item.code]?.location ?? ''}
+                              onChange={event => updateDetail(item.code, 'location', event.target.value)}
+                              placeholder="파일 위치 / 실물철 위치"
+                              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-emerald-700 md:col-span-2"
+                            />
+                            <textarea
+                              value={details[item.code]?.rationale ?? ''}
+                              onChange={event => updateDetail(item.code, 'rationale', event.target.value)}
+                              placeholder="인정 판단 근거"
+                              className="min-h-16 rounded-lg border border-slate-200 bg-white p-3 text-xs leading-5 outline-none focus:border-emerald-700"
+                            />
+                            <textarea
+                              value={details[item.code]?.missing ?? ''}
+                              onChange={event => updateDetail(item.code, 'missing', event.target.value)}
+                              placeholder="보완 필요사항 / 불인정 위험"
+                              className="min-h-16 rounded-lg border border-amber-200 bg-white p-3 text-xs leading-5 outline-none focus:border-amber-600"
+                            />
+                          </div>
+                        </div>
+                        <details className="mt-4 overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/50">
+                          <summary className="cursor-pointer px-4 py-3 text-xs font-black text-emerald-900">평가지표 원문 상세기준 펼치기</summary>
+                          <div className="border-t border-emerald-200 bg-white p-4">
+                            <p className="mb-3 text-xs font-bold text-slate-500">평가목표 · 평가내용 · 배점기준 · 대상기간 · 인정/미인정 범위 · 평가자료 · 참고사항</p>
+                            <pre className="whitespace-pre-wrap break-words font-sans text-xs leading-6 text-slate-700">{evaluationCriteriaDetails[item.code] ?? '상세 원문을 확인 중입니다.'}</pre>
+                          </div>
+                        </details>
+                      </td>
+                      {YEARS.map(year=><td key={year} className="w-36 p-4">{item.applies.includes(year)?<select aria-label={`${item.code} ${year} 상태`} value={statuses[item.code]?.[year] ?? '미착수'} onChange={e=>updateStatus(item.code,year,e.target.value as Status)} className={`w-full rounded-lg border px-2 py-2 text-xs font-bold ${statusTone(statuses[item.code]?.[year] ?? '미착수')}`}>{STATUSES.map(s=><option key={s}>{s}</option>)}</select>:<span className="inline-block rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-400">비적용</span>}</td>)}
+                      <td className="w-64 p-4 leading-6 text-amber-900">{item.nextAction}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </section>
         <p className="mt-4 text-xs leading-5 text-slate-500">상태값은 이 브라우저에만 저장됩니다. Google Drive 및 PDF/HWP 원본은 변경하지 않습니다. ‘미착수’는 증빙이 없다는 판정이 아니라 아직 탐색하지 않았다는 뜻입니다.</p>
       </div>
