@@ -96,6 +96,7 @@ export default function Evaluation2027Page() {
   const [details, setDetails] = useState<DetailMap>({})
   const [user, setUser] = useState<User | null>(null)
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [cloudStatus, setCloudStatus] = useState('로컬 저장')
   const [cloudError, setCloudError] = useState('')
   const [query, setQuery] = useState('')
@@ -195,6 +196,23 @@ export default function Evaluation2027Page() {
       setCloudError(error.message)
     } else {
       setCloudStatus('메일함에서 로그인 링크 확인')
+    }
+  }
+
+  async function signInWithPassword() {
+    if (!email.trim() || !password) return
+    setCloudError('')
+    setCloudStatus('비밀번호 로그인 중')
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    })
+    if (error) {
+      setCloudStatus('로컬 저장')
+      setCloudError(error.message)
+    } else {
+      setPassword('')
+      setCloudStatus('클라우드 연결됨')
     }
   }
 
@@ -355,15 +373,27 @@ export default function Evaluation2027Page() {
                 <button onClick={signOut} className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-black text-slate-600">로그아웃</button>
               </div>
             ) : (
-              <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={event => setEmail(event.target.value)}
-                  placeholder="이메일 입력"
-                  className="min-w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-700"
-                />
-                <button onClick={signIn} className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-black text-white">로그인 링크 받기</button>
+              <div className="flex min-w-0 flex-col gap-2">
+                <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={event => setEmail(event.target.value)}
+                    placeholder="이메일 입력"
+                    className="min-w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-700"
+                  />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={event => setPassword(event.target.value)}
+                    placeholder="비밀번호"
+                    className="min-w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-700"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={signInWithPassword} className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-black text-white">비밀번호 로그인</button>
+                  <button onClick={signIn} className="rounded-lg border border-emerald-700 px-4 py-2 text-sm font-black text-emerald-800">로그인 링크 받기</button>
+                </div>
               </div>
             )}
           </div>
