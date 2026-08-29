@@ -84,12 +84,26 @@ type LearningRecord = {
   action: string
   confidence: string
 }
+type ConnectionRecord = {
+  id: string
+  date: string
+  code: string
+  title: string
+  category: string
+  rule: string
+  check: string
+  owner: string
+  due: string
+}
 
 const EVIDENCE_KEY = 'cheonggok-evaluation-2027-evidence-v1'
 const NOTE_KEY = 'cheonggok-evaluation-2027-notes-v1'
 const DETAIL_KEY = 'cheonggok-evaluation-2027-details-v1'
 const LEARNING_KEY = 'cheonggok-evaluation-2027-learning-v1'
+const CONNECTION_KEY = 'cheonggok-evaluation-2027-connections-v1'
 const LEARNING_START_DATE = new Date('2026-08-31T00:00:00+09:00')
+const connectionCategories = ['수성구청 지도점검', '운영규정', '노무규정', '개인정보·인권', '안전관리', '팀 운영'] as const
+type ConnectionCategory = typeof connectionCategories[number]
 
 const learningOrder = [
   'E3','E4','E1','D5','C3-2','C3-1','C3-3','C5','C4',
@@ -161,6 +175,14 @@ export default function Evaluation2027Page() {
     action: '',
     confidence: '보통',
   })
+  const [connectionRecords, setConnectionRecords] = useState<ConnectionRecord[]>([])
+  const [connectionDraft, setConnectionDraft] = useState({
+    category: connectionCategories[0] as ConnectionCategory,
+    rule: '',
+    check: '',
+    owner: '',
+    due: '',
+  })
 
   useEffect(() => {
     loadLocal()
@@ -189,6 +211,8 @@ export default function Evaluation2027Page() {
     if (detailRaw) setDetails(JSON.parse(detailRaw))
     const learningRaw = localStorage.getItem(LEARNING_KEY)
     if (learningRaw) setLearningRecords(JSON.parse(learningRaw))
+    const connectionRaw = localStorage.getItem(CONNECTION_KEY)
+    if (connectionRaw) setConnectionRecords(JSON.parse(connectionRaw))
   }
 
   async function loadCloud(userId: string) {
@@ -368,6 +392,7 @@ export default function Evaluation2027Page() {
   const todayDetail = evaluationCriteriaDetails[todayLearning.code] ?? ''
   const todayEvidence = todayLearning.evidence.join(', ')
   const latestLearningRecords = learningRecords.slice(0, 6)
+  const latestConnectionRecords = connectionRecords.slice(0, 6)
 
   const saveLearningRecord = () => {
     const record: LearningRecord = {
@@ -391,6 +416,30 @@ export default function Evaluation2027Page() {
     const next = learningRecords.filter(record => record.id !== id)
     setLearningRecords(next)
     localStorage.setItem(LEARNING_KEY, JSON.stringify(next))
+  }
+
+  const saveConnectionRecord = () => {
+    const record: ConnectionRecord = {
+      id: `${Date.now()}`,
+      date: todayDateString(),
+      code: todayLearning.code,
+      title: todayLearning.title,
+      category: connectionDraft.category,
+      rule: connectionDraft.rule.trim(),
+      check: connectionDraft.check.trim(),
+      owner: connectionDraft.owner.trim(),
+      due: connectionDraft.due,
+    }
+    const next = [record, ...connectionRecords].slice(0, 200)
+    setConnectionRecords(next)
+    localStorage.setItem(CONNECTION_KEY, JSON.stringify(next))
+    setConnectionDraft({ category: connectionCategories[0] as ConnectionCategory, rule: '', check: '', owner: '', due: '' })
+  }
+
+  const removeConnectionRecord = (id: string) => {
+    const next = connectionRecords.filter(record => record.id !== id)
+    setConnectionRecords(next)
+    localStorage.setItem(CONNECTION_KEY, JSON.stringify(next))
   }
 
   const applicableCells = indicators.reduce((sum, item) => sum + item.applies.length, 0)
@@ -621,6 +670,114 @@ export default function Evaluation2027Page() {
                   </div>
                 ) : (
                   <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">아직 저장된 학습기록이 없습니다. 오늘 지표를 읽고 첫 기록을 남기면 됩니다.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-[#f7f4ef] p-4">
+            <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
+              <div>
+                <p className="text-xs font-black tracking-[.18em] text-stone-600">MANAGER CROSS-CHECK</p>
+                <h2 className="mt-1 text-xl font-black text-slate-950">규정·지도점검 연결 메모</h2>
+                <p className="mt-1 text-sm text-slate-600">평가지표를 기관 운영규정, 노무규정, 지도점검, 개인정보·인권·안전 기준과 연결해서 기록합니다.</p>
+              </div>
+              <div className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700">
+                최근 연결 메모 {connectionRecords.length}건
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-0 xl:grid-cols-[.95fr_1.05fr]">
+            <div className="border-b border-slate-200 p-5 xl:border-b-0 xl:border-r">
+              <div className="grid gap-3">
+                <select
+                  value={connectionDraft.category}
+                  onChange={event => setConnectionDraft(previous => ({ ...previous, category: event.target.value as ConnectionCategory }))}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-stone-600"
+                >
+                  {connectionCategories.map(category => <option key={category}>{category}</option>)}
+                </select>
+                <textarea
+                  value={connectionDraft.rule}
+                  onChange={event => setConnectionDraft(previous => ({ ...previous, rule: event.target.value }))}
+                  placeholder="연결되는 규정·조항·점검 기준"
+                  className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-stone-600"
+                />
+                <textarea
+                  value={connectionDraft.check}
+                  onChange={event => setConnectionDraft(previous => ({ ...previous, check: event.target.value }))}
+                  placeholder="우리 기관에서 확인할 실제 운영·서류·현장"
+                  className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-stone-600"
+                />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input
+                    value={connectionDraft.owner}
+                    onChange={event => setConnectionDraft(previous => ({ ...previous, owner: event.target.value }))}
+                    placeholder="확인 담당 / 요청 대상"
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-stone-600"
+                  />
+                  <input
+                    type="date"
+                    value={connectionDraft.due}
+                    onChange={event => setConnectionDraft(previous => ({ ...previous, due: event.target.value }))}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-stone-600"
+                  />
+                </div>
+                <button
+                  onClick={saveConnectionRecord}
+                  className="rounded-lg bg-stone-800 px-4 py-3 text-sm font-black text-white"
+                >
+                  연결 메모 저장
+                </button>
+              </div>
+            </div>
+            <div className="p-5">
+              <p className="font-black text-slate-950">연결해서 생각할 기준</p>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                  <p className="text-xs font-black text-stone-600">지도점검</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-800">평가지표와 겹치는 인사, 회계, 개인정보, 안전, 이용자 권리 자료를 먼저 연결합니다.</p>
+                </div>
+                <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                  <p className="text-xs font-black text-stone-600">운영규정</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-800">규정에 있는 절차가 실제 기안, 회의록, 대장, 결과보고로 남아 있는지 확인합니다.</p>
+                </div>
+                <div className="rounded-xl border border-stone-200 bg-white p-4">
+                  <p className="text-xs font-black text-stone-600">노무규정</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-800">복무, 휴가, 출장, 교육훈련, 시간외근무, 고충처리처럼 직원관리 판단기준을 연결합니다.</p>
+                </div>
+                <div className="rounded-xl border border-stone-200 bg-white p-4">
+                  <p className="text-xs font-black text-stone-600">개인정보·인권·안전</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-800">규정, 교육, 동의, 보안, 권익옹호, 사고예방이 실제 작동하는지 확인합니다.</p>
+                </div>
+              </div>
+              <div className="mt-5">
+                <p className="mb-2 text-sm font-black text-slate-900">최근 연결 메모</p>
+                {latestConnectionRecords.length ? (
+                  <div className="space-y-2">
+                    {latestConnectionRecords.map(record => (
+                      <div key={record.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-black text-stone-700">{record.date} · {record.code} {record.title} · {record.category}</p>
+                            <p className="mt-1 text-xs leading-5 text-slate-700">{record.rule || '연결 기준 기록 없음'}</p>
+                          </div>
+                          <button onClick={() => removeConnectionRecord(record.id)} className="text-xs font-bold text-slate-400 hover:text-red-600">삭제</button>
+                        </div>
+                        {(record.check || record.owner || record.due) && (
+                          <p className="mt-2 border-t border-slate-200 pt-2 text-xs leading-5 text-slate-600">
+                            {record.check && `확인: ${record.check} `}
+                            {record.owner && `대상: ${record.owner} `}
+                            {record.due && `기한: ${record.due}`}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">아직 연결 메모가 없습니다. 오늘 지표가 어떤 규정이나 지도점검 항목과 이어지는지 하나만 남기면 됩니다.</p>
                 )}
               </div>
             </div>
