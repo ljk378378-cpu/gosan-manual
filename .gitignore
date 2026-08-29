@@ -42,3 +42,8 @@ next-env.d.ts
 
 # 실명 등 민감 개인정보 포함 문서 - 절대 커밋/푸시 금지
 /confidential/
+# local working files (temp exports, video source assets, backup edits)
+/tmp/
+/video-guide-assets/
+*.award-edit
+*.dashboard-edit

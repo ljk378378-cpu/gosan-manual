@@ -81,6 +81,20 @@ export type PartFile = {
   uploaded_at: string
 }
 
+export type Evaluation2027Item = {
+  user_id: string
+  code: string
+  status_by_year: Record<string, string>
+  evidence_checks: Record<string, boolean>
+  note: string
+  owner: string
+  due: string | null
+  location: string
+  rationale: string
+  missing: string
+  updated_at: string
+}
+
 export const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-gray-100 text-gray-600',
   in_progress: 'bg-blue-100 text-blue-700',

@@ -1,0 +1,23 @@
+# Ignore everything by default because this workspace also contains large
+# local reports, scans, and temporary PDF-processing outputs.
+*
+
+# Keep app source and static assets.
+!src
+!src/**
+!public
+!public/**
+
+# Exclude old generated report files from the deployed app.
+public/reports
+public/reports/**
+
+# Keep build and package configuration.
+!package.json
+!package-lock.json
+!next.config.ts
+!tsconfig.json
+!postcss.config.mjs
+!eslint.config.mjs
+!.vercelignore
+!README.md

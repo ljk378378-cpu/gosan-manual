@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 type Decision='인정'|'일부 인정'|'미인정'|'확인 필요'
 type Row={id:string;employee:string;title:string;date:string;host:string;actual:number;accepted:number;decision:Decision;reason:string;evidence:string}
-const KEY='evaluation-2027-b8-training-v1'
+const KEY='cheonggok-evaluation-2027-b8-training-v1'
 const blank=():Row=>({id:crypto.randomUUID(),employee:'',title:'',date:'',host:'',actual:0,accepted:0,decision:'확인 필요',reason:'',evidence:''})
 const grade=(h:number)=>h>16?['탁월','1점','emerald']:h>10?['우수','0.8점','blue']:h>5?['양호','0.6점','amber']:h>1?['미흡','0.4점','orange']:['매우 미흡','0점','red']
 
@@ -15,7 +15,7 @@ export default function Page(){
  const edit=(id:string,k:keyof Row,v:string|number)=>save(rows.map(r=>r.id===id?{...r,[k]:v}:r))
  const staff=useMemo(()=>{const m=new Map<string,{actual:number;accepted:number;missing:number;pending:number}>();rows.filter(r=>r.employee.trim()).forEach(r=>{const n=r.employee.trim(),v=m.get(n)??{actual:0,accepted:0,missing:0,pending:0};v.actual+=+r.actual||0;v.accepted+=+r.accepted||0;if(!r.evidence.trim())v.missing++;if(r.decision==='확인 필요')v.pending++;m.set(n,v)});return [...m].map(([name,v])=>({name,...v,g:grade(v.accepted),short:Math.max(0,16.01-v.accepted)})).sort((a,b)=>a.accepted-b.accepted)},[rows])
  return <main className="min-h-screen bg-slate-50 text-slate-900">
-  <header className="bg-[#123c2c] text-white"><div className="mx-auto max-w-[1500px] px-6 py-6"><Link href="/evaluation-2027" className="text-xs font-bold text-emerald-200">← 전체 평가 대시보드</Link><h1 className="mt-2 text-2xl font-black">B8 직원 역량 강화 · 교육시간 관리</h1><p className="mt-1 text-sm text-emerald-100">대상기간 2026.1.1.~2026.12.31.</p></div></header>
+  <header className="bg-[#123c2c] text-white"><div className="mx-auto max-w-[1500px] px-6 py-6"><Link href="/evaluation-2027" className="text-xs font-bold text-emerald-200">← 27년 평가 특별반</Link><h1 className="mt-2 text-2xl font-black">B8 직원 역량 강화 · 교육시간 관리</h1><p className="mt-1 text-sm text-emerald-100">대상기간 2026.1.1.~2026.12.31.</p></div></header>
   <div className="mx-auto max-w-[1500px] space-y-5 px-6 py-6">
    <section className="grid grid-cols-2 gap-3 md:grid-cols-4">{[['교육 등록',rows.length],['관리 직원',staff.length],['16시간 이하',staff.filter(s=>s.accepted<=16).length],['증빙 누락',rows.filter(r=>!r.evidence.trim()).length]].map(([k,v])=><div key={String(k)} className="rounded-xl border bg-white p-4"><p className="text-xs font-bold text-slate-500">{k}</p><p className="mt-1 text-2xl font-black">{v}</p></div>)}</section>
    <section className="rounded-2xl border bg-white p-5"><h2 className="text-lg font-black">인정기준 요약</h2><div className="mt-4 grid gap-4 lg:grid-cols-3">
