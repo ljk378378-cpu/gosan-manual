@@ -73,10 +73,30 @@ type DetailMap = Record<string, {
   missing?: string
 }>
 type ViewFilter = '전체' | '중요지표' | '미비서류' | '2026신규' | '메모있음'
+type LearningRecord = {
+  id: string
+  date: string
+  code: string
+  title: string
+  understood: string
+  risk: string
+  evidence: string
+  action: string
+  confidence: string
+}
 
 const EVIDENCE_KEY = 'cheonggok-evaluation-2027-evidence-v1'
 const NOTE_KEY = 'cheonggok-evaluation-2027-notes-v1'
 const DETAIL_KEY = 'cheonggok-evaluation-2027-details-v1'
+const LEARNING_KEY = 'cheonggok-evaluation-2027-learning-v1'
+const LEARNING_START_DATE = new Date('2026-08-31T00:00:00+09:00')
+
+const learningOrder = [
+  'E3','E4','E1','D5','C3-2','C3-1','C3-3','C5','C4',
+  'B8','B1','B3','B5','B6','B7','B9','B10','B11','B2','B4',
+  'C1-1','C1-2','C1-3','C1-4','C2-1','C2-2','C2-3',
+  'D1','D2','D3','D4','A1','A2','A3','C6',
+]
 
 function evidenceKey(code: string, year: Year, evidence: string) {
   return `${code}:${year}:${evidence}`
@@ -87,6 +107,35 @@ function statusTone(status: Status) {
   if (status === '부분 충족' || status === '확인 중') return 'border-amber-200 bg-amber-50 text-amber-800'
   if (status === '미충족') return 'border-red-200 bg-red-50 text-red-700'
   return 'border-slate-200 bg-white text-slate-700'
+}
+
+function todayDateString() {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(new Date())
+}
+
+function weekdayLearningIndex() {
+  const today = new Date(`${todayDateString()}T00:00:00+09:00`)
+  let count = 0
+  for (let day = new Date(LEARNING_START_DATE); day <= today; day.setDate(day.getDate() + 1)) {
+    const weekday = day.getDay()
+    if (weekday !== 0 && weekday !== 6) count++
+  }
+  return Math.max(0, count - 1) % learningOrder.length
+}
+
+function indicatorByCode(code: string) {
+  return indicators.find(item => item.code === code) ?? indicators[0]
+}
+
+function learningGuide(item: Indicator) {
+  const areaFocus: Record<string, string> = {
+    'A. 시설 및 환경': '현장 확인과 법정기준 충족 여부가 핵심입니다. 문서가 있어도 실제 공간에서 확인되지 않으면 약해집니다.',
+    'B. 재정 및 조직운영': '인사·회계·결산 자료가 산식과 맞아야 합니다. 기준값, 제외대상, 월별 변동을 먼저 잡아야 합니다.',
+    'C. 프로그램 및 서비스': '계획, 수행, 평가, 환류가 한 줄로 이어져야 합니다. 좋은 사업을 했다는 말보다 과정기록과 변화 근거가 중요합니다.',
+    'D. 이용자의 권리': '규정, 안내, 동의, 교육, 실제 처리기록이 분리되지 않고 연결되어야 합니다. 현장 인터뷰에서 바로 설명 가능해야 합니다.',
+    'E. 시설운영전반': '기관 전체를 관통하는 설명력이 필요합니다. 개별 서류보다 방향성, 질적 수준, 자체평가 정확성이 중요합니다.',
+  }
+  return areaFocus[item.area] ?? '평가기준, 증빙, 현장 설명이 서로 맞는지 확인하는 것이 핵심입니다.'
 }
 
 export default function Evaluation2027Page() {
@@ -103,6 +152,15 @@ export default function Evaluation2027Page() {
   const [area, setArea] = useState('전체')
   const [viewFilter, setViewFilter] = useState<ViewFilter>('전체')
   const [sourceReady, setSourceReady] = useState(false)
+  const [learningCode, setLearningCode] = useState(() => learningOrder[weekdayLearningIndex()])
+  const [learningRecords, setLearningRecords] = useState<LearningRecord[]>([])
+  const [learningDraft, setLearningDraft] = useState({
+    understood: '',
+    risk: '',
+    evidence: '',
+    action: '',
+    confidence: '보통',
+  })
 
   useEffect(() => {
     loadLocal()
@@ -129,6 +187,8 @@ export default function Evaluation2027Page() {
     if (noteRaw) setNotes(JSON.parse(noteRaw))
     const detailRaw = localStorage.getItem(DETAIL_KEY)
     if (detailRaw) setDetails(JSON.parse(detailRaw))
+    const learningRaw = localStorage.getItem(LEARNING_KEY)
+    if (learningRaw) setLearningRecords(JSON.parse(learningRaw))
   }
 
   async function loadCloud(userId: string) {
@@ -304,6 +364,35 @@ export default function Evaluation2027Page() {
     })
   }
 
+  const todayLearning = indicatorByCode(learningCode)
+  const todayDetail = evaluationCriteriaDetails[todayLearning.code] ?? ''
+  const todayEvidence = todayLearning.evidence.join(', ')
+  const latestLearningRecords = learningRecords.slice(0, 6)
+
+  const saveLearningRecord = () => {
+    const record: LearningRecord = {
+      id: `${Date.now()}`,
+      date: todayDateString(),
+      code: todayLearning.code,
+      title: todayLearning.title,
+      understood: learningDraft.understood.trim(),
+      risk: learningDraft.risk.trim(),
+      evidence: learningDraft.evidence.trim(),
+      action: learningDraft.action.trim(),
+      confidence: learningDraft.confidence,
+    }
+    const next = [record, ...learningRecords].slice(0, 200)
+    setLearningRecords(next)
+    localStorage.setItem(LEARNING_KEY, JSON.stringify(next))
+    setLearningDraft({ understood: '', risk: '', evidence: '', action: '', confidence: '보통' })
+  }
+
+  const removeLearningRecord = (id: string) => {
+    const next = learningRecords.filter(record => record.id !== id)
+    setLearningRecords(next)
+    localStorage.setItem(LEARNING_KEY, JSON.stringify(next))
+  }
+
   const applicableCells = indicators.reduce((sum, item) => sum + item.applies.length, 0)
   const evidenceCells = indicators.reduce((sum, item) => sum + (item.applies.length * item.evidence.length), 0)
   const checkedEvidence = indicators.reduce((sum, item) => sum + item.applies.reduce((yearSum, year) => yearSum + item.evidence.filter(evidence => evidenceChecks[evidenceKey(item.code, year, evidence)]).length, 0), 0)
@@ -401,6 +490,141 @@ export default function Evaluation2027Page() {
 
         <section className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
           {[['관리 항목',indicators.length],['적용 셀',applicableCells],['지표 진행률',`${progress}%`],['증빙 진행률',`${evidenceProgress}%`],['확인 중',counts['확인 중']],['부분 충족',counts['부분 충족']],['미충족',counts['미충족']],['중요 미완료',priorityRiskCount]].map(([label,value])=><div key={String(label)} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-xs font-bold text-slate-500">{label}</p><p className="mt-1 text-2xl font-black">{value}</p></div>)}
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
+              <div>
+                <p className="text-xs font-black tracking-[.18em] text-emerald-700">DAILY EVALUATION LETTER</p>
+                <h2 className="mt-1 text-xl font-black text-slate-950">과장 학습노트</h2>
+                <p className="mt-1 text-sm text-slate-600">매일 하나의 지표를 이해하고, 우리 기관의 위험요소와 확인자료를 기록합니다.</p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <select
+                  value={learningCode}
+                  onChange={event => setLearningCode(event.target.value)}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-emerald-700"
+                >
+                  {learningOrder.map(code => {
+                    const item = indicatorByCode(code)
+                    return <option key={code} value={code}>{item.code} {item.title}</option>
+                  })}
+                </select>
+                <button
+                  onClick={() => setLearningCode(learningOrder[weekdayLearningIndex()])}
+                  className="rounded-lg border border-emerald-700 px-3 py-2 text-sm font-black text-emerald-800"
+                >
+                  오늘 지표
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-0 xl:grid-cols-[1.08fr_.92fr]">
+            <div className="border-b border-slate-200 p-5 xl:border-b-0 xl:border-r">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800">{todayLearning.code}</span>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{todayLearning.area}</span>
+                {todayLearning.priority && <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800">우선 학습</span>}
+              </div>
+              <h3 className="mt-3 text-2xl font-black text-slate-950">{todayLearning.title}</h3>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-black text-slate-500">평가에서 보는 핵심</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-800">{todayLearning.requirement}</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-black text-slate-500">과장 관점의 이해 포인트</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-800">{learningGuide(todayLearning)}</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-black text-slate-500">오늘 확인할 자료</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-800">{todayEvidence}</p>
+                </div>
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-xs font-black text-amber-700">오늘의 실행 과제</p>
+                  <p className="mt-2 text-sm leading-6 text-amber-950">{todayLearning.nextAction}</p>
+                </div>
+              </div>
+              <details className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50/50">
+                <summary className="cursor-pointer px-4 py-3 text-sm font-black text-emerald-900">오늘 지표 원문 펼치기</summary>
+                <pre className="max-h-72 overflow-auto border-t border-emerald-200 bg-white p-4 whitespace-pre-wrap break-words font-sans text-xs leading-6 text-slate-700">{todayDetail}</pre>
+              </details>
+            </div>
+            <div className="p-5">
+              <p className="font-black text-slate-950">오늘 학습 기록</p>
+              <div className="mt-3 grid gap-3">
+                <textarea
+                  value={learningDraft.understood}
+                  onChange={event => setLearningDraft(previous => ({ ...previous, understood: event.target.value }))}
+                  placeholder="내가 이해한 핵심"
+                  className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-emerald-700"
+                />
+                <textarea
+                  value={learningDraft.risk}
+                  onChange={event => setLearningDraft(previous => ({ ...previous, risk: event.target.value }))}
+                  placeholder="우리 기관에서 위험한 부분"
+                  className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-emerald-700"
+                />
+                <textarea
+                  value={learningDraft.evidence}
+                  onChange={event => setLearningDraft(previous => ({ ...previous, evidence: event.target.value }))}
+                  placeholder="확인해야 할 자료"
+                  className="min-h-16 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-emerald-700"
+                />
+                <div className="grid gap-3 sm:grid-cols-[1fr_130px]">
+                  <textarea
+                    value={learningDraft.action}
+                    onChange={event => setLearningDraft(previous => ({ ...previous, action: event.target.value }))}
+                    placeholder="후속조치"
+                    className="min-h-16 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-emerald-700"
+                  />
+                  <select
+                    value={learningDraft.confidence}
+                    onChange={event => setLearningDraft(previous => ({ ...previous, confidence: event.target.value }))}
+                    className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm font-bold outline-none focus:border-emerald-700"
+                  >
+                    <option>낮음</option>
+                    <option>보통</option>
+                    <option>높음</option>
+                  </select>
+                </div>
+                <button
+                  onClick={saveLearningRecord}
+                  className="rounded-lg bg-emerald-800 px-4 py-3 text-sm font-black text-white"
+                >
+                  학습기록 저장
+                </button>
+              </div>
+              <div className="mt-5">
+                <p className="mb-2 text-sm font-black text-slate-900">최근 학습기록</p>
+                {latestLearningRecords.length ? (
+                  <div className="space-y-2">
+                    {latestLearningRecords.map(record => (
+                      <div key={record.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-black text-emerald-800">{record.date} · {record.code} {record.title} · 이해도 {record.confidence}</p>
+                            <p className="mt-1 text-xs leading-5 text-slate-700">{record.understood || '핵심 기록 없음'}</p>
+                          </div>
+                          <button onClick={() => removeLearningRecord(record.id)} className="text-xs font-bold text-slate-400 hover:text-red-600">삭제</button>
+                        </div>
+                        {(record.risk || record.evidence || record.action) && (
+                          <p className="mt-2 border-t border-slate-200 pt-2 text-xs leading-5 text-slate-600">
+                            {record.risk && `위험: ${record.risk} `}
+                            {record.evidence && `자료: ${record.evidence} `}
+                            {record.action && `조치: ${record.action}`}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">아직 저장된 학습기록이 없습니다. 오늘 지표를 읽고 첫 기록을 남기면 됩니다.</p>
+                )}
+              </div>
+            </div>
+          </div>
         </section>
 
         <div className="mb-4 flex flex-col justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 md:flex-row md:items-center"><div><p className="font-black text-emerald-950">B8 직원교육시간을 정리하고 있나요?</p><p className="mt-1 text-sm text-emerald-800">교육별 인정·미인정 판정, 직원별 합계, 부족시간과 증빙 누락을 별도 관리할 수 있습니다.</p></div><Link href="/evaluation-2027/b8-training" className="rounded-lg bg-emerald-800 px-4 py-2 text-center text-sm font-black text-white">B8 교육시간 관리 열기</Link></div>
