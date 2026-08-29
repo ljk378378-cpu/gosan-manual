@@ -47,3 +47,49 @@ next-env.d.ts
 /video-guide-assets/
 *.award-edit
 *.dashboard-edit
+
+# local report/export work products - keep on disk, never commit
+/output/
+/assets/
+/samples/
+/evaluation_2027/
+/newsletter_review/
+/webhard_delivery/
+/public/reports/
+/.claude/
+/91219/
+/91219
+
+# office documents and scanned/exported media at project root
+/*.html
+/*.md
+/*.pdf
+/*.hwp
+/*.hwpx
+/*.doc
+/*.docx
+/*.xls
+/*.xlsx
+/*.zip
+/*.jpg
+/*.jpeg
+/*.png
+/*.heic
+/*.mp4
+/*.mov
+
+# legacy Korean-named work folders
+/메뉴얼 사진/
+/메뉴얼 사진2/
+/주민이그린고산 잘나온사진/
+/주민이그린고산 자료사진/
+/성과공유회/
+
+# one-off local production scripts from past report/design work
+/tools/make_four_foam_boards.py
+/tools/make_gosan_split_ppt.js
+/tools/make_group_photo_pickets.py
+/tools/package_foam_boards.py
+/tools/package_group_photo_vendor.py
+/tools/rebuild_drive_submission.py
+/supabase-design-review-round2.sql
