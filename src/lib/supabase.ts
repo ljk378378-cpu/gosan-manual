@@ -95,6 +95,22 @@ export type Evaluation2027Item = {
   updated_at: string
 }
 
+export type Evaluation2027AiTask = {
+  user_id: string
+  id: string
+  date: string
+  title: string
+  lane: string
+  status: string
+  urgency: string
+  approval: boolean
+  source: string
+  output: string
+  memo: string
+  due: string | null
+  updated_at: string
+}
+
 export const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-gray-100 text-gray-600',
   in_progress: 'bg-blue-100 text-blue-700',

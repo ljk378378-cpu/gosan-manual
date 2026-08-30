@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { CRITERIA_SOURCE, evaluationCriteriaDetails } from '@/data/evaluation2027Criteria'
-import { supabase, type Evaluation2027Item } from '@/lib/supabase'
+import { supabase, type Evaluation2027AiTask, type Evaluation2027Item } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 
 type Status = '미착수' | '확인 중' | '충족' | '부분 충족' | '미충족' | '보완 완료'
@@ -124,6 +124,18 @@ type ConnectionCategory = typeof connectionCategories[number]
 const aiTaskLanes: AiTaskLane[] = ['Codex에게 맡길 일', '승인 후 처리할 일', '내가 직접 할 일']
 const aiTaskStatuses: AiTaskStatus[] = ['대기', 'Codex 작업 중', '초안 완료', '승인 필요', '완료', '보류']
 const aiTaskUrgencies: AiTaskUrgency[] = ['오늘', '이번 주', '여유']
+
+function asAiTaskLane(value: string): AiTaskLane {
+  return aiTaskLanes.includes(value as AiTaskLane) ? value as AiTaskLane : 'Codex에게 맡길 일'
+}
+
+function asAiTaskStatus(value: string): AiTaskStatus {
+  return aiTaskStatuses.includes(value as AiTaskStatus) ? value as AiTaskStatus : '대기'
+}
+
+function asAiTaskUrgency(value: string): AiTaskUrgency {
+  return aiTaskUrgencies.includes(value as AiTaskUrgency) ? value as AiTaskUrgency : '오늘'
+}
 
 const learningOrder = [
   'E3','E4','E1','D5','C3-2','C3-1','C3-3','C5','C4',
@@ -273,11 +285,6 @@ export default function Evaluation2027Page() {
     }
 
     const rows = (data ?? []) as Evaluation2027Item[]
-    if (!rows.length) {
-      setCloudStatus('클라우드 연결됨 · 저장자료 없음')
-      return
-    }
-
     const nextStatuses: StatusMap = {}
     const nextEvidence: EvidenceMap = {}
     const nextNotes: NoteMap = {}
@@ -306,7 +313,42 @@ export default function Evaluation2027Page() {
     localStorage.setItem(EVIDENCE_KEY, JSON.stringify(nextEvidence))
     localStorage.setItem(NOTE_KEY, JSON.stringify(nextNotes))
     localStorage.setItem(DETAIL_KEY, JSON.stringify(nextDetails))
+    await loadCloudAiTasks(userId)
     setCloudStatus('클라우드 동기화됨')
+  }
+
+  async function loadCloudAiTasks(userId: string) {
+    const { data, error } = await supabase
+      .from('evaluation_2027_ai_tasks')
+      .select('*')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+
+    if (error) {
+      setCloudError(previous => {
+        const message = `AI 업무함 클라우드 저장 준비 필요: ${error.message}`
+        return previous ? `${previous} / ${message}` : message
+      })
+      return
+    }
+
+    const rows = (data ?? []) as Evaluation2027AiTask[]
+    const next: AiTaskRecord[] = rows.map(row => ({
+      id: row.id,
+      date: row.date,
+      title: row.title ?? '',
+      lane: asAiTaskLane(row.lane ?? ''),
+      status: asAiTaskStatus(row.status ?? ''),
+      urgency: asAiTaskUrgency(row.urgency ?? ''),
+      approval: !!row.approval,
+      source: row.source ?? '',
+      output: row.output ?? '',
+      memo: row.memo ?? '',
+      due: row.due ?? '',
+    }))
+
+    setAiTasks(next)
+    localStorage.setItem(AI_TASK_KEY, JSON.stringify(next))
   }
 
   async function signIn() {
@@ -354,6 +396,9 @@ export default function Evaluation2027Page() {
     for (const item of indicators) {
       await saveCloudItem(item.code, statuses, evidenceChecks, notes, details)
     }
+    for (const task of aiTasks) {
+      await saveCloudAiTask(task)
+    }
     setCloudStatus('로컬 자료 클라우드 반영됨')
   }
 
@@ -387,6 +432,34 @@ export default function Evaluation2027Page() {
     if (error) {
       setCloudStatus('로컬 저장')
       setCloudError(`클라우드 저장 실패: ${error.message}`)
+    } else {
+      setCloudStatus('클라우드 저장됨')
+      setCloudError('')
+    }
+  }
+
+  async function saveCloudAiTask(task: AiTaskRecord) {
+    if (!user) return
+    setCloudStatus('AI 업무함 클라우드 저장 중')
+    const { error } = await supabase.from('evaluation_2027_ai_tasks').upsert({
+      user_id: user.id,
+      id: task.id,
+      date: task.date,
+      title: task.title,
+      lane: task.lane,
+      status: task.status,
+      urgency: task.urgency,
+      approval: task.approval,
+      source: task.source,
+      output: task.output,
+      memo: task.memo,
+      due: task.due || null,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,id' })
+
+    if (error) {
+      setCloudStatus('로컬 저장')
+      setCloudError(`AI 업무함 클라우드 저장 실패: ${error.message}`)
     } else {
       setCloudStatus('클라우드 저장됨')
       setCloudError('')
@@ -509,6 +582,7 @@ export default function Evaluation2027Page() {
     const next = [record, ...aiTasks].slice(0, 200)
     setAiTasks(next)
     localStorage.setItem(AI_TASK_KEY, JSON.stringify(next))
+    saveCloudAiTask(record)
     setAiTaskDraft({
       lane: 'Codex에게 맡길 일',
       urgency: '오늘',
@@ -525,12 +599,30 @@ export default function Evaluation2027Page() {
     const next = aiTasks.map(task => task.id === id ? { ...task, status } : task)
     setAiTasks(next)
     localStorage.setItem(AI_TASK_KEY, JSON.stringify(next))
+    const updated = next.find(task => task.id === id)
+    if (updated) saveCloudAiTask(updated)
   }
 
   const removeAiTask = (id: string) => {
     const next = aiTasks.filter(task => task.id !== id)
     setAiTasks(next)
     localStorage.setItem(AI_TASK_KEY, JSON.stringify(next))
+    if (user) {
+      supabase
+        .from('evaluation_2027_ai_tasks')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('id', id)
+        .then(({ error }) => {
+          if (error) {
+            setCloudStatus('로컬 저장')
+            setCloudError(`AI 업무함 삭제 실패: ${error.message}`)
+          } else {
+            setCloudStatus('클라우드 저장됨')
+            setCloudError('')
+          }
+        })
+    }
   }
 
   const applicableCells = indicators.reduce((sum, item) => sum + item.applies.length, 0)
