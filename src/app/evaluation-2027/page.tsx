@@ -95,15 +95,35 @@ type ConnectionRecord = {
   owner: string
   due: string
 }
+type AiTaskLane = '내가 직접 할 일' | 'Codex에게 맡길 일' | '승인 후 처리할 일'
+type AiTaskStatus = '대기' | 'Codex 작업 중' | '초안 완료' | '승인 필요' | '완료' | '보류'
+type AiTaskUrgency = '오늘' | '이번 주' | '여유'
+type AiTaskRecord = {
+  id: string
+  date: string
+  title: string
+  lane: AiTaskLane
+  status: AiTaskStatus
+  urgency: AiTaskUrgency
+  approval: boolean
+  source: string
+  output: string
+  memo: string
+  due: string
+}
 
 const EVIDENCE_KEY = 'cheonggok-evaluation-2027-evidence-v1'
 const NOTE_KEY = 'cheonggok-evaluation-2027-notes-v1'
 const DETAIL_KEY = 'cheonggok-evaluation-2027-details-v1'
 const LEARNING_KEY = 'cheonggok-evaluation-2027-learning-v1'
 const CONNECTION_KEY = 'cheonggok-evaluation-2027-connections-v1'
+const AI_TASK_KEY = 'cheonggok-evaluation-2027-ai-tasks-v1'
 const LEARNING_START_DATE = new Date('2026-08-31T00:00:00+09:00')
 const connectionCategories = ['수성구청 지도점검', '운영규정', '노무규정', '개인정보·인권', '안전관리', '팀 운영'] as const
 type ConnectionCategory = typeof connectionCategories[number]
+const aiTaskLanes: AiTaskLane[] = ['Codex에게 맡길 일', '승인 후 처리할 일', '내가 직접 할 일']
+const aiTaskStatuses: AiTaskStatus[] = ['대기', 'Codex 작업 중', '초안 완료', '승인 필요', '완료', '보류']
+const aiTaskUrgencies: AiTaskUrgency[] = ['오늘', '이번 주', '여유']
 
 const learningOrder = [
   'E3','E4','E1','D5','C3-2','C3-1','C3-3','C5','C4',
@@ -183,6 +203,26 @@ export default function Evaluation2027Page() {
     owner: '',
     due: '',
   })
+  const [aiTasks, setAiTasks] = useState<AiTaskRecord[]>([])
+  const [aiTaskDraft, setAiTaskDraft] = useState<{
+    lane: AiTaskLane
+    urgency: AiTaskUrgency
+    title: string
+    source: string
+    output: string
+    memo: string
+    due: string
+    approval: boolean
+  }>({
+    lane: 'Codex에게 맡길 일',
+    urgency: '오늘',
+    title: '',
+    source: '',
+    output: '',
+    memo: '',
+    due: '',
+    approval: true,
+  })
 
   useEffect(() => {
     loadLocal()
@@ -213,6 +253,8 @@ export default function Evaluation2027Page() {
     if (learningRaw) setLearningRecords(JSON.parse(learningRaw))
     const connectionRaw = localStorage.getItem(CONNECTION_KEY)
     if (connectionRaw) setConnectionRecords(JSON.parse(connectionRaw))
+    const aiTaskRaw = localStorage.getItem(AI_TASK_KEY)
+    if (aiTaskRaw) setAiTasks(JSON.parse(aiTaskRaw))
   }
 
   async function loadCloud(userId: string) {
@@ -393,6 +435,13 @@ export default function Evaluation2027Page() {
   const todayEvidence = todayLearning.evidence.join(', ')
   const latestLearningRecords = learningRecords.slice(0, 6)
   const latestConnectionRecords = connectionRecords.slice(0, 6)
+  const latestAiTasks = aiTasks.slice(0, 8)
+  const aiTaskStats = {
+    total: aiTasks.length,
+    active: aiTasks.filter(task => task.status === '대기' || task.status === 'Codex 작업 중').length,
+    approval: aiTasks.filter(task => task.approval || task.status === '승인 필요').length,
+    done: aiTasks.filter(task => task.status === '완료').length,
+  }
 
   const saveLearningRecord = () => {
     const record: LearningRecord = {
@@ -440,6 +489,48 @@ export default function Evaluation2027Page() {
     const next = connectionRecords.filter(record => record.id !== id)
     setConnectionRecords(next)
     localStorage.setItem(CONNECTION_KEY, JSON.stringify(next))
+  }
+
+  const saveAiTask = () => {
+    if (!aiTaskDraft.title.trim()) return
+    const record: AiTaskRecord = {
+      id: `${Date.now()}`,
+      date: todayDateString(),
+      title: aiTaskDraft.title.trim(),
+      lane: aiTaskDraft.lane,
+      status: aiTaskDraft.approval ? '승인 필요' : '대기',
+      urgency: aiTaskDraft.urgency,
+      approval: aiTaskDraft.approval,
+      source: aiTaskDraft.source.trim(),
+      output: aiTaskDraft.output.trim(),
+      memo: aiTaskDraft.memo.trim(),
+      due: aiTaskDraft.due,
+    }
+    const next = [record, ...aiTasks].slice(0, 200)
+    setAiTasks(next)
+    localStorage.setItem(AI_TASK_KEY, JSON.stringify(next))
+    setAiTaskDraft({
+      lane: 'Codex에게 맡길 일',
+      urgency: '오늘',
+      title: '',
+      source: '',
+      output: '',
+      memo: '',
+      due: '',
+      approval: true,
+    })
+  }
+
+  const updateAiTaskStatus = (id: string, status: AiTaskStatus) => {
+    const next = aiTasks.map(task => task.id === id ? { ...task, status } : task)
+    setAiTasks(next)
+    localStorage.setItem(AI_TASK_KEY, JSON.stringify(next))
+  }
+
+  const removeAiTask = (id: string) => {
+    const next = aiTasks.filter(task => task.id !== id)
+    setAiTasks(next)
+    localStorage.setItem(AI_TASK_KEY, JSON.stringify(next))
   }
 
   const applicableCells = indicators.reduce((sum, item) => sum + item.applies.length, 0)
@@ -778,6 +869,150 @@ export default function Evaluation2027Page() {
                   </div>
                 ) : (
                   <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">아직 연결 메모가 없습니다. 오늘 지표가 어떤 규정이나 지도점검 항목과 이어지는지 하나만 남기면 됩니다.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-[#eef7f5] p-4">
+            <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
+              <div>
+                <p className="text-xs font-black tracking-[.18em] text-emerald-700">AI WORK QUEUE</p>
+                <h2 className="mt-1 text-xl font-black text-slate-950">AI 업무함</h2>
+                <p className="mt-1 text-sm text-slate-600">과장님이 급한 일에 집중하는 동안 Codex가 읽기, 비교, 정리, 초안 작성을 맡을 수 있도록 대기작업을 쌓아둡니다.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-700 sm:grid-cols-4">
+                <span className="rounded-lg border border-emerald-200 bg-white px-3 py-2">전체 {aiTaskStats.total}</span>
+                <span className="rounded-lg border border-amber-200 bg-white px-3 py-2">진행대기 {aiTaskStats.active}</span>
+                <span className="rounded-lg border border-rose-200 bg-white px-3 py-2">승인 {aiTaskStats.approval}</span>
+                <span className="rounded-lg border border-slate-200 bg-white px-3 py-2">완료 {aiTaskStats.done}</span>
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-0 xl:grid-cols-[.95fr_1.05fr]">
+            <div className="border-b border-slate-200 p-5 xl:border-b-0 xl:border-r">
+              <div className="grid gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <select
+                    value={aiTaskDraft.lane}
+                    onChange={event => setAiTaskDraft(previous => ({ ...previous, lane: event.target.value as AiTaskLane }))}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-emerald-700"
+                  >
+                    {aiTaskLanes.map(lane => <option key={lane}>{lane}</option>)}
+                  </select>
+                  <select
+                    value={aiTaskDraft.urgency}
+                    onChange={event => setAiTaskDraft(previous => ({ ...previous, urgency: event.target.value as AiTaskUrgency }))}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-emerald-700"
+                  >
+                    {aiTaskUrgencies.map(urgency => <option key={urgency}>{urgency}</option>)}
+                  </select>
+                </div>
+                <input
+                  value={aiTaskDraft.title}
+                  onChange={event => setAiTaskDraft(previous => ({ ...previous, title: event.target.value }))}
+                  placeholder="업무 제목"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-700"
+                />
+                <input
+                  value={aiTaskDraft.source}
+                  onChange={event => setAiTaskDraft(previous => ({ ...previous, source: event.target.value }))}
+                  placeholder="자료 위치: Google Drive, 로컬 폴더, NAS, 파일명"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-700"
+                />
+                <input
+                  value={aiTaskDraft.output}
+                  onChange={event => setAiTaskDraft(previous => ({ ...previous, output: event.target.value }))}
+                  placeholder="기대 산출물: 비교표, 누락체크, 보완문장, 보고서 초안"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-700"
+                />
+                <textarea
+                  value={aiTaskDraft.memo}
+                  onChange={event => setAiTaskDraft(previous => ({ ...previous, memo: event.target.value }))}
+                  placeholder="작업 원칙: 원본 수정 금지, 개인정보 주의, 표 양식 유지 등"
+                  className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-emerald-700"
+                />
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                  <input
+                    type="date"
+                    value={aiTaskDraft.due}
+                    onChange={event => setAiTaskDraft(previous => ({ ...previous, due: event.target.value }))}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-700"
+                  />
+                  <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={aiTaskDraft.approval}
+                      onChange={event => setAiTaskDraft(previous => ({ ...previous, approval: event.target.checked }))}
+                    />
+                    승인 필요
+                  </label>
+                </div>
+                <button
+                  onClick={saveAiTask}
+                  className="rounded-lg bg-emerald-800 px-4 py-3 text-sm font-black text-white"
+                >
+                  AI 업무 등록
+                </button>
+              </div>
+            </div>
+            <div className="p-5">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                  <p className="text-xs font-black text-emerald-700">맡기기 좋은 일</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-800">PDF 읽기, 기준 대조, 표 정리, 초안 작성처럼 판단 전 준비가 필요한 일입니다.</p>
+                </div>
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-xs font-black text-amber-700">승인 필요한 일</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-800">Drive 원본 수정, 배포, 삭제, 대외 발송처럼 과장님 확인 뒤 진행할 일입니다.</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-black text-slate-700">직접 할 일</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-800">결재 판단, 팀 조율, 대외 설명처럼 현장 판단이 필요한 일을 분리합니다.</p>
+                </div>
+              </div>
+              <div className="mt-5">
+                <p className="mb-2 text-sm font-black text-slate-900">최근 AI 업무</p>
+                {latestAiTasks.length ? (
+                  <div className="space-y-2">
+                    {latestAiTasks.map(task => (
+                      <div key={task.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                          <div>
+                            <p className="text-xs font-black text-emerald-800">{task.date} · {task.urgency} · {task.lane}</p>
+                            <p className="mt-1 text-sm font-black text-slate-950">{task.title}</p>
+                            {(task.source || task.output) && (
+                              <p className="mt-2 text-xs leading-5 text-slate-600">
+                                {task.source && `자료: ${task.source} `}
+                                {task.output && `산출물: ${task.output}`}
+                              </p>
+                            )}
+                            {(task.memo || task.due || task.approval) && (
+                              <p className="mt-2 border-t border-slate-200 pt-2 text-xs leading-5 text-slate-600">
+                                {task.memo && `원칙: ${task.memo} `}
+                                {task.due && `기한: ${task.due} `}
+                                {task.approval && '과장 승인 후 진행'}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <select
+                              value={task.status}
+                              onChange={event => updateAiTaskStatus(task.id, event.target.value as AiTaskStatus)}
+                              className="rounded-lg border border-slate-300 bg-white px-2 py-2 text-xs font-bold outline-none focus:border-emerald-700"
+                            >
+                              {aiTaskStatuses.map(status => <option key={status}>{status}</option>)}
+                            </select>
+                            <button onClick={() => removeAiTask(task.id)} className="text-xs font-bold text-slate-400 hover:text-red-600">삭제</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">아직 등록된 AI 업무가 없습니다. 출근 전, 자기 전, 이동 전에 맡길 일을 한 줄로 남기면 다음 작업을 바로 이어갈 수 있습니다.</p>
                 )}
               </div>
             </div>
