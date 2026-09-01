@@ -656,7 +656,11 @@ export default function Evaluation2027Page() {
       </header>
 
       <div className="mx-auto max-w-[1500px] px-5 py-6 md:px-8">
-        <div className="mb-5 flex gap-2"><button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white">27년 평가 특별반</button><Link href="/inspection-2026" className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-cyan-500 hover:text-cyan-700">2026 수성구청 지도점검 →</Link></div>
+        <div className="mb-5 flex flex-wrap gap-2">
+          <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white">27년 평가 특별반</button>
+          <Link href="/inspection-2026" className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-cyan-500 hover:text-cyan-700">2026 수성구청 지도점검 →</Link>
+          <Link href="/team-command" className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-emerald-500 hover:text-emerald-700">팀 운영 컨트롤타워 →</Link>
+        </div>
 
         <section className={`mb-5 rounded-xl border p-4 ${sourceReady ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
           <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center"><div><p className="font-black">기준자료 상태: {sourceReady ? '정오표 반영본 확인 표시' : CRITERIA_SOURCE.status}</p><p className="mt-1 text-sm text-slate-600">현재 상세기준: {CRITERIA_SOURCE.title} · 원문 읽기 전용</p><p className="mt-1 text-xs text-slate-500">최종 기준 예정: evaluation_2027/source/2027년_사회복지관_평가지표_260608_정오표반영.pdf</p></div><button onClick={()=>setSourceReady(v=>!v)} className="rounded-lg border border-current px-3 py-2 text-xs font-bold">{sourceReady ? '확인 표시 취소' : '정오표 파일 동기화 후 확인'}</button></div>

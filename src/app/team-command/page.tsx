@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 type TeamKey = '지역사회조직팀' | '서비스제공팀' | '공통'
 type StaffKey = '1차 판단 지원 필요' | '기본업무 누락관리 필요' | '실행형 업무 중심 배정' | '겸직 우선순위 조정 필요' | '공통'
-type ReportType = '결재' | '상의' | '공유' | '긴급'
+type ReportType = '당일 결재' | '익일 사전검토' | '시간외 상의' | '단순 공유' | '즉시보고'
 type ReportStatus = '접수' | '돌려보냄' | '판단완료' | '추적필요' | '완료'
 
 type ReportRecord = {
@@ -26,7 +26,7 @@ type ReportRecord = {
 const STORAGE_KEY = 'cheonggok-team-command-reports-v1'
 const teamKeys: TeamKey[] = ['지역사회조직팀', '서비스제공팀', '공통']
 const staffKeys: StaffKey[] = ['1차 판단 지원 필요', '기본업무 누락관리 필요', '실행형 업무 중심 배정', '겸직 우선순위 조정 필요', '공통']
-const reportTypes: ReportType[] = ['결재', '상의', '공유', '긴급']
+const reportTypes: ReportType[] = ['당일 결재', '익일 사전검토', '시간외 상의', '단순 공유', '즉시보고']
 const reportStatuses: ReportStatus[] = ['접수', '돌려보냄', '판단완료', '추적필요', '완료']
 
 const teamStructures = [
@@ -79,23 +79,23 @@ const staffProfiles = [
 
 const decisionRules = [
   {
-    title: '단순 공유',
-    rule: '대면보고하지 않고 메신저 또는 업무메모로 남김',
-    question: '지금 과장이 즉시 판단해야 하는 사안인가?',
+    title: '09:00~09:30 당일 결재',
+    rule: '과장 결재 후 부장 개별 결재로 올라갈 문서만 처리함. 단순 상의성 문서는 받지 않음',
+    question: '이 문서는 오늘 부장 결재로 바로 올라갈 수준인가?',
   },
   {
-    title: '판단 필요',
-    rule: '선택지 2개 이상과 본인 추천안을 포함해 보고',
-    question: '본인이 보기에는 어느 안이 맞는가?',
+    title: '17:00~18:00 익일 결재 사전검토',
+    rule: '다음 날 결재할 결과보고서, 계획서, 기안문을 미리 보고 수정 피드백을 줌',
+    question: '내일 아침 결재 전에 꼼꼼히 봐야 하는 문서인가?',
   },
   {
-    title: '결재 필요',
-    rule: '결재문서, 자가점검표, 피드백 반영표를 함께 제출',
-    question: '지난 피드백은 어디에 반영했는가?',
+    title: '그 외 시간 수시보고 제한',
+    rule: '긴급이 아니면 메모로 남기고 정해진 결재·사전검토 시간에 처리함',
+    question: '지금 과장 업무를 끊고 즉시 판단해야 하는 사안인가?',
   },
   {
-    title: '긴급',
-    rule: '이용자 안전, 민원, 사고, 대외기관 대응만 즉시 보고',
+    title: '즉시보고 예외',
+    rule: '이용자 안전, 민원, 사고, 대외기관 긴급 대응, 당일 행사 차질 사안만 즉시 보고',
     question: '지금 놓치면 피해가 발생하는가?',
   },
 ]
@@ -104,7 +104,9 @@ const scripts = [
   '선생님이 생각한 결론은 무엇인가요?',
   '선택지는 몇 가지이고, 그중 어떤 안을 추천하나요?',
   '제가 지금 결정해야 하는 것은 정확히 무엇인가요?',
-  '이 사안은 메모로 남기고 오후 보고시간에 같이 보겠습니다.',
+  '이 사안은 메모로 남기고 17시 사전검토 시간에 같이 보겠습니다.',
+  '내일 결재문서는 오늘 17시 전에 먼저 올려주세요.',
+  '지금은 제 업무 집중시간이라 긴급이 아니면 정해진 시간에 보겠습니다.',
   '지난 피드백 반영표를 붙여서 다시 가져와 주세요.',
 ]
 
@@ -124,7 +126,7 @@ export default function TeamCommandPage() {
   const [draft, setDraft] = useState({
     team: '공통' as TeamKey,
     staff: '공통' as StaffKey,
-    type: '상의' as ReportType,
+    type: '시간외 상의' as ReportType,
     title: '',
     issue: '',
     staffOption: '',
@@ -170,7 +172,7 @@ export default function TeamCommandPage() {
     setDraft({
       team: '공통',
       staff: '공통',
-      type: '상의',
+      type: '시간외 상의',
       title: '',
       issue: '',
       staffOption: '',
@@ -333,12 +335,12 @@ export default function TeamCommandPage() {
 
         <section className="mb-5 grid gap-5 lg:grid-cols-[.9fr_1.1fr]">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black tracking-[.18em] text-slate-500">PROTECTED TIME</p>
-            <h2 className="mt-1 text-xl font-black">과장 업무시간 보호선</h2>
+              <p className="text-xs font-black tracking-[.18em] text-slate-500">PROTECTED TIME</p>
+              <h2 className="mt-1 text-xl font-black">과장 업무시간 보호선</h2>
             <div className="mt-4 space-y-3 text-sm leading-6 text-slate-700">
-              <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"><b>09:30~10:00</b> 긴급 결재·오늘 판단만 처리</p>
-              <p className="rounded-xl border border-slate-200 bg-slate-50 p-4"><b>10:00~15:30</b> 수시보고는 메모로 남기고 즉시 대면 금지</p>
-              <p className="rounded-xl border border-amber-200 bg-amber-50 p-4"><b>16:30~17:00</b> 진행상황·내일 준비·추적사항 확인</p>
+              <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"><b>09:00~09:30</b> 당일 결재. 과장 결재 후 부장 결재로 바로 올라갈 문서만 처리</p>
+              <p className="rounded-xl border border-slate-200 bg-slate-50 p-4"><b>09:30~17:00</b> 집중업무 시간. 수시보고는 긴급상황만 받고, 일반 상의는 메모로 전환</p>
+              <p className="rounded-xl border border-amber-200 bg-amber-50 p-4"><b>17:00~18:00</b> 익일 결재 사전검토. 결과보고서 등 꼼꼼한 확인이 필요한 문서 피드백</p>
             </div>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
