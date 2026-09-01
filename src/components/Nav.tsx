@@ -9,6 +9,7 @@ const navItems = [
   { href: '/comments', label: '의견 게시판', icon: '💬' },
   { href: '/designer', label: '디자인 브리핑', icon: '🎨' },
   { href: '/design-review', label: '수정요청', icon: '✏️' },
+  { href: '/team-command', label: '팀 운영', icon: '팀' },
   { href: '/report', label: '보고서 출력', icon: '🖨️' },
 ]
 
