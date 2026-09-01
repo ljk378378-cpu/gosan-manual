@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 type TeamKey = '지역사회조직팀' | '서비스제공팀' | '공통'
 type StaffKey = '1차 판단 지원 필요' | '기본업무 누락관리 필요' | '실행형 업무 중심 배정' | '겸직 우선순위 조정 필요' | '공통'
-type ReportType = '당일 결재' | '익일 사전검토' | '시간외 상의' | '단순 공유' | '즉시보고'
+type ReportType = '당일 결재' | '익일 문서 제출' | '익일 사전검토' | '시간외 상의' | '단순 공유' | '즉시보고' | '퇴근 이후 문의'
 type ReportStatus = '접수' | '돌려보냄' | '판단완료' | '추적필요' | '완료'
 
 type ReportRecord = {
@@ -26,7 +26,7 @@ type ReportRecord = {
 const STORAGE_KEY = 'cheonggok-team-command-reports-v1'
 const teamKeys: TeamKey[] = ['지역사회조직팀', '서비스제공팀', '공통']
 const staffKeys: StaffKey[] = ['1차 판단 지원 필요', '기본업무 누락관리 필요', '실행형 업무 중심 배정', '겸직 우선순위 조정 필요', '공통']
-const reportTypes: ReportType[] = ['당일 결재', '익일 사전검토', '시간외 상의', '단순 공유', '즉시보고']
+const reportTypes: ReportType[] = ['당일 결재', '익일 문서 제출', '익일 사전검토', '시간외 상의', '단순 공유', '즉시보고', '퇴근 이후 문의']
 const reportStatuses: ReportStatus[] = ['접수', '돌려보냄', '판단완료', '추적필요', '완료']
 
 const teamStructures = [
@@ -84,9 +84,19 @@ const decisionRules = [
     question: '이 문서는 오늘 부장 결재로 바로 올라갈 수준인가?',
   },
   {
-    title: '17:00~18:00 익일 결재 사전검토',
-    rule: '다음 날 결재할 결과보고서, 계획서, 기안문을 미리 보고 수정 피드백을 줌',
-    question: '내일 아침 결재 전에 꼼꼼히 봐야 하는 문서인가?',
+    title: '16:30 익일 문서 제출 마감',
+    rule: '다음 날 결재할 계획서, 결과보고서, 기안문은 16:30까지 제출함',
+    question: '내일 결재가 필요한 문서를 마감 전에 올렸는가?',
+  },
+  {
+    title: '17:00~17:30 익일 결재 사전검토',
+    rule: '결과보고서 등 꼼꼼한 확인이 필요한 문서만 집중 검토하고 수정 피드백을 줌',
+    question: '내일 아침 결재 전에 반드시 확인해야 하는 문서인가?',
+  },
+  {
+    title: '17:30~18:00 과장 정리시간',
+    rule: '피드백 기록, 다음 날 결재 순서, 미완료 업무 정리에 사용함',
+    question: '이 사안이 오늘 정리시간을 중단해야 할 만큼 긴급한가?',
   },
   {
     title: '그 외 시간 수시보고 제한',
@@ -98,6 +108,11 @@ const decisionRules = [
     rule: '이용자 안전, 민원, 사고, 대외기관 긴급 대응, 당일 행사 차질 사안만 즉시 보고',
     question: '지금 놓치면 피해가 발생하는가?',
   },
+  {
+    title: '18:00 이후 문의 제한',
+    rule: '퇴근 이후 메시지·카톡 문의와 상의는 원칙적으로 받지 않고, 긴급상황만 예외로 처리함',
+    question: '내일 근무시간까지 기다릴 수 없는 긴급상황인가?',
+  },
 ]
 
 const scripts = [
@@ -105,8 +120,11 @@ const scripts = [
   '선택지는 몇 가지이고, 그중 어떤 안을 추천하나요?',
   '제가 지금 결정해야 하는 것은 정확히 무엇인가요?',
   '이 사안은 메모로 남기고 17시 사전검토 시간에 같이 보겠습니다.',
-  '내일 결재문서는 오늘 17시 전에 먼저 올려주세요.',
+  '내일 결재문서는 오늘 16시 30분까지 먼저 올려주세요.',
+  '17시부터 17시 30분까지는 익일 결재문서만 집중해서 보겠습니다.',
+  '17시 30분 이후에는 오늘 피드백과 내일 결재 순서를 정리하겠습니다.',
   '지금은 제 업무 집중시간이라 긴급이 아니면 정해진 시간에 보겠습니다.',
+  '퇴근 이후 메시지·카톡 상의는 긴급상황이 아니면 다음 근무일에 확인하겠습니다.',
   '지난 피드백 반영표를 붙여서 다시 가져와 주세요.',
 ]
 
@@ -339,8 +357,11 @@ export default function TeamCommandPage() {
               <h2 className="mt-1 text-xl font-black">과장 업무시간 보호선</h2>
             <div className="mt-4 space-y-3 text-sm leading-6 text-slate-700">
               <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"><b>09:00~09:30</b> 당일 결재. 과장 결재 후 부장 결재로 바로 올라갈 문서만 처리</p>
-              <p className="rounded-xl border border-slate-200 bg-slate-50 p-4"><b>09:30~17:00</b> 집중업무 시간. 수시보고는 긴급상황만 받고, 일반 상의는 메모로 전환</p>
-              <p className="rounded-xl border border-amber-200 bg-amber-50 p-4"><b>17:00~18:00</b> 익일 결재 사전검토. 결과보고서 등 꼼꼼한 확인이 필요한 문서 피드백</p>
+              <p className="rounded-xl border border-slate-200 bg-slate-50 p-4"><b>09:30~16:30</b> 집중업무 시간. 수시보고는 긴급상황만 받고, 일반 상의는 메모로 전환</p>
+              <p className="rounded-xl border border-sky-200 bg-sky-50 p-4"><b>16:30</b> 익일 결재문서 제출 마감. 다음 날 결재가 필요한 문서는 이 시간까지 제출</p>
+              <p className="rounded-xl border border-amber-200 bg-amber-50 p-4"><b>17:00~17:30</b> 익일 결재 사전검토. 결과보고서 등 꼼꼼한 확인이 필요한 문서 피드백</p>
+              <p className="rounded-xl border border-violet-200 bg-violet-50 p-4"><b>17:30~18:00</b> 과장 정리시간. 피드백 기록, 다음 날 결재 순서, 미완료 업무 정리</p>
+              <p className="rounded-xl border border-red-200 bg-red-50 p-4"><b>18:00 이후</b> 메시지·카톡 문의·상의 제한. 긴급상황만 예외 처리</p>
             </div>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
