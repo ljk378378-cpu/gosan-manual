@@ -351,22 +351,6 @@ export default function Evaluation2027Page() {
     localStorage.setItem(AI_TASK_KEY, JSON.stringify(next))
   }
 
-  async function signIn() {
-    if (!email.trim()) return
-    setCloudError('')
-    setCloudStatus('로그인 메일 발송 중')
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: window.location.href },
-    })
-    if (error) {
-      setCloudStatus('로컬 저장')
-      setCloudError(error.message)
-    } else {
-      setCloudStatus('메일함에서 로그인 링크 확인')
-    }
-  }
-
   async function signInWithPassword() {
     if (!email.trim() || !password) return
     setCloudError('')
@@ -683,7 +667,7 @@ export default function Evaluation2027Page() {
             <div>
               <p className="font-black text-slate-900">저장 방식: {cloudStatus}</p>
               <p className="mt-1 text-sm text-slate-600">
-                {user ? `${user.email} 계정으로 로그인됨 · 맥/윈도우에서 같은 계정으로 접속하면 이어서 관리 가능` : '로그인 전에는 현재 브라우저에만 저장됩니다.'}
+                {user ? `${user.email} 계정으로 로그인됨 · 맥/윈도우에서 같은 계정으로 접속하면 이어서 관리 가능` : '아이디와 비밀번호로 로그인하면 맥/윈도우/휴대폰에서 같은 자료를 이어서 관리할 수 있습니다.'}
               </p>
               {cloudError && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{cloudError}</p>}
             </div>
@@ -695,12 +679,13 @@ export default function Evaluation2027Page() {
               </div>
             ) : (
               <div className="flex min-w-0 flex-col gap-2">
+                <p className="text-xs font-black text-emerald-800">아이디·비밀번호 로그인</p>
                 <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
                   <input
                     type="email"
                     value={email}
                     onChange={event => setEmail(event.target.value)}
-                    placeholder="이메일 입력"
+                    placeholder="아이디(이메일)"
                     className="min-w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-700"
                   />
                   <input
@@ -712,8 +697,7 @@ export default function Evaluation2027Page() {
                   />
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button onClick={signInWithPassword} className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-black text-white">비밀번호 로그인</button>
-                  <button onClick={signIn} className="rounded-lg border border-emerald-700 px-4 py-2 text-sm font-black text-emerald-800">로그인 링크 받기</button>
+                  <button onClick={signInWithPassword} className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-black text-white">로그인</button>
                 </div>
               </div>
             )}
