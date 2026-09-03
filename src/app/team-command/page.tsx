@@ -8,6 +8,16 @@ type ReportType = '당일 결재' | '익일 문서 제출' | '익일 사전검�
 type ReportStatus = '접수' | '돌려보냄' | '판단완료' | '추적필요' | '완료'
 type BurdenReason = '직원안 없음' | '반복누락' | '기한임박' | '역할불명확' | '과장 결정 의존' | '긴급예외'
 type BoundaryAction = '직원안 재제출' | '체크리스트 요구' | '정해진 시간 재상담' | '담당자 역할 재확인' | '과장 판단 후 종료' | '즉시 대응'
+type QuickTemplate = {
+  title: string
+  type: ReportType
+  burdenReason: BurdenReason
+  boundaryAction: BoundaryAction
+  status: ReportStatus
+  minutes: number
+  issue: string
+  feedback: string
+}
 
 type ReportRecord = {
   id: string
@@ -24,6 +34,7 @@ type ReportRecord = {
   status: ReportStatus
   burdenReason: BurdenReason
   boundaryAction: BoundaryAction
+  minutes: number
 }
 
 const STORAGE_KEY = 'cheonggok-team-command-reports-v1'
@@ -156,6 +167,59 @@ const burdenChecks = [
   },
 ]
 
+const quickTemplates: QuickTemplate[] = [
+  {
+    title: '직원안 없이 상의 들어옴',
+    type: '시간외 상의',
+    burdenReason: '직원안 없음',
+    boundaryAction: '직원안 재제출',
+    status: '돌려보냄',
+    minutes: 10,
+    issue: '상황 설명은 있었으나 직원의 선택지와 추천안이 정리되지 않은 상태로 상의가 들어옴',
+    feedback: '본인 판단안과 추천안을 정리한 뒤 정해진 시간에 다시 상의하도록 안내함',
+  },
+  {
+    title: '반복누락 재피드백',
+    type: '시간외 상의',
+    burdenReason: '반복누락',
+    boundaryAction: '체크리스트 요구',
+    status: '추적필요',
+    minutes: 15,
+    issue: '이전에 안내한 내용이 다시 누락되어 추가 확인과 재피드백이 필요했음',
+    feedback: '동일 항목 반복누락 방지를 위해 체크리스트 확인 후 재제출하도록 안내함',
+  },
+  {
+    title: '마감임박 문서 검토 요청',
+    type: '시간외 상의',
+    burdenReason: '기한임박',
+    boundaryAction: '정해진 시간 재상담',
+    status: '추적필요',
+    minutes: 20,
+    issue: '충분한 사전검토 시간 없이 마감이 임박한 상태에서 검토 요청이 들어옴',
+    feedback: '긴급 여부만 확인하고, 다음부터는 16:30 제출마감 기준을 지키도록 안내함',
+  },
+  {
+    title: '과장 결정 의존',
+    type: '시간외 상의',
+    burdenReason: '과장 결정 의존',
+    boundaryAction: '담당자 역할 재확인',
+    status: '추적필요',
+    minutes: 15,
+    issue: '담당자가 1차 판단을 충분히 정리하지 않고 과장 판단에 의존하는 형태로 상의가 진행됨',
+    feedback: '담당자가 먼저 실행안과 추천안을 정리하고 과장은 최종 조정하는 방식으로 안내함',
+  },
+  {
+    title: '긴급예외 즉시대응',
+    type: '즉시보고',
+    burdenReason: '긴급예외',
+    boundaryAction: '즉시 대응',
+    status: '판단완료',
+    minutes: 20,
+    issue: '이용자 안전, 민원, 사고, 대외기관 대응 등 즉시 판단이 필요한 사안으로 보고됨',
+    feedback: '긴급 사안으로 판단하여 즉시 확인하고 필요한 조치를 진행함',
+  },
+]
+
 function todayDateString() {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(new Date())
 }
@@ -181,6 +245,7 @@ export default function TeamCommandPage() {
     nextDue: '',
     burdenReason: '과장 결정 의존' as BurdenReason,
     boundaryAction: '직원안 재제출' as BoundaryAction,
+    minutes: 10,
   })
 
   useEffect(() => {
@@ -189,14 +254,44 @@ export default function TeamCommandPage() {
   }, [])
 
   const stats = useMemo(() => {
+    const today = todayDateString()
+    const todayRecords = records.filter(record => record.date === today)
+    const todayTakeoverRisk = todayRecords.filter(record => record.status === '돌려보냄' || !record.staffOption || record.type === '시간외 상의' || record.type === '퇴근 이후 문의')
     const active = records.filter(record => record.status !== '완료')
     return {
       total: records.length,
+      today: todayRecords.length,
       active: active.length,
       returned: records.filter(record => record.status === '돌려보냄').length,
       tracking: records.filter(record => record.status === '추적필요').length,
       takeoverRisk: records.filter(record => record.status === '돌려보냄' || !record.staffOption || record.type === '시간외 상의' || record.type === '퇴근 이후 문의').length,
+      todayTakeoverRisk: todayTakeoverRisk.length,
+      todayMinutes: todayRecords.reduce((sum, record) => sum + Number(record.minutes || 0), 0),
+      todayReturned: todayRecords.filter(record => record.status === '돌려보냄').length,
     }
+  }, [records])
+
+  const todaySummary = useMemo(() => {
+    const today = todayDateString()
+    const todayRecords = records.filter(record => record.date === today)
+    const takeoverRecords = todayRecords.filter(record => record.status === '돌려보냄' || !record.staffOption || record.type === '시간외 상의' || record.type === '퇴근 이후 문의')
+    const minutes = todayRecords.reduce((sum, record) => sum + Number(record.minutes || 0), 0)
+    const recentLines = todayRecords.slice(0, 8).map(record => `- ${record.staff} / ${record.burdenReason || record.type} / ${record.title} / ${record.boundaryAction || record.status} / ${record.minutes || 0}분`)
+    return [
+      `[${today} 팀 운영 기록]`,
+      `오늘 수시보고: ${todayRecords.length}건`,
+      `떠안음 위험: ${takeoverRecords.length}건`,
+      `돌려보냄: ${todayRecords.filter(record => record.status === '돌려보냄').length}건`,
+      `빼앗긴 시간: ${minutes}분`,
+      '',
+      '주요 기록',
+      recentLines.length ? recentLines.join('\n') : '- 기록 없음',
+      '',
+      '내일 적용 기준',
+      '- 직원안 없는 상의는 받지 않고 재정리 요청',
+      '- 반복누락은 구두 피드백보다 체크리스트로 관리',
+      '- 마감임박 문서는 긴급 여부만 판단하고 제출기준 재안내',
+    ].join('\n')
   }, [records])
 
   const saveRecord = () => {
@@ -216,6 +311,7 @@ export default function TeamCommandPage() {
       status: draft.staffOption.trim() ? '접수' : '돌려보냄',
       burdenReason: draft.burdenReason,
       boundaryAction: draft.boundaryAction,
+      minutes: Number(draft.minutes) || 0,
     }
     const next = [record, ...records].slice(0, 300)
     setRecords(next)
@@ -232,7 +328,31 @@ export default function TeamCommandPage() {
       nextDue: '',
       burdenReason: '과장 결정 의존',
       boundaryAction: '직원안 재제출',
+      minutes: 10,
     })
+  }
+
+  const saveQuickRecord = (template: QuickTemplate) => {
+    const record: ReportRecord = {
+      id: `${Date.now()}`,
+      date: todayDateString(),
+      team: draft.team,
+      staff: draft.staff,
+      type: template.type,
+      title: template.title,
+      issue: template.issue,
+      staffOption: '',
+      requestedDecision: '',
+      feedback: template.feedback,
+      nextDue: '',
+      status: template.status,
+      burdenReason: template.burdenReason,
+      boundaryAction: template.boundaryAction,
+      minutes: template.minutes,
+    }
+    const next = [record, ...records].slice(0, 300)
+    setRecords(next)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
   }
 
   const updateStatus = (id: string, status: ReportStatus) => {
@@ -277,25 +397,63 @@ export default function TeamCommandPage() {
 
         <section className="mb-5 grid gap-3 md:grid-cols-5">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black text-slate-500">기록</p>
-            <p className="mt-2 text-3xl font-black">{stats.total}</p>
+            <p className="text-xs font-black text-slate-500">오늘 수시보고</p>
+            <p className="mt-2 text-3xl font-black">{stats.today}</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black text-slate-500">미완료</p>
-            <p className="mt-2 text-3xl font-black">{stats.active}</p>
+            <p className="text-xs font-black text-slate-500">빼앗긴 시간</p>
+            <p className="mt-2 text-3xl font-black">{stats.todayMinutes}<span className="ml-1 text-base">분</span></p>
           </div>
           <div className="rounded-2xl border border-red-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black text-red-600">돌려보냄</p>
-            <p className="mt-2 text-3xl font-black">{stats.returned}</p>
+            <p className="text-xs font-black text-red-600">오늘 떠안음 위험</p>
+            <p className="mt-2 text-3xl font-black">{stats.todayTakeoverRisk}</p>
           </div>
           <div className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black text-amber-600">추적필요</p>
-            <p className="mt-2 text-3xl font-black">{stats.tracking}</p>
+            <p className="text-xs font-black text-amber-600">오늘 돌려보냄</p>
+            <p className="mt-2 text-3xl font-black">{stats.todayReturned}</p>
           </div>
           <div className="rounded-2xl border border-red-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black text-red-600">떠안음 위험</p>
-            <p className="mt-2 text-3xl font-black">{stats.takeoverRisk}</p>
+            <p className="text-xs font-black text-red-600">전체 미완료</p>
+            <p className="mt-2 text-3xl font-black">{stats.active}</p>
           </div>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+          <div className="border-b border-emerald-100 bg-emerald-50 p-4">
+            <p className="text-xs font-black tracking-[.18em] text-emerald-700">30 SECOND LOG</p>
+            <h2 className="mt-1 text-xl font-black">바로 찍는 빠른 기록</h2>
+            <p className="mt-1 text-sm leading-6 text-emerald-900">직원이 들어온 순간 길게 쓰지 말고 대상만 고른 뒤 해당 버튼을 누릅니다.</p>
+          </div>
+          <div className="grid gap-3 border-b border-slate-100 p-5 md:grid-cols-2">
+            <select value={draft.team} onChange={event => setDraft(previous => ({ ...previous, team: event.target.value as TeamKey }))} className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold">
+              {teamKeys.map(key => <option key={key}>{key}</option>)}
+            </select>
+            <select value={draft.staff} onChange={event => setDraft(previous => ({ ...previous, staff: event.target.value as StaffKey }))} className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold">
+              {staffKeys.map(key => <option key={key}>{key}</option>)}
+            </select>
+          </div>
+          <div className="grid gap-3 p-5 md:grid-cols-5">
+            {quickTemplates.map(template => (
+              <button key={template.title} onClick={() => saveQuickRecord(template)} className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-emerald-400 hover:bg-emerald-50">
+                <p className="text-sm font-black text-slate-950">{template.title}</p>
+                <p className="mt-2 text-xs font-bold text-red-700">{template.burdenReason}</p>
+                <p className="mt-1 text-xs font-bold text-emerald-700">{template.boundaryAction}</p>
+                <p className="mt-3 text-xs text-slate-500">기본 {template.minutes}분 기록</p>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center">
+            <div>
+              <p className="text-xs font-black tracking-[.18em] text-slate-500">DAILY WRAP-UP</p>
+              <h2 className="mt-1 text-xl font-black">퇴근 전 요약</h2>
+              <p className="mt-1 text-sm leading-6 text-slate-600">오늘 기록을 그대로 복사해서 저에게 보내면 하루 패턴을 분석할 수 있습니다.</p>
+            </div>
+            <button onClick={() => navigator.clipboard.writeText(todaySummary)} className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">요약 복사</button>
+          </div>
+          <pre className="max-h-72 overflow-auto whitespace-pre-wrap p-5 text-sm leading-6 text-slate-700">{todaySummary}</pre>
         </section>
 
         <section className="mb-5 overflow-hidden rounded-2xl border border-red-200 bg-white shadow-sm">
@@ -387,8 +545,9 @@ export default function TeamCommandPage() {
               <textarea value={draft.staffOption} onChange={event => setDraft(previous => ({ ...previous, staffOption: event.target.value }))} placeholder="직원이 제시한 선택지와 추천안. 없으면 돌려보냄으로 기록됩니다." className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-emerald-700" />
               <textarea value={draft.requestedDecision} onChange={event => setDraft(previous => ({ ...previous, requestedDecision: event.target.value }))} placeholder="과장에게 필요한 판단사항" className="min-h-16 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-emerald-700" />
               <textarea value={draft.feedback} onChange={event => setDraft(previous => ({ ...previous, feedback: event.target.value }))} placeholder="제시한 피드백 또는 다음 제출 기준" className="min-h-16 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-emerald-700" />
-              <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+              <div className="grid gap-3 sm:grid-cols-[1fr_140px_auto] sm:items-center">
                 <input type="date" value={draft.nextDue} onChange={event => setDraft(previous => ({ ...previous, nextDue: event.target.value }))} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                <input type="number" min="0" step="5" value={draft.minutes} onChange={event => setDraft(previous => ({ ...previous, minutes: Number(event.target.value) }))} placeholder="소요분" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 <button onClick={saveRecord} className="rounded-lg bg-emerald-800 px-4 py-3 text-sm font-black text-white">기록 저장</button>
               </div>
             </div>
@@ -457,6 +616,7 @@ export default function TeamCommandPage() {
                   <th className="p-3">직원안</th>
                   <th className="p-3">과장 판단</th>
                   <th className="p-3">경계선 조치</th>
+                  <th className="p-3">소요</th>
                   <th className="p-3">기한</th>
                   <th className="p-3">상태</th>
                   <th className="p-3">관리</th>
@@ -477,6 +637,7 @@ export default function TeamCommandPage() {
                     <td className="max-w-xs p-3 text-xs leading-5 text-slate-600">{record.staffOption || '직원안 없음'}</td>
                     <td className="max-w-xs p-3 text-xs leading-5 text-slate-600">{record.requestedDecision || record.feedback || '판단사항 없음'}</td>
                     <td className="p-3 text-xs font-black text-emerald-700">{record.boundaryAction || '-'}</td>
+                    <td className="p-3 text-xs font-black text-slate-700">{record.minutes || 0}분</td>
                     <td className="p-3 text-xs font-bold text-amber-700">{record.nextDue || '-'}</td>
                     <td className="p-3">
                       <select value={record.status} onChange={event => updateStatus(record.id, event.target.value as ReportStatus)} className={`rounded-lg border px-2 py-2 text-xs font-bold ${statusTone(record.status)}`}>
@@ -489,7 +650,7 @@ export default function TeamCommandPage() {
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan={12} className="p-8 text-center text-sm text-slate-500">아직 기록이 없습니다. 오늘부터 수시보고가 들어올 때 제목과 직원안을 짧게 남기면 됩니다.</td>
+                    <td colSpan={13} className="p-8 text-center text-sm text-slate-500">아직 기록이 없습니다. 오늘부터 수시보고가 들어올 때 대상만 고르고 빠른 기록 버튼을 누르면 됩니다.</td>
                   </tr>
                 )}
               </tbody>
