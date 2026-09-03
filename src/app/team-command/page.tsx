@@ -26,6 +26,7 @@ type ConditionRecord = {
   fatigue: number
   overload: number
 }
+type ConditionHistory = Record<string, ConditionRecord>
 
 type ReportRecord = {
   id: string
@@ -241,6 +242,12 @@ function todayDateString() {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(new Date())
 }
 
+function dateStringDaysAgo(daysAgo: number) {
+  const date = new Date()
+  date.setDate(date.getDate() - daysAgo)
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(date)
+}
+
 function statusTone(status: ReportStatus) {
   if (status === '완료' || status === '판단완료') return 'border-emerald-200 bg-emerald-50 text-emerald-800'
   if (status === '추적필요') return 'border-amber-200 bg-amber-50 text-amber-800'
@@ -251,6 +258,7 @@ function statusTone(status: ReportStatus) {
 export default function TeamCommandPage() {
   const [records, setRecords] = useState<ReportRecord[]>([])
   const [condition, setCondition] = useState<ConditionRecord>(conditionDefaults)
+  const [conditionHistory, setConditionHistory] = useState<ConditionHistory>({})
   const [draft, setDraft] = useState({
     team: '공통' as TeamKey,
     staff: '공통' as StaffKey,
@@ -270,7 +278,13 @@ export default function TeamCommandPage() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) setRecords(JSON.parse(raw))
     const conditionRaw = localStorage.getItem(CONDITION_KEY)
-    if (conditionRaw) setCondition({ ...conditionDefaults, ...JSON.parse(conditionRaw) })
+    if (conditionRaw) {
+      const parsed = JSON.parse(conditionRaw)
+      const today = todayDateString()
+      const history = typeof parsed.water === 'number' ? { [today]: { ...conditionDefaults, ...parsed } } : parsed
+      setConditionHistory(history)
+      setCondition({ ...conditionDefaults, ...(history[today] || {}) })
+    }
   }, [])
 
   const stats = useMemo(() => {
@@ -320,6 +334,43 @@ export default function TeamCommandPage() {
     const today = todayDateString()
     return records.filter(record => record.date === today)
   }, [records])
+
+  const conditionTrend = useMemo(() => {
+    const dates = Array.from({ length: 7 }, (_, index) => dateStringDaysAgo(index)).reverse()
+    const entries = dates.map(date => ({
+      date,
+      condition: conditionHistory[date] || conditionDefaults,
+    }))
+    const recordedEntries = entries.filter(entry =>
+      entry.condition.water ||
+      entry.condition.restroom ||
+      entry.condition.coffee ||
+      entry.condition.neckBackPain ||
+      entry.condition.fatigue ||
+      entry.condition.overload
+    )
+    const divide = (sum: number) => recordedEntries.length ? (sum / recordedEntries.length).toFixed(1) : '0.0'
+    const totals = recordedEntries.reduce((sum, entry) => ({
+      water: sum.water + entry.condition.water,
+      restroom: sum.restroom + entry.condition.restroom,
+      coffee: sum.coffee + entry.condition.coffee,
+      neckBackPain: sum.neckBackPain + entry.condition.neckBackPain,
+      fatigue: sum.fatigue + entry.condition.fatigue,
+      overload: sum.overload + entry.condition.overload,
+    }), conditionDefaults)
+    return {
+      entries,
+      recordedDays: recordedEntries.length,
+      averages: {
+        water: divide(totals.water),
+        restroom: divide(totals.restroom),
+        coffee: divide(totals.coffee),
+        neckBackPain: divide(totals.neckBackPain),
+        fatigue: divide(totals.fatigue),
+        overload: divide(totals.overload),
+      },
+    }
+  }, [conditionHistory])
 
   const saveRecord = () => {
     if (!draft.title.trim()) return
@@ -403,17 +454,29 @@ export default function TeamCommandPage() {
   }
 
   const updateCondition = (key: keyof ConditionRecord, value: number) => {
+    const today = todayDateString()
     const next = {
       ...condition,
       [key]: Math.max(0, Math.min(10, value)),
     }
+    const nextHistory = {
+      ...conditionHistory,
+      [today]: next,
+    }
     setCondition(next)
-    localStorage.setItem(CONDITION_KEY, JSON.stringify(next))
+    setConditionHistory(nextHistory)
+    localStorage.setItem(CONDITION_KEY, JSON.stringify(nextHistory))
   }
 
   const resetCondition = () => {
+    const today = todayDateString()
+    const nextHistory = {
+      ...conditionHistory,
+      [today]: conditionDefaults,
+    }
     setCondition(conditionDefaults)
-    localStorage.setItem(CONDITION_KEY, JSON.stringify(conditionDefaults))
+    setConditionHistory(nextHistory)
+    localStorage.setItem(CONDITION_KEY, JSON.stringify(nextHistory))
   }
 
   return (
@@ -515,6 +578,62 @@ export default function TeamCommandPage() {
               <p className="text-sm font-black text-slate-950">감정 과부하</p>
               <input type="range" min="0" max="10" value={condition.overload} onChange={event => updateCondition('overload', Number(event.target.value))} className="mt-4 w-full" />
               <p className="mt-2 text-right text-lg font-black text-sky-800">{condition.overload}/10</p>
+            </div>
+          </div>
+          <div className="border-t border-slate-100 p-5">
+            <div className="grid gap-3 md:grid-cols-6">
+              <div className="rounded-xl border border-sky-100 bg-sky-50 p-3">
+                <p className="text-xs font-black text-sky-700">기록일</p>
+                <p className="mt-1 text-xl font-black text-slate-950">{conditionTrend.recordedDays}<span className="ml-1 text-sm">일</span></p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-xs font-black text-slate-500">평균 물</p>
+                <p className="mt-1 text-xl font-black text-slate-950">{conditionTrend.averages.water}<span className="ml-1 text-sm">컵</span></p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-xs font-black text-slate-500">평균 커피</p>
+                <p className="mt-1 text-xl font-black text-slate-950">{conditionTrend.averages.coffee}<span className="ml-1 text-sm">잔</span></p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-xs font-black text-slate-500">평균 통증</p>
+                <p className="mt-1 text-xl font-black text-slate-950">{conditionTrend.averages.neckBackPain}<span className="ml-1 text-sm">/10</span></p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-xs font-black text-slate-500">평균 피로</p>
+                <p className="mt-1 text-xl font-black text-slate-950">{conditionTrend.averages.fatigue}<span className="ml-1 text-sm">/10</span></p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-xs font-black text-slate-500">평균 과부하</p>
+                <p className="mt-1 text-xl font-black text-slate-950">{conditionTrend.averages.overload}<span className="ml-1 text-sm">/10</span></p>
+              </div>
+            </div>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[760px] border-collapse text-xs">
+                <thead className="bg-slate-100 text-left text-slate-600">
+                  <tr>
+                    <th className="p-2">날짜</th>
+                    <th className="p-2">물</th>
+                    <th className="p-2">화장실</th>
+                    <th className="p-2">커피</th>
+                    <th className="p-2">목·등</th>
+                    <th className="p-2">피로</th>
+                    <th className="p-2">과부하</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {conditionTrend.entries.map(entry => (
+                    <tr key={entry.date} className="border-t border-slate-100">
+                      <td className="p-2 font-black text-slate-700">{entry.date}</td>
+                      <td className="p-2">{entry.condition.water}컵</td>
+                      <td className="p-2">{entry.condition.restroom}회</td>
+                      <td className="p-2">{entry.condition.coffee}잔</td>
+                      <td className="p-2">{entry.condition.neckBackPain}/10</td>
+                      <td className="p-2">{entry.condition.fatigue}/10</td>
+                      <td className="p-2">{entry.condition.overload}/10</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </section>
