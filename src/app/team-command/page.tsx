@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
 
 type TeamKey = '지역사회조직팀' | '서비스제공팀' | '공통'
 type StaffKey = '1차 판단 지원 필요' | '기본업무 누락관리 필요' | '실행형 업무 중심 배정' | '겸직 우선순위 조정 필요' | '공통'
@@ -261,7 +260,7 @@ export default function TeamCommandPage() {
               </p>
             </div>
             <div className="flex gap-2">
-              <Link href="/evaluation-2027" className="rounded-lg border border-white/20 px-4 py-2 text-sm font-black text-white hover:bg-white/10">평가 대시보드</Link>
+              <a href="/evaluation-2027" className="rounded-lg border border-white/20 px-4 py-2 text-sm font-black text-white hover:bg-white/10">27년 평가 특별반으로 이동</a>
               <button onClick={() => window.print()} className="rounded-lg bg-white px-4 py-2 text-sm font-black text-slate-950">출력</button>
             </div>
           </div>
