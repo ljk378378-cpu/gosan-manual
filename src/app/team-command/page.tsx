@@ -18,6 +18,14 @@ type QuickTemplate = {
   issue: string
   feedback: string
 }
+type ConditionRecord = {
+  water: number
+  restroom: number
+  coffee: number
+  neckBackPain: number
+  fatigue: number
+  overload: number
+}
 
 type ReportRecord = {
   id: string
@@ -38,12 +46,21 @@ type ReportRecord = {
 }
 
 const STORAGE_KEY = 'cheonggok-team-command-reports-v1'
+const CONDITION_KEY = 'cheonggok-team-command-condition-v1'
 const teamKeys: TeamKey[] = ['지역사회조직팀', '서비스제공팀', '공통']
 const staffKeys: StaffKey[] = ['1차 판단 지원 필요', '기본업무 누락관리 필요', '실행형 업무 중심 배정', '겸직 우선순위 조정 필요', '공통']
 const reportTypes: ReportType[] = ['당일 결재', '익일 문서 제출', '익일 사전검토', '시간외 상의', '단순 공유', '즉시보고', '퇴근 이후 문의']
 const reportStatuses: ReportStatus[] = ['접수', '돌려보냄', '판단완료', '추적필요', '완료']
 const burdenReasons: BurdenReason[] = ['직원안 없음', '반복누락', '기한임박', '역할불명확', '과장 결정 의존', '긴급예외']
 const boundaryActions: BoundaryAction[] = ['직원안 재제출', '체크리스트 요구', '정해진 시간 재상담', '담당자 역할 재확인', '과장 판단 후 종료', '즉시 대응']
+const conditionDefaults: ConditionRecord = {
+  water: 0,
+  restroom: 0,
+  coffee: 0,
+  neckBackPain: 0,
+  fatigue: 0,
+  overload: 0,
+}
 
 const teamStructures = [
   {
@@ -233,6 +250,7 @@ function statusTone(status: ReportStatus) {
 
 export default function TeamCommandPage() {
   const [records, setRecords] = useState<ReportRecord[]>([])
+  const [condition, setCondition] = useState<ConditionRecord>(conditionDefaults)
   const [draft, setDraft] = useState({
     team: '공통' as TeamKey,
     staff: '공통' as StaffKey,
@@ -251,6 +269,8 @@ export default function TeamCommandPage() {
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) setRecords(JSON.parse(raw))
+    const conditionRaw = localStorage.getItem(CONDITION_KEY)
+    if (conditionRaw) setCondition({ ...conditionDefaults, ...JSON.parse(conditionRaw) })
   }, [])
 
   const stats = useMemo(() => {
@@ -283,6 +303,8 @@ export default function TeamCommandPage() {
       `떠안음 위험: ${takeoverRecords.length}건`,
       `돌려보냄: ${todayRecords.filter(record => record.status === '돌려보냄').length}건`,
       `빼앗긴 시간: ${minutes}분`,
+      `물: ${condition.water}컵 / 화장실: ${condition.restroom}회 / 커피: ${condition.coffee}잔`,
+      `목·등 통증: ${condition.neckBackPain}/10 / 피로도: ${condition.fatigue}/10 / 감정 과부하: ${condition.overload}/10`,
       '',
       '주요 기록',
       recentLines.length ? recentLines.join('\n') : '- 기록 없음',
@@ -292,7 +314,7 @@ export default function TeamCommandPage() {
       '- 반복누락은 구두 피드백보다 체크리스트로 관리',
       '- 마감임박 문서는 긴급 여부만 판단하고 제출기준 재안내',
     ].join('\n')
-  }, [records])
+  }, [condition, records])
 
   const todayRecords = useMemo(() => {
     const today = todayDateString()
@@ -380,6 +402,20 @@ export default function TeamCommandPage() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
   }
 
+  const updateCondition = (key: keyof ConditionRecord, value: number) => {
+    const next = {
+      ...condition,
+      [key]: Math.max(0, Math.min(10, value)),
+    }
+    setCondition(next)
+    localStorage.setItem(CONDITION_KEY, JSON.stringify(next))
+  }
+
+  const resetCondition = () => {
+    setCondition(conditionDefaults)
+    localStorage.setItem(CONDITION_KEY, JSON.stringify(conditionDefaults))
+  }
+
   return (
     <main className="min-h-screen bg-[#f5f7f6] text-slate-900">
       <header className="bg-slate-950 text-white">
@@ -428,6 +464,58 @@ export default function TeamCommandPage() {
           <div className="rounded-2xl border border-red-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-red-600">전체 미완료</p>
             <p className="mt-2 text-3xl font-black">{stats.active}</p>
+          </div>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-sky-200 bg-white shadow-sm">
+          <div className="flex flex-col justify-between gap-3 border-b border-sky-100 bg-sky-50 p-4 md:flex-row md:items-center">
+            <div>
+              <p className="text-xs font-black tracking-[.18em] text-sky-700">PERSONAL CONDITION</p>
+              <h2 className="mt-1 text-xl font-black">오늘 컨디션 체크</h2>
+              <p className="mt-1 text-sm leading-6 text-sky-900">물, 화장실, 커피, 통증과 피로를 짧게 눌러 기록합니다. 직원관리 기록과 분리된 개인 확인용입니다.</p>
+            </div>
+            <button onClick={resetCondition} className="rounded-lg border border-sky-200 bg-white px-4 py-3 text-sm font-black text-sky-800">컨디션 초기화</button>
+          </div>
+          <div className="grid gap-3 p-5 md:grid-cols-3">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-black text-slate-950">물</p>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <button onClick={() => updateCondition('water', condition.water - 1)} className="h-10 w-10 rounded-lg border border-slate-300 bg-white text-lg font-black">-</button>
+                <p className="text-2xl font-black text-sky-800">{condition.water}<span className="ml-1 text-sm text-slate-500">컵</span></p>
+                <button onClick={() => updateCondition('water', condition.water + 1)} className="h-10 w-10 rounded-lg bg-sky-700 text-lg font-black text-white">+</button>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-black text-slate-950">화장실</p>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <button onClick={() => updateCondition('restroom', condition.restroom - 1)} className="h-10 w-10 rounded-lg border border-slate-300 bg-white text-lg font-black">-</button>
+                <p className="text-2xl font-black text-sky-800">{condition.restroom}<span className="ml-1 text-sm text-slate-500">회</span></p>
+                <button onClick={() => updateCondition('restroom', condition.restroom + 1)} className="h-10 w-10 rounded-lg bg-sky-700 text-lg font-black text-white">+</button>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-black text-slate-950">커피</p>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <button onClick={() => updateCondition('coffee', condition.coffee - 1)} className="h-10 w-10 rounded-lg border border-slate-300 bg-white text-lg font-black">-</button>
+                <p className="text-2xl font-black text-sky-800">{condition.coffee}<span className="ml-1 text-sm text-slate-500">잔</span></p>
+                <button onClick={() => updateCondition('coffee', condition.coffee + 1)} className="h-10 w-10 rounded-lg bg-sky-700 text-lg font-black text-white">+</button>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-black text-slate-950">목·등 통증</p>
+              <input type="range" min="0" max="10" value={condition.neckBackPain} onChange={event => updateCondition('neckBackPain', Number(event.target.value))} className="mt-4 w-full" />
+              <p className="mt-2 text-right text-lg font-black text-sky-800">{condition.neckBackPain}/10</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-black text-slate-950">피로도</p>
+              <input type="range" min="0" max="10" value={condition.fatigue} onChange={event => updateCondition('fatigue', Number(event.target.value))} className="mt-4 w-full" />
+              <p className="mt-2 text-right text-lg font-black text-sky-800">{condition.fatigue}/10</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-black text-slate-950">감정 과부하</p>
+              <input type="range" min="0" max="10" value={condition.overload} onChange={event => updateCondition('overload', Number(event.target.value))} className="mt-4 w-full" />
+              <p className="mt-2 text-right text-lg font-black text-sky-800">{condition.overload}/10</p>
+            </div>
           </div>
         </section>
 
