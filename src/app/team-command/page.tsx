@@ -500,13 +500,6 @@ export default function TeamCommandPage() {
       </header>
 
       <div className="mx-auto max-w-7xl px-4 py-6">
-        <section className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-5">
-          <p className="text-sm font-black text-amber-900">운영 원칙</p>
-          <p className="mt-2 text-sm leading-6 text-amber-900">
-            이 화면은 직원 평가자료가 아니라 과장님의 업무보호와 팀 운영방식 정리를 위한 내부관리 도구입니다. 직원 실명 대신 역할명으로 기록하고, 민감한 표현은 사실 중심으로 남깁니다.
-          </p>
-        </section>
-
         <section className="mb-5 grid gap-3 md:grid-cols-5">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-slate-500">오늘 수시보고</p>
