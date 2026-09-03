@@ -294,6 +294,11 @@ export default function TeamCommandPage() {
     ].join('\n')
   }, [records])
 
+  const todayRecords = useMemo(() => {
+    const today = todayDateString()
+    return records.filter(record => record.date === today)
+  }, [records])
+
   const saveRecord = () => {
     if (!draft.title.trim()) return
     const record: ReportRecord = {
@@ -363,6 +368,14 @@ export default function TeamCommandPage() {
 
   const removeRecord = (id: string) => {
     const next = records.filter(record => record.id !== id)
+    setRecords(next)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+  }
+
+  const clearTodayRecords = () => {
+    if (!window.confirm('오늘 기록을 모두 삭제할까요?')) return
+    const today = todayDateString()
+    const next = records.filter(record => record.date !== today)
     setRecords(next)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
   }
@@ -451,9 +464,33 @@ export default function TeamCommandPage() {
               <h2 className="mt-1 text-xl font-black">퇴근 전 요약</h2>
               <p className="mt-1 text-sm leading-6 text-slate-600">오늘 기록을 그대로 복사해서 저에게 보내면 하루 패턴을 분석할 수 있습니다.</p>
             </div>
-            <button onClick={() => navigator.clipboard.writeText(todaySummary)} className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">요약 복사</button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button onClick={() => navigator.clipboard.writeText(todaySummary)} className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">요약 복사</button>
+              <button onClick={clearTodayRecords} className="rounded-lg border border-red-200 bg-white px-4 py-3 text-sm font-black text-red-700">오늘 기록 삭제</button>
+            </div>
           </div>
           <pre className="max-h-72 overflow-auto whitespace-pre-wrap p-5 text-sm leading-6 text-slate-700">{todaySummary}</pre>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-white p-4">
+            <p className="text-xs font-black tracking-[.18em] text-slate-500">TODAY LOG</p>
+            <h2 className="mt-1 text-xl font-black">오늘 기록 바로 삭제</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">예시로 찍은 기록은 여기에서 바로 지울 수 있습니다.</p>
+          </div>
+          <div className="grid gap-3 p-5">
+            {todayRecords.length ? todayRecords.slice(0, 8).map(record => (
+              <div key={record.id} className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-[1fr_auto] md:items-center">
+                <div>
+                  <p className="text-sm font-black text-slate-950">{record.title}</p>
+                  <p className="mt-1 text-xs font-bold leading-5 text-slate-600">{record.staff} · {record.burdenReason} · {record.boundaryAction} · {record.minutes || 0}분</p>
+                </div>
+                <button onClick={() => removeRecord(record.id)} className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-black text-red-700">삭제</button>
+              </div>
+            )) : (
+              <p className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-500">오늘 기록이 없습니다.</p>
+            )}
+          </div>
         </section>
 
         <section className="mb-5 overflow-hidden rounded-2xl border border-red-200 bg-white shadow-sm">
