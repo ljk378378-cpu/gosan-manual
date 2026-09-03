@@ -7,6 +7,8 @@ type TeamKey = '지역사회조직팀' | '서비스제공팀' | '공통'
 type StaffKey = '1차 판단 지원 필요' | '기본업무 누락관리 필요' | '실행형 업무 중심 배정' | '겸직 우선순위 조정 필요' | '공통'
 type ReportType = '당일 결재' | '익일 문서 제출' | '익일 사전검토' | '시간외 상의' | '단순 공유' | '즉시보고' | '퇴근 이후 문의'
 type ReportStatus = '접수' | '돌려보냄' | '판단완료' | '추적필요' | '완료'
+type BurdenReason = '직원안 없음' | '반복누락' | '기한임박' | '역할불명확' | '과장 결정 의존' | '긴급예외'
+type BoundaryAction = '직원안 재제출' | '체크리스트 요구' | '정해진 시간 재상담' | '담당자 역할 재확인' | '과장 판단 후 종료' | '즉시 대응'
 
 type ReportRecord = {
   id: string
@@ -21,6 +23,8 @@ type ReportRecord = {
   feedback: string
   nextDue: string
   status: ReportStatus
+  burdenReason: BurdenReason
+  boundaryAction: BoundaryAction
 }
 
 const STORAGE_KEY = 'cheonggok-team-command-reports-v1'
@@ -28,6 +32,8 @@ const teamKeys: TeamKey[] = ['지역사회조직팀', '서비스제공팀', '공
 const staffKeys: StaffKey[] = ['1차 판단 지원 필요', '기본업무 누락관리 필요', '실행형 업무 중심 배정', '겸직 우선순위 조정 필요', '공통']
 const reportTypes: ReportType[] = ['당일 결재', '익일 문서 제출', '익일 사전검토', '시간외 상의', '단순 공유', '즉시보고', '퇴근 이후 문의']
 const reportStatuses: ReportStatus[] = ['접수', '돌려보냄', '판단완료', '추적필요', '완료']
+const burdenReasons: BurdenReason[] = ['직원안 없음', '반복누락', '기한임박', '역할불명확', '과장 결정 의존', '긴급예외']
+const boundaryActions: BoundaryAction[] = ['직원안 재제출', '체크리스트 요구', '정해진 시간 재상담', '담당자 역할 재확인', '과장 판단 후 종료', '즉시 대응']
 
 const teamStructures = [
   {
@@ -128,6 +134,29 @@ const scripts = [
   '지난 피드백 반영표를 붙여서 다시 가져와 주세요.',
 ]
 
+const burdenChecks = [
+  {
+    title: '직원안이 없는가',
+    signal: '상황 설명만 있고 선택지·추천안·요청 판단이 없으면 과장이 일을 떠안게 됨',
+    action: '직원안 재제출로 돌려보냄',
+  },
+  {
+    title: '같은 누락이 반복되는가',
+    signal: '구두 피드백을 했는데도 같은 항목이 계속 빠지면 기억 문제가 아니라 관리도구 문제임',
+    action: '체크리스트로 전환하고 완료 근거를 받음',
+  },
+  {
+    title: '마감 직전에 들어왔는가',
+    signal: '급해서 봐달라는 문서는 대부분 과장이 대신 완성하게 됨',
+    action: '긴급 여부를 나누고, 다음 제출기준을 기록함',
+  },
+  {
+    title: '내가 대신 결정하고 있는가',
+    signal: '직원이 판단을 배우는 과정 없이 과장이 결론을 내려주면 같은 구조가 반복됨',
+    action: '이번 판단만 하고 다음부터 본인 판단안을 조건으로 받음',
+  },
+]
+
 function todayDateString() {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(new Date())
 }
@@ -151,6 +180,8 @@ export default function TeamCommandPage() {
     requestedDecision: '',
     feedback: '',
     nextDue: '',
+    burdenReason: '과장 결정 의존' as BurdenReason,
+    boundaryAction: '직원안 재제출' as BoundaryAction,
   })
 
   useEffect(() => {
@@ -165,6 +196,7 @@ export default function TeamCommandPage() {
       active: active.length,
       returned: records.filter(record => record.status === '돌려보냄').length,
       tracking: records.filter(record => record.status === '추적필요').length,
+      takeoverRisk: records.filter(record => record.status === '돌려보냄' || !record.staffOption || record.type === '시간외 상의' || record.type === '퇴근 이후 문의').length,
     }
   }, [records])
 
@@ -183,6 +215,8 @@ export default function TeamCommandPage() {
       feedback: draft.feedback.trim(),
       nextDue: draft.nextDue,
       status: draft.staffOption.trim() ? '접수' : '돌려보냄',
+      burdenReason: draft.burdenReason,
+      boundaryAction: draft.boundaryAction,
     }
     const next = [record, ...records].slice(0, 300)
     setRecords(next)
@@ -197,6 +231,8 @@ export default function TeamCommandPage() {
       requestedDecision: '',
       feedback: '',
       nextDue: '',
+      burdenReason: '과장 결정 의존',
+      boundaryAction: '직원안 재제출',
     })
   }
 
@@ -240,7 +276,7 @@ export default function TeamCommandPage() {
           </p>
         </section>
 
-        <section className="mb-5 grid gap-3 md:grid-cols-4">
+        <section className="mb-5 grid gap-3 md:grid-cols-5">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-slate-500">기록</p>
             <p className="mt-2 text-3xl font-black">{stats.total}</p>
@@ -256,6 +292,27 @@ export default function TeamCommandPage() {
           <div className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-amber-600">추적필요</p>
             <p className="mt-2 text-3xl font-black">{stats.tracking}</p>
+          </div>
+          <div className="rounded-2xl border border-red-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-black text-red-600">떠안음 위험</p>
+            <p className="mt-2 text-3xl font-black">{stats.takeoverRisk}</p>
+          </div>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-red-200 bg-white shadow-sm">
+          <div className="border-b border-red-100 bg-red-50 p-4">
+            <p className="text-xs font-black tracking-[.18em] text-red-700">TAKEOVER PREVENTION</p>
+            <h2 className="mt-1 text-xl font-black">내가 또 떠안고 있는지 확인</h2>
+            <p className="mt-1 text-sm leading-6 text-red-900">보고를 받는 순간 아래 신호가 보이면 바로 기록하고, 과장 업무로 흡수하지 않습니다.</p>
+          </div>
+          <div className="grid gap-4 p-5 lg:grid-cols-4">
+            {burdenChecks.map(check => (
+              <div key={check.title} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="font-black text-slate-950">{check.title}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-700">{check.signal}</p>
+                <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-black leading-5 text-emerald-800">{check.action}</p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -316,6 +373,14 @@ export default function TeamCommandPage() {
                 </select>
                 <select value={draft.type} onChange={event => setDraft(previous => ({ ...previous, type: event.target.value as ReportType }))} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold">
                   {reportTypes.map(type => <option key={type}>{type}</option>)}
+                </select>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <select value={draft.burdenReason} onChange={event => setDraft(previous => ({ ...previous, burdenReason: event.target.value as BurdenReason }))} className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-800">
+                  {burdenReasons.map(reason => <option key={reason}>{reason}</option>)}
+                </select>
+                <select value={draft.boundaryAction} onChange={event => setDraft(previous => ({ ...previous, boundaryAction: event.target.value as BoundaryAction }))} className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800">
+                  {boundaryActions.map(action => <option key={action}>{action}</option>)}
                 </select>
               </div>
               <input value={draft.title} onChange={event => setDraft(previous => ({ ...previous, title: event.target.value }))} placeholder="보고 제목" className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-700" />
@@ -381,16 +446,18 @@ export default function TeamCommandPage() {
             <h2 className="mt-1 text-xl font-black">최근 보고·피드백 추적</h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1100px] border-collapse text-sm">
+            <table className="w-full min-w-[1280px] border-collapse text-sm">
               <thead className="bg-slate-100 text-left text-xs text-slate-600">
                 <tr>
                   <th className="p-3">일자</th>
                   <th className="p-3">팀</th>
                   <th className="p-3">대상</th>
                   <th className="p-3">유형</th>
+                  <th className="p-3">떠안음 원인</th>
                   <th className="p-3">내용</th>
                   <th className="p-3">직원안</th>
                   <th className="p-3">과장 판단</th>
+                  <th className="p-3">경계선 조치</th>
                   <th className="p-3">기한</th>
                   <th className="p-3">상태</th>
                   <th className="p-3">관리</th>
@@ -403,12 +470,14 @@ export default function TeamCommandPage() {
                     <td className="p-3 text-xs font-black text-emerald-800">{record.team || '공통'}</td>
                     <td className="p-3 font-black">{record.staff}</td>
                     <td className="p-3">{record.type}</td>
+                    <td className="p-3 text-xs font-black text-red-700">{record.burdenReason || '-'}</td>
                     <td className="max-w-xs p-3">
                       <p className="font-black">{record.title}</p>
                       <p className="mt-1 text-xs leading-5 text-slate-600">{record.issue || '상황 기록 없음'}</p>
                     </td>
                     <td className="max-w-xs p-3 text-xs leading-5 text-slate-600">{record.staffOption || '직원안 없음'}</td>
                     <td className="max-w-xs p-3 text-xs leading-5 text-slate-600">{record.requestedDecision || record.feedback || '판단사항 없음'}</td>
+                    <td className="p-3 text-xs font-black text-emerald-700">{record.boundaryAction || '-'}</td>
                     <td className="p-3 text-xs font-bold text-amber-700">{record.nextDue || '-'}</td>
                     <td className="p-3">
                       <select value={record.status} onChange={event => updateStatus(record.id, event.target.value as ReportStatus)} className={`rounded-lg border px-2 py-2 text-xs font-bold ${statusTone(record.status)}`}>
@@ -421,7 +490,7 @@ export default function TeamCommandPage() {
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan={10} className="p-8 text-center text-sm text-slate-500">아직 기록이 없습니다. 오늘부터 수시보고가 들어올 때 제목과 직원안을 짧게 남기면 됩니다.</td>
+                    <td colSpan={12} className="p-8 text-center text-sm text-slate-500">아직 기록이 없습니다. 오늘부터 수시보고가 들어올 때 제목과 직원안을 짧게 남기면 됩니다.</td>
                   </tr>
                 )}
               </tbody>
