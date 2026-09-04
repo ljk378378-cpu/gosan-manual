@@ -1,260 +1,125 @@
-'use client'
-export const dynamic = 'force-dynamic'
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
-import { supabase, Part, STATUS_LABELS, STATUS_COLORS } from '@/lib/supabase'
 
-const WEEKS = [
-  { label: '1주차', dates: '5/19~5/23', task: '준비', done: true },
-  { label: '2주차', dates: '5/26~5/30', task: '원고 집필 1라운드', done: true },
-  { label: '3주차', dates: '6/2~6/6', task: '원고 집필 2라운드', done: true },
-  { label: '4주차', dates: '6/9~6/13', task: '원고 1차 수합', done: true },
-  { label: '5주차', dates: '6/17~6/20', task: '가이드 배포 + 팀원 재작성', done: true },
-  { label: '6주차', dates: '6/23~6/27', task: '팀원 원고 제출·수합', done: true },
-  { label: '7주차', dates: '6/30~7/4', task: '수치 검증·사진 취합·디자이너 가이드·문체 다듬기', done: false, current: true },
-  { label: '8주차', dates: '7/7~7/11', task: '기획사 디자인 검토 + 퇴고', done: false },
-  { label: '9주차', dates: '7/14~7/18', task: '7/14 인쇄 의뢰 + 최종 확정', done: false },
-  { label: '납품', dates: '7/22(수)', task: '책 수령 🎉', done: false },
-  { label: '행사', dates: '7/23(목)', task: '성과공유회 배포', done: false },
+const primaryCards = [
+  {
+    href: '/evaluation-2027',
+    label: '27년 사회복지관 평가',
+    title: '평가 대비 특별반',
+    desc: '2024~2026 자료를 기준으로 지표, 증빙, 담당자, 진행률을 누적 관리',
+    tone: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+  },
+  {
+    href: '/inspection-2026',
+    label: '9.18 확정 점검',
+    title: '구청 지도점검 준비실',
+    desc: '점검일까지 일정표, 일일체크, 증빙자료 위치, 2025 대비 보완사항 관리',
+    tone: 'border-red-200 bg-red-50 text-red-900',
+  },
+  {
+    href: '/team-command',
+    label: '중간관리자 운영',
+    title: '팀 운영 컨트롤타워',
+    desc: '결재·상의 흐름, 반복문제, 직원별 피드백, 나의 컨디션 기록',
+    tone: 'border-sky-200 bg-sky-50 text-sky-950',
+  },
+  {
+    href: '/ai-system',
+    label: '사용원칙',
+    title: 'AI 업무시스템',
+    desc: 'Codex, Work, Drive, Calendar, Keep을 역할별로 나누어 쓰는 기준표',
+    tone: 'border-amber-200 bg-amber-50 text-amber-950',
+  },
 ]
 
-const DAILY_SCHEDULE = [
-  { date: '6/30(월)', task: '1~3차년도 최종결과보고서 업로드 + 수치 전수 대조 시작', done: false, today: true },
-  { date: '6/30(월)', task: '파트별 사진 취합 할당표 작성 + 팀원 공지', done: false, today: true },
-  { date: '7/1(화)', task: '부록 실제 양식지 스캔·정리 + 합본에 첨부', done: false },
-  { date: '7/1(화)', task: '디자이너 가이드 초안 작성 (파트별 사진·글 배치)', done: false },
-  { date: '7/2(수)', task: '전체 원고 문체 다듬기 (어색한 문장·문맥 불일치·오탈자 수정)', done: false },
-  { date: '7/2(수)', task: '수치 검증 완료 + 합본 반영', done: false },
-  { date: '7/3(목)', task: '디자이너 가이드 최종 정리 + 기획사 전달 파일 패키징', done: false },
-  { date: '7/3(목)', task: '기획사 최종 원고 + 디자이너 가이드 전달', done: false },
-  { date: '7/14(화)', task: '인쇄 의뢰', done: false },
+const todayFlow = [
+  { time: '아침', action: '오늘 일정과 반드시 끝낼 업무 3개 확인', tool: 'ChatGPT 브리핑' },
+  { time: '출근 직후', action: '평가·지도점검·팀운영 중 오늘 볼 화면만 열기', tool: '대시보드' },
+  { time: '업무 중', action: '갑자기 들어온 지시와 생각은 바로 처리하지 않고 수집', tool: 'Google Keep' },
+  { time: '오후', action: '기안·보고서·메시지 초안 작성과 검토', tool: 'Work / Codex' },
+  { time: '퇴근 전', action: '오늘 완료, 미완료, 내일 이월, 감정소모 원인 기록', tool: '팀 운영 대시보드' },
 ]
 
-const CHECKLIST = [
-  { emoji: '🔴', title: '7/3(목) 기획사 최종 원고 전달', desc: '원고 + 디자이너 가이드(파트별 사진·글 배치) 함께 전달. 7/2까지 수치 검증·문체 다듬기 완료 필요' },
-  { emoji: '🔴', title: '수치 전수 검증 (1~3차년도 결과보고서 대조)', desc: '최종결과보고서 업로드 후 합본 원고의 모든 수치를 원자료와 대조. 불일치 항목 즉시 수정' },
-  { emoji: '🟠', title: '파트별 사진 취합 (팀원 할당)', desc: '각 파트 담당자가 대표 사진 3~5장씩 제출. 6/30 할당 → 7/2까지 제출 마감' },
-  { emoji: '🟠', title: '부록 실제 양식지 첨부', desc: '실제 활동에서 사용한 양식지(주민환경연구원 활동일지 등)를 스캔하여 부록에 포함' },
-  { emoji: '🟠', title: '디자이너 가이드 제작', desc: '파트별(가능하면 페이지별) 사진 배치·글 배치 가이드 작성. 디자이너가 바로 실행할 수 있는 수준으로' },
-  { emoji: '🟡', title: '문체 다듬기', desc: '어색한 문장·문맥에 맞지 않는 표현·오탈자를 자연스러운 한국어 문어체로 수정' },
-  { emoji: '🟡', title: '5부 표현 주의', desc: '수성구청 협력 파트너를 인정하는 가능성 언어 사용. 요구·비판 표현 금지' },
+const archiveLinks = [
+  { href: '/storyboard', title: '매뉴얼 스토리보드', desc: '주민이 그린 고산 매뉴얼 파트별 기록' },
+  { href: '/daily', title: '데일리 채널', desc: '기존 매뉴얼 작업 당시 일일 기록' },
+  { href: '/comments', title: '의견 게시판', desc: '기존 원고 수정 의견' },
+  { href: '/designer', title: '디자이너 브리핑', desc: '매뉴얼 디자인 전달자료' },
+  { href: '/photo-guide', title: '사진 가이드', desc: '매뉴얼 사진 취합 자료' },
+  { href: '/report', title: '보고서 출력', desc: '기존 진행현황 출력 화면' },
 ]
 
 export default function Home() {
-  const [parts, setParts] = useState<Part[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    supabase.from('parts').select('*').order('order_num').then(({ data }) => {
-      if (data) setParts(data)
-      setLoading(false)
-    })
-  }, [])
-
-  const totalPages = parts.reduce((s, p) => s + p.page_count, 0)
-  const avgProgress = parts.length ? Math.round(parts.reduce((s, p) => s + p.progress, 0) / parts.length) : 0
-  const doneParts = parts.filter(p => p.status === 'done').length
-
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-slate-50">
       <Nav />
-      <main className="max-w-5xl mx-auto px-4 py-6">
-        {/* 헤더 */}
-        <div className="bg-green-800 text-white rounded-2xl p-6 mb-6">
-          <div className="flex items-start gap-4">
-            <div className="text-5xl">🌿</div>
-            <div>
-              <h1 className="text-2xl font-bold">주민이 그린 고산<br />환경리빙랩 매뉴얼</h1>
-              <p className="text-green-200 mt-1">주민이 만든 동네 자원순환, 3년의 기록과 실천 가이드</p>
-              <p className="text-green-300 text-sm mt-2">A4 · 컬러 · 50부 · 약 63페이지 | 최종 원고 전달: 2026년 7월 3일 · 성과공유회 배포: 7월 23일</p>
-            </div>
-          </div>
-        </div>
+      <main className="mx-auto max-w-6xl px-5 py-7">
+        <section className="mb-5 rounded-2xl bg-slate-950 p-7 text-white shadow-xl">
+          <p className="text-xs font-bold tracking-[.22em] text-emerald-300">CHEONGGOK AI WORK HUB</p>
+          <h1 className="mt-3 text-3xl font-black tracking-tight">청곡 AI 업무시스템 허브</h1>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+            현재 기준 업무는 27년 사회복지관 평가, 2026 구청 지도점검, 팀 운영, AI 업무시스템입니다.
+            예전 주민이 그린 고산 매뉴얼 화면은 아래 보관 링크에서 확인합니다.
+          </p>
+        </section>
 
-        {/* 진행 요약 */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
-            <div className="text-3xl font-bold text-green-700">{avgProgress}%</div>
-            <div className="text-sm text-gray-500 mt-1">전체 진행률</div>
-            <div className="mt-2 bg-gray-100 rounded-full h-2">
-              <div className="bg-green-500 h-2 rounded-full transition-all" style={{ width: `${avgProgress}%` }} />
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
-            <div className="text-3xl font-bold text-blue-700">{doneParts}/{parts.length}</div>
-            <div className="text-sm text-gray-500 mt-1">파트 완료</div>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
-            <div className="text-3xl font-bold text-purple-700">{totalPages}p</div>
-            <div className="text-sm text-gray-500 mt-1">총 페이지</div>
-          </div>
-        </div>
+        <section className="mb-5 grid gap-4 md:grid-cols-2">
+          {primaryCards.map(card => (
+            <Link
+              key={card.href}
+              href={card.href}
+              className={`rounded-2xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${card.tone}`}
+            >
+              <p className="text-xs font-black opacity-70">{card.label}</p>
+              <h2 className="mt-2 text-xl font-black">{card.title}</h2>
+              <p className="mt-2 text-sm leading-6 opacity-80">{card.desc}</p>
+            </Link>
+          ))}
+        </section>
 
-        {/* 주차별 타임라인 */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 mb-6">
-          <h2 className="font-bold text-gray-800 mb-4">📅 주차별 일정</h2>
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {WEEKS.map((w, i) => (
-              <div
-                key={i}
-                className={`flex-shrink-0 rounded-lg p-3 text-center min-w-[100px] ${
-                  w.done ? 'bg-green-100 border border-green-300' :
-                  w.current ? 'bg-yellow-100 border-2 border-yellow-400' :
-                  'bg-gray-50 border border-gray-200'
-                }`}
-              >
-                <div className={`text-xs font-bold ${w.current ? 'text-yellow-700' : w.done ? 'text-green-700' : 'text-gray-500'}`}>
-                  {w.done ? '✅' : w.current ? '▶' : '○'} {w.label}
-                </div>
-                <div className="text-xs text-gray-500 mt-1">{w.dates}</div>
-                <div className={`text-xs mt-1 font-medium ${w.current ? 'text-yellow-800' : 'text-gray-600'}`}>{w.task}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 이번 주 작업 계획 */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 mb-6">
-          <h2 className="font-bold text-gray-800 mb-4">📌 이번 주 작업 계획 (이진규 과장)</h2>
-          <div className="space-y-2">
-            {DAILY_SCHEDULE.map((s, i) => (
-              <div
-                key={i}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
-                  s.today ? 'bg-yellow-50 border border-yellow-300' :
-                  s.done ? 'bg-green-50 border border-green-200' :
-                  'bg-gray-50 border border-gray-100'
-                }`}
-              >
-                <span className={`text-sm font-bold w-16 shrink-0 ${s.today ? 'text-yellow-700' : s.done ? 'text-green-700' : 'text-gray-400'}`}>
-                  {s.done ? '✅' : s.today ? '▶' : '○'} {s.date}
-                </span>
-                <span className={`text-sm ${s.today ? 'text-yellow-900 font-medium' : s.done ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
-                  {s.task}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 필수 확인사항 */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-red-100 mb-6">
-          <h2 className="font-bold text-gray-800 mb-4">🚨 필수 확인사항</h2>
-          <div className="space-y-3">
-            {CHECKLIST.map((item, i) => (
-              <div key={i} className="flex gap-3 rounded-lg bg-gray-50 border border-gray-100 px-4 py-3">
-                <span className="text-lg shrink-0">{item.emoji}</span>
-                <div>
-                  <p className="text-sm font-bold text-gray-800">{item.title}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 파트별 현황 미리보기 */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-gray-800">📄 파트별 현황</h2>
-            <Link href="/storyboard" className="text-sm text-green-700 hover:underline">전체 보기 →</Link>
-          </div>
-          {loading ? (
-            <div className="text-gray-400 text-sm">불러오는 중...</div>
-          ) : (
-            <div className="space-y-2">
-              {parts.map((part) => (
-                <div key={part.id} className="flex items-center gap-3">
-                  <div className="w-36 text-sm text-gray-700 truncate">{part.title}</div>
-                  <div className="flex-1 bg-gray-100 rounded-full h-3">
-                    <div
-                      className="bg-green-500 h-3 rounded-full transition-all"
-                      style={{ width: `${part.progress}%` }}
-                    />
-                  </div>
-                  <div className="w-10 text-xs text-right text-gray-500">{part.progress}%</div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[part.status]}`}>
-                    {STATUS_LABELS[part.status]}
-                  </span>
-                  <div className="w-16 text-xs text-gray-400">{part.assignee}</div>
+        <section className="mb-5 grid gap-4 lg:grid-cols-[1fr_340px]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-black text-slate-900">오늘의 사용 흐름</h2>
+            <div className="mt-4 space-y-3">
+              {todayFlow.map(item => (
+                <div key={item.time} className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-[90px_minmax(0,1fr)_150px]">
+                  <div className="text-xs font-bold text-slate-500">{item.time}</div>
+                  <div className="text-sm font-semibold leading-6 text-slate-800">{item.action}</div>
+                  <div className="text-xs font-bold text-emerald-700">{item.tool}</div>
                 </div>
               ))}
             </div>
-          )}
-        </div>
-
-        {/* 7주차 팀원 할 일 */}
-        <div className="bg-amber-50 rounded-xl p-5 shadow-sm border border-amber-200 mb-6">
-          <h2 className="font-bold text-amber-800 mb-1">📣 팀원 공지 — 7주차 (6/30~7/3)</h2>
-          <p className="text-xs text-amber-600 mb-4">아래 항목을 담당 파트별로 7/2(수)까지 완료해 주세요.</p>
-          <div className="space-y-3">
-            <div className="bg-white rounded-lg border border-amber-100 px-4 py-3">
-              <p className="text-sm font-bold text-gray-800">📸 파트별 대표 사진 제출</p>
-              <p className="text-xs text-gray-500 mt-1">각자 담당 파트의 대표 사진 3~5장을 골라 데일리 채널에 올려주세요. 파일명에 파트번호 포함 (예: 2부_수거모델_01.jpg)</p>
-              <p className="text-xs text-red-500 font-bold mt-1">마감: 7/2(수)</p>
-            </div>
-            <div className="bg-white rounded-lg border border-amber-100 px-4 py-3">
-              <p className="text-sm font-bold text-gray-800">✍️ 원고 수정 의견 제출</p>
-              <p className="text-xs text-gray-500 mt-1">자기 파트에서 어색하거나 수정이 필요한 문장이 있으면 의견 게시판에 남겨주세요. 파트명·페이지 위치 함께 적어주시면 반영이 빠릅니다.</p>
-              <p className="text-xs text-red-500 font-bold mt-1">마감: 7/2(수)</p>
-            </div>
-            <div className="bg-white rounded-lg border border-amber-100 px-4 py-3">
-              <p className="text-sm font-bold text-gray-800">📄 활동 양식지 제출 (이승원)</p>
-              <p className="text-xs text-gray-500 mt-1">부록에 첨부할 실제 활동 양식지를 스캔 또는 사진 촬영하여 제출해 주세요.</p>
-              <p className="text-xs text-red-500 font-bold mt-1">마감: 7/1(화)</p>
-            </div>
           </div>
-        </div>
 
-        {/* 바로가기 카드 */}
-        <div className="grid grid-cols-2 gap-4">
-          <Link href="/daily" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
-            <div className="text-2xl mb-2">📝</div>
-            <div className="font-bold text-gray-800">데일리 채널</div>
-            <div className="text-sm text-gray-500 mt-1">오늘의 작업 현황·사진 제출</div>
-          </Link>
-          <Link href="/comments" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
-            <div className="text-2xl mb-2">💬</div>
-            <div className="font-bold text-gray-800">의견 게시판</div>
-            <div className="text-sm text-gray-500 mt-1">원고 수정 의견 누구나 게재</div>
-          </Link>
-          <Link href="/storyboard" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
-            <div className="text-2xl mb-2">📋</div>
-            <div className="font-bold text-gray-800">스토리보드</div>
-            <div className="text-sm text-gray-500 mt-1">파트별 담당자·진행률·메모 관리</div>
-          </Link>
-          <Link href="/designer" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
-            <div className="text-2xl mb-2">🎨</div>
-            <div className="font-bold text-gray-800">디자이너 브리핑</div>
-            <div className="text-sm text-gray-500 mt-1">파트별 사진·글 배치 가이드</div>
-          </Link>
-          <Link href="/photo-guide" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
-            <div className="text-2xl mb-2">📷</div>
-            <div className="font-bold text-gray-800">사진 가이드</div>
-            <div className="text-sm text-gray-500 mt-1">파트별 사진 취합 현황</div>
-          </Link>
-          <Link href="/photo-brief" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
-            <div className="text-2xl mb-2">🖼️</div>
-            <div className="font-bold text-gray-800">사진 배치 가이드 v2</div>
-            <div className="text-sm text-gray-500 mt-1">실사진 기반 베스트픽 · PDF 저장</div>
-          </Link>
-          <Link href="/team-command" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
-            <div className="text-2xl mb-2">팀</div>
-            <div className="font-bold text-gray-800">팀 운영 컨트롤타워</div>
-            <div className="text-sm text-gray-500 mt-1">보고·상의·결재 흐름과 직원별 관리방식 정리</div>
-          </Link>
-          <Link href="/ai-system" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
-            <div className="text-2xl mb-2">AI</div>
-            <div className="font-bold text-gray-800">AI 업무시스템 사용원칙</div>
-            <div className="text-sm text-gray-500 mt-1">Codex·Work·Drive·Calendar·Keep 역할 기준</div>
-          </Link>
-          <Link href="/report" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
-            <div className="text-2xl mb-2">🖨️</div>
-            <div className="font-bold text-gray-800">보고서 출력</div>
-            <div className="text-sm text-gray-500 mt-1">진행현황 보고서 PDF 출력</div>
-          </Link>
-        </div>
+          <aside className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+            <h2 className="text-lg font-black text-amber-950">오늘의 기준</h2>
+            <p className="mt-3 text-sm leading-6 text-amber-900">
+              모든 일을 다 처리하려고 하지 말고, 오늘 끝낼 3개를 먼저 정합니다.
+              갑작스러운 상의와 지시는 즉시 떠안지 않고 기록한 뒤 우선순위를 다시 잡습니다.
+            </p>
+            <Link href="/ai-system" className="mt-4 inline-flex rounded-xl bg-amber-900 px-4 py-2 text-sm font-bold text-white">
+              AI 사용원칙 보기
+            </Link>
+          </aside>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold text-slate-500">이전 작업 보관</p>
+              <h2 className="mt-1 text-lg font-black text-slate-900">주민이 그린 고산 매뉴얼 관련 화면</h2>
+            </div>
+            <p className="text-xs text-slate-500">필요할 때만 참고</p>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            {archiveLinks.map(link => (
+              <Link key={link.href} href={link.href} className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-400">
+                <p className="text-sm font-bold text-slate-900">{link.title}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{link.desc}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
       </main>
     </div>
   )
