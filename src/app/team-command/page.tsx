@@ -27,6 +27,15 @@ type ConditionRecord = {
   overload: number
 }
 type ConditionHistory = Record<string, ConditionRecord>
+type ClosingNote = {
+  done: string
+  carry: string
+  staffMessage: string
+  emotionalDrain: string
+  tomorrow1: string
+  tomorrow2: string
+  tomorrow3: string
+}
 
 type ReportRecord = {
   id: string
@@ -48,6 +57,7 @@ type ReportRecord = {
 
 const STORAGE_KEY = 'cheonggok-team-command-reports-v1'
 const CONDITION_KEY = 'cheonggok-team-command-condition-v1'
+const CLOSING_KEY = 'cheonggok-team-command-closing-v1'
 const teamKeys: TeamKey[] = ['지역사회조직팀', '서비스제공팀', '공통']
 const staffKeys: StaffKey[] = ['1차 판단 지원 필요', '기본업무 누락관리 필요', '실행형 업무 중심 배정', '겸직 우선순위 조정 필요', '공통']
 const reportTypes: ReportType[] = ['당일 결재', '익일 문서 제출', '익일 사전검토', '시간외 상의', '단순 공유', '즉시보고', '퇴근 이후 문의']
@@ -61,6 +71,15 @@ const conditionDefaults: ConditionRecord = {
   neckBackPain: 0,
   fatigue: 0,
   overload: 0,
+}
+const closingDefaults: ClosingNote = {
+  done: '',
+  carry: '',
+  staffMessage: '',
+  emotionalDrain: '',
+  tomorrow1: '',
+  tomorrow2: '',
+  tomorrow3: '',
 }
 
 const teamStructures = [
@@ -259,6 +278,9 @@ export default function TeamCommandPage() {
   const [records, setRecords] = useState<ReportRecord[]>([])
   const [condition, setCondition] = useState<ConditionRecord>(conditionDefaults)
   const [conditionHistory, setConditionHistory] = useState<ConditionHistory>({})
+  const [quickLine, setQuickLine] = useState('')
+  const [quickFollowUp, setQuickFollowUp] = useState(false)
+  const [closingNote, setClosingNote] = useState<ClosingNote>(closingDefaults)
   const [draft, setDraft] = useState({
     team: '공통' as TeamKey,
     staff: '공통' as StaffKey,
@@ -285,7 +307,21 @@ export default function TeamCommandPage() {
       setConditionHistory(history)
       setCondition({ ...conditionDefaults, ...(history[today] || {}) })
     }
+    const closingRaw = localStorage.getItem(CLOSING_KEY)
+    if (closingRaw) {
+      const parsed = JSON.parse(closingRaw)
+      setClosingNote({ ...closingDefaults, ...(parsed[todayDateString()] || {}) })
+    }
   }, [])
+
+  useEffect(() => {
+    const raw = localStorage.getItem(CLOSING_KEY)
+    const parsed = raw ? JSON.parse(raw) : {}
+    localStorage.setItem(CLOSING_KEY, JSON.stringify({
+      ...parsed,
+      [todayDateString()]: closingNote,
+    }))
+  }, [closingNote])
 
   const stats = useMemo(() => {
     const today = todayDateString()
@@ -305,6 +341,27 @@ export default function TeamCommandPage() {
     }
   }, [records])
 
+  const todayAnalysis = useMemo(() => {
+    const today = todayDateString()
+    const todayRecords = records.filter(record => record.date === today)
+    const countBy = <T extends string>(getter: (record: ReportRecord) => T) => {
+      const counts = new Map<T, number>()
+      todayRecords.forEach(record => counts.set(getter(record), (counts.get(getter(record)) || 0) + 1))
+      return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5)
+    }
+    const staffRanking = countBy(record => record.staff)
+    const typeRanking = countBy(record => record.type)
+    const burdenRanking = countBy(record => record.burdenReason)
+    const repeatRisks = Array.from(
+      todayRecords.reduce((map, record) => {
+        const key = `${record.staff} / ${record.burdenReason}`
+        map.set(key, (map.get(key) || 0) + 1)
+        return map
+      }, new Map<string, number>()).entries()
+    ).filter(([, count]) => count >= 2).sort((a, b) => b[1] - a[1])
+    return { staffRanking, typeRanking, burdenRanking, repeatRisks }
+  }, [records])
+
   const todaySummary = useMemo(() => {
     const today = todayDateString()
     const todayRecords = records.filter(record => record.date === today)
@@ -320,15 +377,32 @@ export default function TeamCommandPage() {
       `물: ${condition.water}컵 / 화장실: ${condition.restroom}회 / 커피: ${condition.coffee}잔`,
       `목·등 통증: ${condition.neckBackPain}/10 / 피로도: ${condition.fatigue}/10 / 감정 과부하: ${condition.overload}/10`,
       '',
+      '자동 분석',
+      `- 최다 대상: ${todayAnalysis.staffRanking[0] ? `${todayAnalysis.staffRanking[0][0]} ${todayAnalysis.staffRanking[0][1]}건` : '없음'}`,
+      `- 최다 유형: ${todayAnalysis.typeRanking[0] ? `${todayAnalysis.typeRanking[0][0]} ${todayAnalysis.typeRanking[0][1]}건` : '없음'}`,
+      `- 최다 원인: ${todayAnalysis.burdenRanking[0] ? `${todayAnalysis.burdenRanking[0][0]} ${todayAnalysis.burdenRanking[0][1]}건` : '없음'}`,
+      `- 반복 위험: ${todayAnalysis.repeatRisks.length ? todayAnalysis.repeatRisks.map(([key, count]) => `${key} ${count}건`).join(', ') : '없음'}`,
+      '',
       '주요 기록',
       recentLines.length ? recentLines.join('\n') : '- 기록 없음',
+      '',
+      '퇴근 전 정리',
+      `- 완료: ${closingNote.done || '미입력'}`,
+      `- 이월: ${closingNote.carry || '미입력'}`,
+      `- 직원에게 다시 안내할 기준: ${closingNote.staffMessage || '미입력'}`,
+      `- 감정소모 원인: ${closingNote.emotionalDrain || '미입력'}`,
+      '',
+      '내일 아침 첫 업무 3개',
+      `1. ${closingNote.tomorrow1 || '미입력'}`,
+      `2. ${closingNote.tomorrow2 || '미입력'}`,
+      `3. ${closingNote.tomorrow3 || '미입력'}`,
       '',
       '내일 적용 기준',
       '- 직원안 없는 상의는 받지 않고 재정리 요청',
       '- 반복누락은 구두 피드백보다 체크리스트로 관리',
       '- 마감임박 문서는 긴급 여부만 판단하고 제출기준 재안내',
     ].join('\n')
-  }, [condition, records])
+  }, [closingNote, condition, records, todayAnalysis])
 
   const todayRecords = useMemo(() => {
     const today = todayDateString()
@@ -408,6 +482,32 @@ export default function TeamCommandPage() {
       boundaryAction: '직원안 재제출',
       minutes: 10,
     })
+  }
+
+  const saveFastRecord = () => {
+    if (!quickLine.trim()) return
+    const record: ReportRecord = {
+      id: `${Date.now()}`,
+      date: todayDateString(),
+      team: draft.team,
+      staff: draft.staff,
+      type: draft.type,
+      title: quickLine.trim(),
+      issue: quickLine.trim(),
+      staffOption: '',
+      requestedDecision: '',
+      feedback: quickFollowUp ? '후속확인 필요로 표시함' : '',
+      nextDue: '',
+      status: quickFollowUp ? '추적필요' : '접수',
+      burdenReason: draft.burdenReason,
+      boundaryAction: draft.boundaryAction,
+      minutes: Number(draft.minutes) || 5,
+    }
+    const next = [record, ...records].slice(0, 300)
+    setRecords(next)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    setQuickLine('')
+    setQuickFollowUp(false)
   }
 
   const saveQuickRecord = (template: QuickTemplate) => {
@@ -520,6 +620,104 @@ export default function TeamCommandPage() {
           <div className="rounded-2xl border border-red-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-red-600">전체 미완료</p>
             <p className="mt-2 text-3xl font-black">{stats.active}</p>
+          </div>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+          <div className="border-b border-emerald-100 bg-emerald-50 p-4">
+            <p className="text-xs font-black tracking-[.18em] text-emerald-700">10 SECOND CAPTURE</p>
+            <h2 className="mt-1 text-xl font-black">수시보고 초고속 기록</h2>
+            <p className="mt-1 text-sm leading-6 text-emerald-900">업무 중에는 길게 쓰지 말고 대상, 유형, 한 줄만 남깁니다. 퇴근 전 분석은 아래에서 합니다.</p>
+          </div>
+          <div className="grid gap-3 p-5 lg:grid-cols-[160px_190px_160px_1fr_auto]">
+            <select value={draft.team} onChange={event => setDraft(previous => ({ ...previous, team: event.target.value as TeamKey }))} className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold">
+              {teamKeys.map(key => <option key={key}>{key}</option>)}
+            </select>
+            <select value={draft.staff} onChange={event => setDraft(previous => ({ ...previous, staff: event.target.value as StaffKey }))} className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold">
+              {staffKeys.map(key => <option key={key}>{key}</option>)}
+            </select>
+            <select value={draft.type} onChange={event => setDraft(previous => ({ ...previous, type: event.target.value as ReportType }))} className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold">
+              {reportTypes.map(type => <option key={type}>{type}</option>)}
+            </select>
+            <input
+              value={quickLine}
+              onChange={event => setQuickLine(event.target.value)}
+              onKeyDown={event => {
+                if (event.key === 'Enter') saveFastRecord()
+              }}
+              placeholder="예: 축제 기안 예산근거 불명확, 내일 오전 재확인"
+              className="min-w-0 rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700"
+            />
+            <button onClick={saveFastRecord} className="rounded-lg bg-emerald-800 px-5 py-3 text-sm font-black text-white">저장</button>
+          </div>
+          <div className="grid gap-3 border-t border-slate-100 p-5 lg:grid-cols-[1fr_1fr_140px_140px]">
+            <select value={draft.burdenReason} onChange={event => setDraft(previous => ({ ...previous, burdenReason: event.target.value as BurdenReason }))} className="rounded-lg border border-red-200 bg-red-50 px-3 py-3 text-sm font-bold text-red-800">
+              {burdenReasons.map(reason => <option key={reason}>{reason}</option>)}
+            </select>
+            <select value={draft.boundaryAction} onChange={event => setDraft(previous => ({ ...previous, boundaryAction: event.target.value as BoundaryAction }))} className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm font-bold text-emerald-800">
+              {boundaryActions.map(action => <option key={action}>{action}</option>)}
+            </select>
+            <input type="number" min="0" step="5" value={draft.minutes} onChange={event => setDraft(previous => ({ ...previous, minutes: Number(event.target.value) }))} className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold" />
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm font-black text-amber-800">
+              <input type="checkbox" checked={quickFollowUp} onChange={event => setQuickFollowUp(event.target.checked)} className="h-4 w-4 accent-amber-700" />
+              후속확인
+            </label>
+          </div>
+        </section>
+
+        <section className="mb-5 grid gap-4 xl:grid-cols-[1fr_1.2fr]">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-black tracking-[.18em] text-slate-500">LIVE ANALYSIS</p>
+              <h2 className="mt-1 text-xl font-black">오늘 자동 분석</h2>
+              <p className="mt-1 text-sm leading-6 text-slate-600">기록을 쌓으면 오늘 누가, 어떤 유형으로, 무엇 때문에 시간을 가져갔는지 바로 보입니다.</p>
+            </div>
+            <div className="grid gap-3 p-5 md:grid-cols-3">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs font-black text-slate-500">최다 대상</p>
+                <p className="mt-2 text-lg font-black text-slate-950">{todayAnalysis.staffRanking[0]?.[0] || '기록 없음'}</p>
+                <p className="mt-1 text-sm font-bold text-emerald-700">{todayAnalysis.staffRanking[0]?.[1] || 0}건</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs font-black text-slate-500">최다 유형</p>
+                <p className="mt-2 text-lg font-black text-slate-950">{todayAnalysis.typeRanking[0]?.[0] || '기록 없음'}</p>
+                <p className="mt-1 text-sm font-bold text-emerald-700">{todayAnalysis.typeRanking[0]?.[1] || 0}건</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs font-black text-slate-500">최다 원인</p>
+                <p className="mt-2 text-lg font-black text-slate-950">{todayAnalysis.burdenRanking[0]?.[0] || '기록 없음'}</p>
+                <p className="mt-1 text-sm font-bold text-emerald-700">{todayAnalysis.burdenRanking[0]?.[1] || 0}건</p>
+              </div>
+            </div>
+            <div className="border-t border-slate-100 p-5">
+              <p className="text-sm font-black text-slate-900">반복 위험</p>
+              <div className="mt-3 space-y-2">
+                {todayAnalysis.repeatRisks.length ? todayAnalysis.repeatRisks.map(([key, count]) => (
+                  <p key={key} className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-800">{key} · {count}건 반복</p>
+                )) : (
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">아직 같은 유형의 반복위험은 보이지 않습니다.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-amber-200 bg-white shadow-sm">
+            <div className="border-b border-amber-100 bg-amber-50 p-4">
+              <p className="text-xs font-black tracking-[.18em] text-amber-700">CLOSING ROUTINE</p>
+              <h2 className="mt-1 text-xl font-black">퇴근 전 10분 정리</h2>
+              <p className="mt-1 text-sm leading-6 text-amber-900">하루를 길게 반성하지 말고, 내일 아침 바로 움직일 수 있게 3개만 남깁니다.</p>
+            </div>
+            <div className="grid gap-3 p-5">
+              <textarea value={closingNote.done} onChange={event => setClosingNote(previous => ({ ...previous, done: event.target.value }))} placeholder="오늘 완료한 일" className="min-h-16 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-amber-600" />
+              <textarea value={closingNote.carry} onChange={event => setClosingNote(previous => ({ ...previous, carry: event.target.value }))} placeholder="내일로 넘길 일" className="min-h-16 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-amber-600" />
+              <textarea value={closingNote.staffMessage} onChange={event => setClosingNote(previous => ({ ...previous, staffMessage: event.target.value }))} placeholder="직원에게 다시 안내할 기준" className="min-h-16 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-amber-600" />
+              <textarea value={closingNote.emotionalDrain} onChange={event => setClosingNote(previous => ({ ...previous, emotionalDrain: event.target.value }))} placeholder="오늘 감정소모 원인" className="min-h-16 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-amber-600" />
+              <div className="grid gap-2">
+                <input value={closingNote.tomorrow1} onChange={event => setClosingNote(previous => ({ ...previous, tomorrow1: event.target.value }))} placeholder="내일 첫 업무 1" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                <input value={closingNote.tomorrow2} onChange={event => setClosingNote(previous => ({ ...previous, tomorrow2: event.target.value }))} placeholder="내일 첫 업무 2" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                <input value={closingNote.tomorrow3} onChange={event => setClosingNote(previous => ({ ...previous, tomorrow3: event.target.value }))} placeholder="내일 첫 업무 3" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              </div>
+            </div>
           </div>
         </section>
 
