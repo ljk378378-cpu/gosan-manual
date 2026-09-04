@@ -10,6 +10,7 @@ const navItems = [
   { href: '/designer', label: '디자인 브리핑', icon: '🎨' },
   { href: '/design-review', label: '수정요청', icon: '✏️' },
   { href: '/team-command', label: '팀 운영', icon: '팀' },
+  { href: '/ai-system', label: 'AI원칙', icon: 'AI' },
   { href: '/report', label: '보고서 출력', icon: '🖨️' },
 ]
 

@@ -244,6 +244,11 @@ export default function Home() {
             <div className="font-bold text-gray-800">팀 운영 컨트롤타워</div>
             <div className="text-sm text-gray-500 mt-1">보고·상의·결재 흐름과 직원별 관리방식 정리</div>
           </Link>
+          <Link href="/ai-system" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
+            <div className="text-2xl mb-2">AI</div>
+            <div className="font-bold text-gray-800">AI 업무시스템 사용원칙</div>
+            <div className="text-sm text-gray-500 mt-1">Codex·Work·Drive·Calendar·Keep 역할 기준</div>
+          </Link>
           <Link href="/report" className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:border-green-300 transition-colors">
             <div className="text-2xl mb-2">🖨️</div>
             <div className="font-bold text-gray-800">보고서 출력</div>
