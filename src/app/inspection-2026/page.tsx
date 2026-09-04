@@ -179,7 +179,10 @@ export default function Inspection2026Page() {
         <section className="mb-5 overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-cyan-950 p-7 text-white shadow-xl">
           <div className="grid gap-7 lg:grid-cols-[1fr_360px]">
             <div>
-              <span className="rounded-full bg-red-400/15 px-3 py-1 text-xs font-bold text-red-200">제출기한 2026. 7. 30.</span>
+              <div className="flex flex-wrap gap-2">
+                <span className="rounded-full bg-red-400/15 px-3 py-1 text-xs font-bold text-red-200">점검예정일 2026. 9. 18.</span>
+                <span className="rounded-full bg-cyan-400/15 px-3 py-1 text-xs font-bold text-cyan-200">사전제출기한 2026. 7. 30.</span>
+              </div>
               <h2 className="mt-4 text-3xl font-black tracking-tight">자료를 찾는 화면이 아니라,<br/>점검관에게 바로 보여주는 준비 화면</h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">점검 대상은 2024년 7월부터 2026년 6월까지입니다. 2025년 실제 제출자료를 재사용하되, 빠진 2024년 7월과 2025년 8월 이후 자료를 반드시 이어 붙이세요.</p>
             </div>
