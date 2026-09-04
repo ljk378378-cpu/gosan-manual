@@ -45,6 +45,14 @@ type ChapterSection = {
 const STORAGE_KEY = 'cheonggok-hr-labor-learning-v1'
 const LATEST_KEY = 'cheonggok-hr-labor-latest-v1'
 
+const guideRoadmap = [
+  { phase: '1단계', title: '전체 목차 읽기', detail: '사회복지시설 관리안내가 어떤 장으로 구성되는지 먼저 파악하고, 시설운영·종사자관리·회계·후원금·안전·지도점검의 위치를 표시한다.' },
+  { phase: '2단계', title: '종사자 관리 정독', detail: '채용, 임면, 결격사유, 경력인정, 호봉, 복무, 교육, 퇴직 등 과장 업무와 직접 연결되는 내용을 소단원 단위로 읽는다.' },
+  { phase: '3단계', title: '근로기준법 연결', detail: '관리안내만으로 판단이 부족한 근로시간, 휴게, 연차, 임금, 퇴직, 괴롭힘 사안은 고용노동부와 국가법령정보센터 자료로 연결한다.' },
+  { phase: '4단계', title: '기관 규정 대조', detail: '사회복지시설 관리안내의 기준과 청곡복지관 운영규정, 인사규정, 복무규정, 보수규정, 서비스규정이 충돌하지 않는지 확인한다.' },
+  { phase: '5단계', title: '현장 사례 적용', detail: '결재, 직원상담, 반복실수, 지도점검, 평가자료 준비 상황에 적용하여 관리자로서 설명 가능한 문장과 증빙 위치를 남긴다.' },
+]
+
 const topics: Topic[] = [
   { day: 1, area: '채용', title: '공개채용과 채용공정성', keyPoint: '채용공고, 심사기준, 면접위원, 결과공지, 개인정보 관리가 하나의 흐름으로 남아야 함', managerQuestion: '최근 채용 건에서 외부위원과 심사표가 모두 남아 있는가?', evidence: '채용공고, 지원서, 심사표, 면접위원 명단, 채용결과 공지' },
   { day: 2, area: '채용', title: '근로계약과 수습기간', keyPoint: '근로계약서에는 업무, 임금, 근로시간, 휴게, 휴일, 계약기간이 명확해야 함', managerQuestion: '계약직과 정규직의 계약서 양식이 실제 근무조건을 정확히 반영하는가?', evidence: '근로계약서, 임용기안, 인사발령, 업무분장표' },
@@ -374,20 +382,20 @@ function todayTopicIndex() {
 function buildChapterSections(topic: Topic, material: Material): ChapterSection[] {
   return [
     {
-      heading: '1. 오늘 챕터의 의미',
-      body: `${topic.title}은 관리자가 현장에서 자주 마주치는 인사노무 판단의 출발점이다. 이 주제는 법 조문 하나를 외우는 문제가 아니라, 직원에게 어떤 기준으로 설명하고 어떤 자료를 남겨야 하는지를 익히는 과정이다. 특히 사회복지관은 인건비, 복무, 교육, 평가, 지도점검이 서로 연결되어 있으므로 한 항목의 누락이 다른 영역의 설명 부담으로 이어질 수 있다. 오늘은 ${topic.area} 영역을 중심으로 ${topic.keyPoint}`,
+      heading: '1. 오늘 원문 정독 범위',
+      body: `오늘은 사회복지시설 관리안내 전문에서 ${topic.area} 영역과 연결되는 부분을 먼저 읽는다. 원문을 읽을 때는 제목만 훑지 않고, “적용대상”, “기관이 해야 할 일”, “남겨야 할 증빙”, “지방자치단체 또는 지도점검에서 확인할 수 있는 내용”을 표시한다. 오늘 주제는 ${topic.title}이며, 원문을 읽으면서 ${topic.keyPoint}`,
     },
     {
-      heading: '2. 기본개념 이해',
-      body: `${material.read.join(' ')} 처음 학습할 때는 모든 예외를 한 번에 외우려고 하기보다 “권리인지, 기관의 관리책임인지, 증빙이 필요한지, 규정과 실제 운영이 맞는지” 네 가지로 나누어 이해하는 것이 좋다. 이 구조로 보면 생소한 노무 이슈가 들어와도 당장 결론을 내리기보다 확인해야 할 자료와 질문을 먼저 정리할 수 있다.`,
+      heading: '2. 원문을 읽은 뒤 이해할 핵심',
+      body: `${material.read.join(' ')} 사회복지시설 관리안내는 일반적인 노무 교재가 아니라 사회복지시설을 운영하는 기관이 따라야 할 행정적 기준에 가깝다. 따라서 원문을 읽을 때는 “좋은 지식”을 얻는 것보다 “우리 기관이 이 기준을 이미 지키고 있는가, 지키고 있다면 어떤 문서로 설명할 수 있는가, 부족하다면 누가 언제까지 보완해야 하는가”로 읽어야 학습효과가 생긴다.`,
     },
     {
-      heading: '3. 공식자료를 읽는 방법',
-      body: `오늘 기준자료는 ${material.source}이다. 공식자료를 볼 때는 제목과 개정일만 확인하고 넘기지 말고, 우리 기관에 실제로 적용될 문장을 찾아야 한다. 예를 들어 “해야 한다”, “둘 수 있다”, “확인한다”, “보관한다”와 같은 표현은 관리자가 남겨야 할 문서와 직접 연결된다. 최신자료에서 변경사항이 확인되면 기존 운영규정, 실제 결재양식, 직원 안내문, 평가 증빙자료와 충돌하는 부분이 없는지 함께 보아야 한다.`,
+      heading: '3. 함께 확인할 보조자료',
+      body: `오늘 보조자료는 ${material.source}이다. 사회복지시설 관리안내를 기본 교재로 읽고, 법적 판단이 필요한 부분은 국가법령정보센터와 고용노동부 자료로 확인한다. 예를 들어 근로시간, 휴게, 연차, 임금, 퇴직, 직장 내 괴롭힘은 관리안내만으로 끝내기보다 근로기준법과 고용노동부 해석을 함께 확인해야 한다. 최신자료에서 변경사항이 보이면 기관 규정과 실제 결재양식이 여전히 맞는지도 같이 본다.`,
     },
     {
       heading: '4. 사회복지관 업무에 적용하기',
-      body: `사회복지관의 인사노무는 일반 회사의 노무관리와 달리 보조금, 평가, 지도점검, 법인 규정, 기관 내부결재가 함께 맞아야 한다. 따라서 오늘 주제는 단순히 담당자 한 명이 아는 지식으로 끝나면 안 되고, 기관 안에서 반복적으로 쓰이는 양식과 절차로 남아야 한다. ${topic.evidence} 자료가 흩어져 있거나 담당자 기억에만 의존하고 있다면 점검 시 설명이 어려워질 수 있다.`,
+      body: `사회복지관의 인사노무는 일반 회사의 노무관리와 달리 보조금, 평가, 지도점검, 법인 규정, 기관 내부결재가 함께 맞아야 한다. 따라서 오늘 주제는 단순히 담당자 한 명이 아는 지식으로 끝나면 안 되고, 기관 안에서 반복적으로 쓰이는 양식과 절차로 남아야 한다. 오늘 확인할 증빙은 ${topic.evidence}이다. 이 자료가 흩어져 있거나 담당자 기억에만 의존하고 있다면 점검 시 설명이 어려워질 수 있다.`,
     },
     {
       heading: '5. 관리자로서 확인할 질문',
@@ -527,11 +535,28 @@ export default function HrLaborPage() {
 
       <div className="mx-auto max-w-7xl px-5 py-7">
         <section className="mb-5 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-violet-950 p-7 text-white shadow-xl">
-          <p className="text-sm font-bold text-violet-200">관리자 학습 원칙</p>
-          <h2 className="mt-2 text-3xl font-black tracking-tight">매일 10분, 법령·지침·우리 규정을<br />실제 결재와 직원관리로 연결</h2>
+          <p className="text-sm font-bold text-violet-200">사회복지시설 관리안내 전문 학습</p>
+          <h2 className="mt-2 text-3xl font-black tracking-tight">매일 한 소단원씩 정독하고<br />관리자의 판단 언어로 바꾸기</h2>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
-            최신 기준은 공식자료로 확인하고, 우리 기관 운영규정·서비스규정과 실제 업무가 맞는지 기록합니다. 판단이 필요한 사안은 즉시 결론내리지 않고 확인질문으로 남깁니다.
+            사회복지시설 관리안내를 기본 교재로 삼고, 필요한 경우 근로기준법·고용노동부 자료·우리 기관 규정을 연결합니다. 목표는 전문을 외우는 것이 아니라 원문을 읽고, 찾고, 설명하고, 실제 결재와 직원관리에 적용하는 힘을 기르는 것입니다.
           </p>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-slate-50 p-5">
+            <p className="text-xs font-black tracking-[.18em] text-slate-500">TEXTBOOK ROADMAP</p>
+            <h2 className="mt-1 text-xl font-black">사회복지시설 관리안내 전문 학습 로드맵</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">링크는 원문 확인용이고, 학습의 기준은 관리안내 전문입니다. 매일 원문 한 범위를 읽고 아래 챕터로 해석합니다.</p>
+          </div>
+          <div className="grid gap-3 p-5 md:grid-cols-5">
+            {guideRoadmap.map(item => (
+              <article key={item.phase} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs font-black text-violet-700">{item.phase}</p>
+                <h3 className="mt-1 text-sm font-black text-slate-950">{item.title}</h3>
+                <p className="mt-2 text-xs font-semibold leading-5 text-slate-600">{item.detail}</p>
+              </article>
+            ))}
+          </div>
         </section>
 
         <section className="mb-5 grid gap-3 md:grid-cols-4">
