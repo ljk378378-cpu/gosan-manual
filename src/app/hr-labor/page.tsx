@@ -28,6 +28,7 @@ type LatestRecord = {
   source: string
   summary: string
   impact: string
+  question?: string
   action: string
 }
 type Material = {
@@ -375,6 +376,7 @@ export default function HrLaborPage() {
     source: '',
     summary: '',
     impact: '',
+    question: '',
     action: '',
   })
   const [draft, setDraft] = useState({
@@ -438,12 +440,13 @@ export default function HrLaborPage() {
       source: latestDraft.source.trim(),
       summary: latestDraft.summary.trim(),
       impact: latestDraft.impact.trim(),
+      question: latestDraft.question.trim(),
       action: latestDraft.action.trim(),
     }
     const next = [record, ...latestRecords].slice(0, 200)
     setLatestRecords(next)
     localStorage.setItem(LATEST_KEY, JSON.stringify(next))
-    setLatestDraft({ title: '', source: '', summary: '', impact: '', action: '' })
+    setLatestDraft({ title: '', source: '', summary: '', impact: '', question: '', action: '' })
   }
 
   const removeLatestRecord = (id: string) => {
@@ -453,9 +456,9 @@ export default function HrLaborPage() {
   }
 
   const latestSearchPrompt = [
-    '오늘 기준 사회복지시설 인사노무 최신자료를 확인해줘.',
-    '공식자료를 우선으로 보고, 보건복지부 사회복지시설 관리안내, 고용노동부 보도자료·정책자료, 국가법령정보센터 법령 개정사항을 기준으로 정리해줘.',
-    '관리자가 알아야 할 변경사항, 우리 복지관에 영향 있는 부분, 오늘 확인할 서류나 규정을 5줄 이내로 정리해줘.',
+    '오늘의 사회복지시설 인사노무 학습 챕터를 하나 만들어줘.',
+    '최신 공식자료를 우선으로 보고, 보건복지부 사회복지시설 관리안내, 고용노동부 보도자료·정책자료, 국가법령정보센터 법령 개정사항 중 오늘 관리자가 학습할 만한 주제 하나를 선정해줘.',
+    '구성은 1. 오늘의 챕터 제목 2. 왜 지금 중요한지 3. 기본개념 설명 4. 공식자료 핵심 5. 사회복지관에 적용할 점 6. 내가 스스로 점검할 질문 3개 7. 노무사에게 확인할 질문 1개로 정리해줘.',
   ].join(' ')
 
   const summary = [
@@ -469,8 +472,8 @@ export default function HrLaborPage() {
     '오늘 기록',
     todayRecords.length ? todayRecords.map(record => `- ${record.topic}: ${record.learned || record.question}`).join('\n') : '- 아직 기록 없음',
     '',
-    '오늘 최신자료 확인',
-    todayLatestRecords.length ? todayLatestRecords.map(record => `- ${record.title}: ${record.summary || record.impact}`).join('\n') : '- 아직 기록 없음',
+    '오늘 최신 챕터 학습',
+    todayLatestRecords.length ? todayLatestRecords.map(record => `- ${record.title}: ${record.summary || record.impact}${record.question ? ` / 질문: ${record.question}` : ''}`).join('\n') : '- 아직 기록 없음',
   ].join('\n')
 
   return (
@@ -519,11 +522,19 @@ export default function HrLaborPage() {
         <section className="mb-5 grid gap-4 lg:grid-cols-[1fr_420px]">
           <div className="overflow-hidden rounded-2xl border border-red-200 bg-white shadow-sm">
             <div className="border-b border-red-100 bg-red-50 p-5">
-              <p className="text-xs font-black tracking-[.18em] text-red-700">LATEST HR UPDATE</p>
-              <h2 className="mt-1 text-xl font-black">매일 최신 노무자료 학습</h2>
-              <p className="mt-1 text-sm leading-6 text-red-900">고정 커리큘럼과 별개로, 매일 최신 개정·보도·지침을 확인하고 우리 기관 영향만 기록합니다.</p>
+              <p className="text-xs font-black tracking-[.18em] text-red-700">TODAY HR CHAPTER</p>
+              <h2 className="mt-1 text-xl font-black">오늘의 최신 인사노무 챕터</h2>
+              <p className="mt-1 text-sm leading-6 text-red-900">매일 최신자료 중 하나를 골라 읽고, 기본개념부터 사회복지관 적용까지 한 챕터로 학습합니다.</p>
             </div>
-            <div className="grid gap-3 p-5 md:grid-cols-3">
+            <div className="grid gap-3 p-5 md:grid-cols-5">
+              {['주제 선정', '자료 읽기', '개념 이해', '질문 기록', '업무 적용'].map((step, index) => (
+                <div key={step} className="rounded-xl border border-red-100 bg-red-50 p-4">
+                  <p className="text-xs font-black text-red-700">{index + 1}단계</p>
+                  <p className="mt-1 text-sm font-black text-slate-900">{step}</p>
+                </div>
+              ))}
+            </div>
+            <div className="grid gap-3 border-t border-slate-100 p-5 md:grid-cols-3">
               <a href="https://www.mohw.go.kr/board.es?act=view&bid=0021&list_no=1488923&mid=a10413000000" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-red-300">
                 <p className="text-sm font-black text-slate-900">복지부 관리안내</p>
                 <p className="mt-1 text-xs leading-5 text-slate-600">사회복지시설 인사·운영 기준 확인</p>
@@ -539,27 +550,31 @@ export default function HrLaborPage() {
             </div>
             <div className="border-t border-slate-100 p-5">
               <div className="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center">
-                <p className="text-sm font-bold leading-6 text-slate-700">ChatGPT Work에서 최신자료를 확인할 때 이 문장을 그대로 사용합니다.</p>
-                <button onClick={() => navigator.clipboard.writeText(latestSearchPrompt)} className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">검색문장 복사</button>
+                <div>
+                  <p className="text-sm font-black leading-6 text-slate-800">ChatGPT Work용 챕터 생성 문장</p>
+                  <p className="text-xs font-bold leading-5 text-slate-600">최신자료를 그냥 찾는 것이 아니라, 매일 공부할 수 있는 하나의 수업 형태로 만들어 달라는 문장입니다.</p>
+                </div>
+                <button onClick={() => navigator.clipboard.writeText(latestSearchPrompt)} className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">챕터문장 복사</button>
               </div>
               <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-bold leading-5 text-amber-900">
-                최신자료는 자동으로 확정 판단하지 않습니다. 변경사항이 보이면 우리 기관 규정, 실제 처리방식, 노무사 확인 필요 여부로 나누어 기록합니다.
+                목표는 매일 한 가지를 깊게 익히는 것입니다. 읽은 자료, 이해한 개념, 궁금한 질문, 우리 기관 적용점을 남기면 나중에 과장님의 인사노무 학습노트가 됩니다.
               </p>
             </div>
           </div>
 
           <aside className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 bg-slate-50 p-5">
-              <p className="text-xs font-black tracking-[.18em] text-slate-500">LATEST RECORD</p>
-              <h2 className="mt-1 text-xl font-black">오늘 최신자료 기록</h2>
+              <p className="text-xs font-black tracking-[.18em] text-slate-500">CHAPTER NOTE</p>
+              <h2 className="mt-1 text-xl font-black">오늘 챕터 학습기록</h2>
             </div>
             <div className="grid gap-3 p-5">
-              <input value={latestDraft.title} onChange={event => setLatestDraft(previous => ({ ...previous, title: event.target.value }))} placeholder="자료 제목 또는 이슈명" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-red-700" />
-              <input value={latestDraft.source} onChange={event => setLatestDraft(previous => ({ ...previous, source: event.target.value }))} placeholder="출처 또는 링크" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-red-700" />
-              <textarea value={latestDraft.summary} onChange={event => setLatestDraft(previous => ({ ...previous, summary: event.target.value }))} placeholder="핵심 내용" className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-red-700" />
-              <textarea value={latestDraft.impact} onChange={event => setLatestDraft(previous => ({ ...previous, impact: event.target.value }))} placeholder="우리 기관에 영향 있는 부분" className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-red-700" />
-              <textarea value={latestDraft.action} onChange={event => setLatestDraft(previous => ({ ...previous, action: event.target.value }))} placeholder="오늘 확인할 규정·서류·담당자" className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-red-700" />
-              <button onClick={saveLatestRecord} className="rounded-lg bg-red-800 px-4 py-3 text-sm font-black text-white">최신자료 기록 저장</button>
+              <input value={latestDraft.title} onChange={event => setLatestDraft(previous => ({ ...previous, title: event.target.value }))} placeholder="오늘 챕터 제목" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-red-700" />
+              <input value={latestDraft.source} onChange={event => setLatestDraft(previous => ({ ...previous, source: event.target.value }))} placeholder="읽은 공식자료·링크" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-red-700" />
+              <textarea value={latestDraft.summary} onChange={event => setLatestDraft(previous => ({ ...previous, summary: event.target.value }))} placeholder="오늘 읽고 이해한 내용" className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-red-700" />
+              <textarea value={latestDraft.impact} onChange={event => setLatestDraft(previous => ({ ...previous, impact: event.target.value }))} placeholder="처음 알게 된 기본개념·최신 흐름" className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-red-700" />
+              <textarea value={latestDraft.question} onChange={event => setLatestDraft(previous => ({ ...previous, question: event.target.value }))} placeholder="궁금한 점·나중에 물어볼 질문" className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-red-700" />
+              <textarea value={latestDraft.action} onChange={event => setLatestDraft(previous => ({ ...previous, action: event.target.value }))} placeholder="우리 기관 규정·업무에 적용할 내용" className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-red-700" />
+              <button onClick={saveLatestRecord} className="rounded-lg bg-red-800 px-4 py-3 text-sm font-black text-white">오늘 챕터 저장</button>
             </div>
           </aside>
         </section>
@@ -705,18 +720,19 @@ export default function HrLaborPage() {
 
         <section className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 bg-slate-50 p-5">
-            <h2 className="text-lg font-black">최근 최신자료 기록</h2>
+            <h2 className="text-lg font-black">최근 챕터 학습기록</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[980px] border-collapse text-sm">
               <thead className="bg-slate-100 text-left text-xs text-slate-600">
                 <tr>
                   <th className="p-3">일자</th>
-                  <th className="p-3">자료</th>
+                  <th className="p-3">챕터</th>
                   <th className="p-3">출처</th>
-                  <th className="p-3">핵심</th>
-                  <th className="p-3">기관 영향</th>
-                  <th className="p-3">조치</th>
+                  <th className="p-3">이해한 내용</th>
+                  <th className="p-3">개념·흐름</th>
+                  <th className="p-3">질문</th>
+                  <th className="p-3">업무 적용</th>
                   <th className="p-3">관리</th>
                 </tr>
               </thead>
@@ -728,11 +744,12 @@ export default function HrLaborPage() {
                     <td className="max-w-xs p-3 text-xs leading-5 text-slate-600">{record.source || '-'}</td>
                     <td className="max-w-xs p-3 text-xs leading-5 text-slate-600">{record.summary || '-'}</td>
                     <td className="max-w-xs p-3 text-xs leading-5 text-red-700">{record.impact || '-'}</td>
+                    <td className="max-w-xs p-3 text-xs leading-5 text-amber-700">{record.question || '-'}</td>
                     <td className="max-w-xs p-3 text-xs leading-5 text-emerald-700">{record.action || '-'}</td>
                     <td className="p-3"><button onClick={() => removeLatestRecord(record.id)} className="text-xs font-bold text-slate-400 hover:text-red-600">삭제</button></td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={7} className="p-8 text-center text-sm text-slate-500">아직 최신자료 기록이 없습니다. 매일 공식자료를 확인한 뒤 우리 기관 영향만 짧게 남기면 됩니다.</td></tr>
+                  <tr><td colSpan={8} className="p-8 text-center text-sm text-slate-500">아직 챕터 기록이 없습니다. 매일 하나의 주제를 읽고 이해한 내용, 질문, 업무 적용점을 남기면 됩니다.</td></tr>
                 )}
               </tbody>
             </table>
