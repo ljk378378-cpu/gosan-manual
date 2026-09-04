@@ -281,6 +281,7 @@ export default function TeamCommandPage() {
   const [quickLine, setQuickLine] = useState('')
   const [quickFollowUp, setQuickFollowUp] = useState(false)
   const [closingNote, setClosingNote] = useState<ClosingNote>(closingDefaults)
+  const [detailLogOpen, setDetailLogOpen] = useState(false)
   const [draft, setDraft] = useState({
     team: '공통' as TeamKey,
     staff: '공통' as StaffKey,
@@ -951,11 +952,17 @@ export default function TeamCommandPage() {
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 bg-emerald-50 p-4">
-              <p className="text-xs font-black tracking-[.18em] text-emerald-700">INTERRUPTION LOG</p>
-              <h2 className="mt-1 text-xl font-black">수시보고 기록</h2>
+            <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-emerald-50 p-4 md:flex-row md:items-center">
+              <div>
+                <p className="text-xs font-black tracking-[.18em] text-emerald-700">DETAIL LOG</p>
+                <h2 className="mt-1 text-xl font-black">정밀 수시보고 기록</h2>
+                <p className="mt-1 text-sm leading-6 text-emerald-900">반복문제, 책임소재, 부장 보고 가능성이 있는 건만 자세히 남깁니다.</p>
+              </div>
+              <button onClick={() => setDetailLogOpen(value => !value)} className="rounded-lg bg-emerald-800 px-4 py-3 text-sm font-black text-white">
+                {detailLogOpen ? '정밀기록 접기' : '정밀기록 열기'}
+              </button>
             </div>
-            <div className="grid gap-3 p-5">
+            {detailLogOpen ? <div className="grid gap-3 p-5">
               <select value={draft.team} onChange={event => setDraft(previous => ({ ...previous, team: event.target.value as TeamKey }))} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold">
                 {teamKeys.map(key => <option key={key}>{key}</option>)}
               </select>
@@ -985,7 +992,11 @@ export default function TeamCommandPage() {
                 <input type="number" min="0" step="5" value={draft.minutes} onChange={event => setDraft(previous => ({ ...previous, minutes: Number(event.target.value) }))} placeholder="소요분" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 <button onClick={saveRecord} className="rounded-lg bg-emerald-800 px-4 py-3 text-sm font-black text-white">기록 저장</button>
               </div>
-            </div>
+            </div> : <div className="p-5">
+              <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+                평소에는 맨 위 초고속 기록만 사용합니다. 같은 문제가 반복되거나 공식 피드백 근거가 필요할 때만 정밀기록을 엽니다.
+              </p>
+            </div>}
           </div>
         </section>
 
