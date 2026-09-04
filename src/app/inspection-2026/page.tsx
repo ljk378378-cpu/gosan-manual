@@ -15,9 +15,13 @@ type Item = {
 }
 
 type DetailGuide = { check: string; evidence: string; warning?: string }
+type DailyCheck = { id: string; time: string; title: string; detail: string; evidence: string }
+type ScheduleStep = { date: string; title: string; focus: string; output: string; risk: string }
+type CompareRow = { area: string; base2025: string; required2026: string; currentData: string; action: string }
 
 const STATUS: Status[] = ['미착수', '진행중', '확인필요', '완료']
 const KEY = 'cheonggok-inspection-2026-v1'
+const DAILY_KEY = 'cheonggok-inspection-2026-daily-v1'
 
 const detailGuides: Record<string, DetailGuide[]> = {
   F1: [
@@ -125,10 +129,42 @@ const items: Item[] = [
 
 const groups = [...new Set(items.map(i => i.group))]
 
+const scheduleSteps: ScheduleStep[] = [
+  { date:'9.4(금)', title:'전체 구조 확정', focus:'사전 제출 4종과 현장 원본철 기준을 먼저 맞춤', output:'제출파일 목록, 원본철 위치표 초안', risk:'자료는 있으나 어디 있는지 설명하지 못하는 상태' },
+  { date:'9.7(월)', title:'인사·급여 1차 점검', focus:'임면직, 호봉, 가족수당, 시간외, 사회보험을 기간 기준으로 대조', output:'인사 보완목록, 가족수당 확인표', risk:'2026 양식의 가족수당 항목 누락' },
+  { date:'9.8(화)', title:'회계·후원금 대조', focus:'총계정원장, 현금출납부, 통장, 카드, 후원금 공개·통보 확인', output:'회계 질문 예상표, 후원금 공개 증빙', risk:'시스템 자료와 결재철 수치 불일치' },
+  { date:'9.9(수)', title:'시설·안전·차량 확인', focus:'법정 비치서류, 재물조사, 안전점검, 차량운행일지를 현장 기준으로 확인', output:'현장 점검 체크표, 보완사진 목록', risk:'현장 게시·비치·잠금보관 상태 미흡' },
+  { date:'9.10(목)', title:'운영위원회·규정 검토', focus:'운영규정 개정이력, 운영위원회 구성·회의록·공개자료 연결', output:'규정·위원회 증빙 묶음', risk:'회의록은 있으나 공개·보고 증빙 누락' },
+  { date:'9.11(금)', title:'보완요청 확정', focus:'확인필요와 미착수 항목을 분리하고 담당자 회수 일정 확정', output:'보완요청 리스트, 담당자별 마감표', risk:'마감 없는 부탁으로 남아 회수가 지연됨' },
+  { date:'9.14(월)', title:'증빙 위치표 완성', focus:'점검관 질문에 30초 안에 보여줄 수 있도록 원본철·전자파일 위치 확정', output:'최종 증빙 위치표', risk:'파일명·폴더명 불명확으로 현장 대응 지연' },
+  { date:'9.15(화)', title:'모의점검', focus:'긴급 항목 위주로 실제 질문과 자료 제시를 리허설', output:'질문답변 메모, 보완조치표', risk:'담당자별 답변 기준이 다름' },
+  { date:'9.16(수)', title:'최종 보완', focus:'보완필요 항목만 남겨 재확인하고 출력·파일을 정리', output:'최종 출력본, 전자폴더 정리본', risk:'마지막 수정본과 출력본이 다름' },
+  { date:'9.17(목)', title:'점검 전 세팅', focus:'점검실, 원본철, 노트북, 전자폴더, 담당자 동선을 확정', output:'현장 세팅 완료표', risk:'자료는 준비됐으나 현장 동선이 정리되지 않음' },
+  { date:'9.18(금)', title:'구청 지도점검', focus:'확정된 자료만 제시하고 추가요청은 즉시 기록', output:'점검 대응 기록, 추가요청 목록', risk:'즉흥답변으로 불필요한 의문을 만듦' },
+]
+
+const dailyChecks: DailyCheck[] = [
+  { id:'morning-target', time:'출근 직후', title:'오늘 끝낼 항목 3개 확정', detail:'긴급·확인필요 항목 중 오늘 완료할 자료를 3개만 정함', evidence:'오늘 완료 항목명이 메모에 남아 있음' },
+  { id:'source-location', time:'오전', title:'원본철과 전자파일 위치 확인', detail:'문서가 있다는 수준이 아니라 실제로 꺼내 보여줄 수 있는지 확인함', evidence:'원본철 위치와 전자폴더 위치가 항목 메모에 입력됨' },
+  { id:'data-compare', time:'오후', title:'2025 기준자료와 2026 요구사항 비교', detail:'작년 제출자료를 그대로 쓰는 항목과 올해 보완해야 할 항목을 구분함', evidence:'비교데이터 표의 조치가 항목 상태에 반영됨' },
+  { id:'evidence-proof', time:'퇴근 전', title:'완료 항목은 증빙까지 확인', detail:'완료는 문장 작성 완료가 아니라 원본·전자자료·수치 대조까지 끝난 상태로 처리함', evidence:'상태가 완료이고 메모에 파일 위치 또는 확인근거가 남아 있음' },
+  { id:'carry-over', time:'퇴근 전', title:'내일 이월자료 정리', detail:'확인필요·미착수 항목 중 내일 먼저 볼 자료를 3개 이하로 줄임', evidence:'내일 확인할 항목이 메모에 정리됨' },
+]
+
+const comparisonRows: CompareRow[] = [
+  { area:'점검 기간', base2025:'2024.8~2025.7 자료 중심', required2026:'2024.7~2026.6 전체 확인', currentData:'2024.7 누락 여부와 2025.8 이후 자료 보완 필요', action:'기간이 걸치는 자료는 시작월과 종료월을 별도 확인' },
+  { area:'사전 제출파일', base2025:'준비자료, 결산, 총계정원장, 현금출납부 제출 경험 있음', required2026:'동일하되 총계정원장은 하나의 시트 기준', currentData:'4개 파일 완성 여부와 파일명 통일 필요', action:'S1~S4를 가장 먼저 완료 처리' },
+  { area:'인사·수당', base2025:'종사자 명부와 임면직 자료 중심', required2026:'가족수당 이중수령 확인이 별도 항목으로 강화', currentData:'배우자 수령 여부, 가족관계 증빙, 월별 지급액 확인 필요', action:'H4·H5를 긴급항목으로 먼저 대조' },
+  { area:'회계·후원금', base2025:'시스템 출력자료와 후원금 공개자료 활용', required2026:'계좌, 카드, 원장, 공개·통보 증빙의 연결성 확인', currentData:'수치보다 증빙 연결표가 중요함', action:'총계정원장-결의서-통장 흐름을 표본으로 확인' },
+  { area:'시설·안전', base2025:'차량등록증 등 일부 실제 제출자료 보유', required2026:'비치서류, 재물조사, 안전점검, 현장상태까지 확인', currentData:'문서철과 현장 상태가 동시에 맞아야 함', action:'현장 사진·게시물·잠금보관 상태까지 점검' },
+  { area:'사업·운영', base2025:'운영위원회, 사업계획, 결과보고 자료 활용', required2026:'계획·변경·실적·결과보고 수치의 일치 확인', currentData:'계획 변경 승인과 결과보고 수치 대조 필요', action:'D4와 운영위원회 자료를 함께 확인' },
+]
+
 export default function Inspection2026Page() {
   const [statuses, setStatuses] = useState<Record<string, Status>>({})
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [detailChecks, setDetailChecks] = useState<Record<string, boolean>>({})
+  const [dailyDone, setDailyDone] = useState<Record<string, boolean>>({})
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({})
   const [group, setGroup] = useState('전체')
   const [query, setQuery] = useState('')
@@ -140,6 +176,8 @@ export default function Inspection2026Page() {
       setStatuses(saved.statuses || {})
       setNotes(saved.notes || {})
       setDetailChecks(saved.detailChecks || {})
+      const savedDaily = JSON.parse(localStorage.getItem(DAILY_KEY) || '{}')
+      setDailyDone(savedDaily || {})
     } catch { /* ignore malformed local data */ }
   }, [])
 
@@ -149,6 +187,12 @@ export default function Inspection2026Page() {
     }
   }, [statuses, notes, detailChecks])
 
+  useEffect(() => {
+    if (Object.keys(dailyDone).length) {
+      localStorage.setItem(DAILY_KEY, JSON.stringify(dailyDone))
+    }
+  }, [dailyDone])
+
   const filtered = useMemo(() => items.filter(item => {
     const text = `${item.title} ${item.evidence} ${item.owner}`.toLowerCase()
     return (group === '전체' || item.group === group) && (!riskOnly || item.priority === '긴급') && text.includes(query.toLowerCase())
@@ -156,9 +200,14 @@ export default function Inspection2026Page() {
 
   const done = items.filter(i => statuses[i.id] === '완료').length
   const checking = items.filter(i => statuses[i.id] === '확인필요').length
+  const inProgress = items.filter(i => statuses[i.id] === '진행중').length
+  const notStarted = items.filter(i => !statuses[i.id] || statuses[i.id] === '미착수').length
+  const urgentOpen = items.filter(i => i.priority === '긴급' && statuses[i.id] !== '완료').length
   const percent = Math.round(done / items.length * 100)
+  const dailyPercent = Math.round(dailyChecks.filter(check => dailyDone[check.id]).length / dailyChecks.length * 100)
 
   const setStatus = (id: string, value: Status) => setStatuses(prev => ({ ...prev, [id]: value }))
+  const toggleDaily = (id: string) => setDailyDone(prev => ({ ...prev, [id]: !prev[id] }))
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -189,7 +238,7 @@ export default function Inspection2026Page() {
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
               <div className="flex items-end justify-between"><span className="text-sm text-slate-300">전체 준비율</span><strong className="text-4xl text-cyan-300">{percent}%</strong></div>
               <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-cyan-400 transition-all" style={{width:`${percent}%`}} /></div>
-              <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs"><div><b className="block text-xl">{items.length}</b>전체</div><div><b className="block text-xl text-emerald-300">{done}</b>완료</div><div><b className="block text-xl text-amber-300">{checking}</b>확인필요</div></div>
+              <div className="mt-4 grid grid-cols-5 gap-2 text-center text-xs"><div><b className="block text-xl">{items.length}</b>전체</div><div><b className="block text-xl text-emerald-300">{done}</b>증빙확인</div><div><b className="block text-xl text-blue-300">{inProgress}</b>진행중</div><div><b className="block text-xl text-amber-300">{checking}</b>확인필요</div><div><b className="block text-xl text-red-300">{urgentOpen}</b>긴급미완</div></div>
             </div>
           </div>
         </section>
@@ -198,6 +247,99 @@ export default function Inspection2026Page() {
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4"><p className="text-xs font-bold text-red-600">가장 먼저</p><p className="mt-1 font-bold">4개 사전 제출파일 완성</p><p className="mt-1 text-xs leading-5 text-red-800">준비자료 + 결산서 + 총계정원장(1시트) + 현금출납부</p></div>
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><p className="text-xs font-bold text-amber-700">2025 자료 재사용</p><p className="mt-1 font-bold">작년 제출 묶음을 기준점으로</p><p className="mt-1 text-xs leading-5 text-amber-800">2024.8~2025.7 자료는 보유 확인. 올해 범위에 맞춰 앞뒤 기간 보완</p></div>
           <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-4"><p className="text-xs font-bold text-cyan-700">올해 강화</p><p className="mt-1 font-bold">가족수당·현장 비치·자료 위치</p><p className="mt-1 text-xs leading-5 text-cyan-900">배우자 이중수령, 호봉·채용, 통장·카드, 재물조사를 별도 통제</p></div>
+        </section>
+
+        <section className="mb-5 grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)]">
+          <div className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm">
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-xs font-bold text-emerald-700">매일 점검</p>
+                <h3 className="mt-1 text-lg font-black">오늘의 필수 체크</h3>
+              </div>
+              <strong className="text-2xl text-emerald-700">{dailyPercent}%</strong>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-emerald-100"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{width:`${dailyPercent}%`}} /></div>
+            <div className="mt-4 space-y-2">
+              {dailyChecks.map(check => <label key={check.id} className="flex cursor-pointer gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <input type="checkbox" checked={!!dailyDone[check.id]} onChange={()=>toggleDaily(check.id)} className="mt-1 h-4 w-4 accent-emerald-700" />
+                <span className="min-w-0">
+                  <span className="block text-[11px] font-bold text-emerald-700">{check.time}</span>
+                  <b className="block text-sm text-slate-900">{check.title}</b>
+                  <span className="mt-1 block text-xs leading-5 text-slate-600">{check.detail}</span>
+                  <span className="mt-1 block text-[11px] leading-5 text-slate-500">확인근거: {check.evidence}</span>
+                </span>
+              </label>)}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold text-slate-500">9.18 지도점검 역산표</p>
+                <h3 className="mt-1 text-lg font-black">매일 무엇을 끝낼지 보이는 일정표</h3>
+              </div>
+              <div className="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700">미착수 {notStarted} · 진행중 {inProgress} · 확인필요 {checking}</div>
+            </div>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[760px] border-collapse text-left text-xs">
+                <thead>
+                  <tr className="border-y bg-slate-100 text-slate-600">
+                    <th className="w-20 px-3 py-2">일자</th>
+                    <th className="w-32 px-3 py-2">작업</th>
+                    <th className="px-3 py-2">핵심 확인</th>
+                    <th className="px-3 py-2">당일 산출물</th>
+                    <th className="px-3 py-2">놓치면 생기는 문제</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scheduleSteps.map(step => <tr key={`${step.date}-${step.title}`} className="border-b align-top">
+                    <td className="px-3 py-2 font-bold text-slate-900">{step.date}</td>
+                    <td className="px-3 py-2 font-semibold text-slate-800">{step.title}</td>
+                    <td className="px-3 py-2 leading-5 text-slate-600">{step.focus}</td>
+                    <td className="px-3 py-2 leading-5 text-emerald-700">{step.output}</td>
+                    <td className="px-3 py-2 leading-5 text-red-700">{step.risk}</td>
+                  </tr>)}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-5 grid gap-3 md:grid-cols-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs font-bold text-slate-500">완료 기준 1</p><p className="mt-1 text-sm font-bold">원본철 위치 확인</p><p className="mt-1 text-xs leading-5 text-slate-600">실물 파일철에서 바로 꺼낼 수 있어야 완료</p></div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs font-bold text-slate-500">완료 기준 2</p><p className="mt-1 text-sm font-bold">전자파일 위치 확인</p><p className="mt-1 text-xs leading-5 text-slate-600">폴더명과 파일명이 설명 가능한 상태</p></div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs font-bold text-slate-500">완료 기준 3</p><p className="mt-1 text-sm font-bold">수치·기간 대조</p><p className="mt-1 text-xs leading-5 text-slate-600">2024.7~2026.6 범위와 표 수치 일치</p></div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs font-bold text-slate-500">완료 기준 4</p><p className="mt-1 text-sm font-bold">30초 내 제시</p><p className="mt-1 text-xs leading-5 text-slate-600">점검관 질문에 담당자가 바로 보여줄 수 있어야 함</p></div>
+        </section>
+
+        <section className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div>
+            <p className="text-xs font-bold text-cyan-700">실질 비교데이터</p>
+            <h3 className="mt-1 text-lg font-black">2025 제출자료와 2026 점검요구 대조</h3>
+            <p className="mt-1 text-xs leading-5 text-slate-500">작년 자료를 그대로 믿지 않고, 올해 점검기간과 강화 항목에 맞춰 무엇을 보완해야 하는지 보는 표입니다.</p>
+          </div>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[860px] border-collapse text-left text-xs">
+              <thead>
+                <tr className="border-y bg-cyan-50 text-cyan-900">
+                  <th className="w-28 px-3 py-2">구분</th>
+                  <th className="px-3 py-2">2025 기준자료</th>
+                  <th className="px-3 py-2">2026 요구사항</th>
+                  <th className="px-3 py-2">현재 확인할 데이터</th>
+                  <th className="px-3 py-2">조치 방향</th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparisonRows.map(row => <tr key={row.area} className="border-b align-top">
+                  <td className="px-3 py-2 font-bold text-slate-900">{row.area}</td>
+                  <td className="px-3 py-2 leading-5 text-slate-600">{row.base2025}</td>
+                  <td className="px-3 py-2 leading-5 text-slate-700">{row.required2026}</td>
+                  <td className="px-3 py-2 leading-5 text-amber-700">{row.currentData}</td>
+                  <td className="px-3 py-2 leading-5 text-emerald-700">{row.action}</td>
+                </tr>)}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section className="mb-4 rounded-2xl border bg-white p-4 shadow-sm no-print">
