@@ -3,11 +3,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const navItems = [
-  { href: '/', label: '홈', icon: '홈' },
-  { href: '/evaluation-2027', label: '27년 평가', icon: '평가' },
-  { href: '/inspection-2026', label: '지도점검', icon: '점검' },
-  { href: '/team-command', label: '팀 운영', icon: '팀' },
-  { href: '/ai-system', label: 'AI원칙', icon: 'AI' },
+  { href: '/', label: '홈' },
+  { href: '/evaluation-2027', label: '27년 평가' },
+  { href: '/inspection-2026', label: '지도점검' },
+  { href: '/team-command', label: '팀 운영' },
+  { href: '/ai-system', label: 'AI원칙' },
 ]
 
 export default function Nav() {
@@ -31,8 +31,7 @@ export default function Nav() {
                     : 'hover:bg-white/10'
                 }`}
               >
-                <span className="mr-1 text-xs font-bold">{item.icon}</span>
-                <span className="hidden sm:inline">{item.label}</span>
+                <span>{item.label}</span>
               </Link>
             ))}
           </div>
