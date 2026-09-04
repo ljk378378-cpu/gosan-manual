@@ -24,6 +24,13 @@ const primaryCards = [
     tone: 'border-sky-200 bg-sky-50 text-sky-950',
   },
   {
+    href: '/hr-labor',
+    label: '관리자 학습',
+    title: '인사노무 학습실',
+    desc: '사회복지시설 인사노무, 운영규정, 서비스규정을 매일 10분씩 학습하고 기록',
+    tone: 'border-violet-200 bg-violet-50 text-violet-950',
+  },
+  {
     href: '/ai-system',
     label: '사용원칙',
     title: 'AI 업무시스템',
@@ -49,7 +56,7 @@ export default function Home() {
           <p className="text-xs font-bold tracking-[.22em] text-emerald-300">CHEONGGOK AI WORK HUB</p>
           <h1 className="mt-3 text-3xl font-black tracking-tight">청곡 AI 업무시스템 허브</h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
-            현재 기준 업무는 27년 사회복지관 평가, 2026 구청 지도점검, 팀 운영, AI 업무시스템입니다.
+            현재 기준 업무는 27년 사회복지관 평가, 2026 구청 지도점검, 팀 운영, 인사노무 학습, AI 업무시스템입니다.
             매일 확인할 화면을 줄이고, 업무 흐름을 한 곳에서 시작하기 위한 첫 화면입니다.
           </p>
         </section>

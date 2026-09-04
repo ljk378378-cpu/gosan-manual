@@ -7,6 +7,7 @@ const navItems = [
   { href: '/evaluation-2027', label: '27년 평가' },
   { href: '/inspection-2026', label: '지도점검' },
   { href: '/team-command', label: '팀 운영' },
+  { href: '/hr-labor', label: '인사노무' },
   { href: '/ai-system', label: 'AI원칙' },
 ]
 
