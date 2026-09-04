@@ -40,15 +40,6 @@ const todayFlow = [
   { time: '퇴근 전', action: '오늘 완료, 미완료, 내일 이월, 감정소모 원인 기록', tool: '팀 운영 대시보드' },
 ]
 
-const archiveLinks = [
-  { href: '/storyboard', title: '매뉴얼 스토리보드', desc: '주민이 그린 고산 매뉴얼 파트별 기록' },
-  { href: '/daily', title: '데일리 채널', desc: '기존 매뉴얼 작업 당시 일일 기록' },
-  { href: '/comments', title: '의견 게시판', desc: '기존 원고 수정 의견' },
-  { href: '/designer', title: '디자이너 브리핑', desc: '매뉴얼 디자인 전달자료' },
-  { href: '/photo-guide', title: '사진 가이드', desc: '매뉴얼 사진 취합 자료' },
-  { href: '/report', title: '보고서 출력', desc: '기존 진행현황 출력 화면' },
-]
-
 export default function Home() {
   return (
     <div className="min-h-screen bg-slate-50">
@@ -59,7 +50,7 @@ export default function Home() {
           <h1 className="mt-3 text-3xl font-black tracking-tight">청곡 AI 업무시스템 허브</h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
             현재 기준 업무는 27년 사회복지관 평가, 2026 구청 지도점검, 팀 운영, AI 업무시스템입니다.
-            예전 주민이 그린 고산 매뉴얼 화면은 아래 보관 링크에서 확인합니다.
+            매일 확인할 화면을 줄이고, 업무 흐름을 한 곳에서 시작하기 위한 첫 화면입니다.
           </p>
         </section>
 
@@ -103,23 +94,6 @@ export default function Home() {
           </aside>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold text-slate-500">이전 작업 보관</p>
-              <h2 className="mt-1 text-lg font-black text-slate-900">주민이 그린 고산 매뉴얼 관련 화면</h2>
-            </div>
-            <p className="text-xs text-slate-500">필요할 때만 참고</p>
-          </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            {archiveLinks.map(link => (
-              <Link key={link.href} href={link.href} className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-400">
-                <p className="text-sm font-bold text-slate-900">{link.title}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">{link.desc}</p>
-              </Link>
-            ))}
-          </div>
-        </section>
       </main>
     </div>
   )
