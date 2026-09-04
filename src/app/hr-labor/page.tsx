@@ -37,6 +37,10 @@ type Material = {
   read: string[]
   practice: string
 }
+type ChapterSection = {
+  heading: string
+  body: string
+}
 
 const STORAGE_KEY = 'cheonggok-hr-labor-learning-v1'
 const LATEST_KEY = 'cheonggok-hr-labor-latest-v1'
@@ -367,6 +371,35 @@ function todayTopicIndex() {
   return diff % topics.length
 }
 
+function buildChapterSections(topic: Topic, material: Material): ChapterSection[] {
+  return [
+    {
+      heading: '1. 오늘 챕터의 의미',
+      body: `${topic.title}은 관리자가 현장에서 자주 마주치는 인사노무 판단의 출발점이다. 이 주제는 법 조문 하나를 외우는 문제가 아니라, 직원에게 어떤 기준으로 설명하고 어떤 자료를 남겨야 하는지를 익히는 과정이다. 특히 사회복지관은 인건비, 복무, 교육, 평가, 지도점검이 서로 연결되어 있으므로 한 항목의 누락이 다른 영역의 설명 부담으로 이어질 수 있다. 오늘은 ${topic.area} 영역을 중심으로 ${topic.keyPoint}`,
+    },
+    {
+      heading: '2. 기본개념 이해',
+      body: `${material.read.join(' ')} 처음 학습할 때는 모든 예외를 한 번에 외우려고 하기보다 “권리인지, 기관의 관리책임인지, 증빙이 필요한지, 규정과 실제 운영이 맞는지” 네 가지로 나누어 이해하는 것이 좋다. 이 구조로 보면 생소한 노무 이슈가 들어와도 당장 결론을 내리기보다 확인해야 할 자료와 질문을 먼저 정리할 수 있다.`,
+    },
+    {
+      heading: '3. 공식자료를 읽는 방법',
+      body: `오늘 기준자료는 ${material.source}이다. 공식자료를 볼 때는 제목과 개정일만 확인하고 넘기지 말고, 우리 기관에 실제로 적용될 문장을 찾아야 한다. 예를 들어 “해야 한다”, “둘 수 있다”, “확인한다”, “보관한다”와 같은 표현은 관리자가 남겨야 할 문서와 직접 연결된다. 최신자료에서 변경사항이 확인되면 기존 운영규정, 실제 결재양식, 직원 안내문, 평가 증빙자료와 충돌하는 부분이 없는지 함께 보아야 한다.`,
+    },
+    {
+      heading: '4. 사회복지관 업무에 적용하기',
+      body: `사회복지관의 인사노무는 일반 회사의 노무관리와 달리 보조금, 평가, 지도점검, 법인 규정, 기관 내부결재가 함께 맞아야 한다. 따라서 오늘 주제는 단순히 담당자 한 명이 아는 지식으로 끝나면 안 되고, 기관 안에서 반복적으로 쓰이는 양식과 절차로 남아야 한다. ${topic.evidence} 자료가 흩어져 있거나 담당자 기억에만 의존하고 있다면 점검 시 설명이 어려워질 수 있다.`,
+    },
+    {
+      heading: '5. 관리자로서 확인할 질문',
+      body: `오늘 스스로 확인할 질문은 세 가지다. 첫째, ${topic.managerQuestion} 둘째, 이 사안을 직원에게 설명할 때 감정이나 관행이 아니라 규정과 자료로 말할 수 있는가. 셋째, 지금 우리 기관의 문서가 나중에 제3자가 보아도 같은 결론에 도달할 만큼 남아 있는가. 이 질문에 바로 답하기 어렵다면 오늘의 학습기록에 “확인 필요”로 남기고, 규정 또는 노무사 확인으로 연결하는 것이 좋다.`,
+    },
+    {
+      heading: '6. 오늘 남길 기록',
+      body: `${material.practice} 기록은 길게 쓰는 것이 목적이 아니다. 오늘 이해한 핵심 한 문장, 우리 기관에서 확인할 자료 한 가지, 궁금한 질문 한 가지, 실제 업무에 적용할 행동 한 가지를 남기면 된다. 이 기록이 1개월만 쌓여도 과장님이 팀원에게 설명할 수 있는 인사노무 언어가 생기고, 지도점검과 평가 준비에도 바로 활용할 수 있는 개인 학습자료가 된다.`,
+    },
+  ]
+}
+
 export default function HrLaborPage() {
   const [topicIndex, setTopicIndex] = useState(todayTopicIndex())
   const [records, setRecords] = useState<LearningRecord[]>([])
@@ -395,6 +428,7 @@ export default function HrLaborPage() {
 
   const topic = topics[topicIndex]
   const material = materialByArea[topic.area] ?? defaultMaterial
+  const chapterSections = buildChapterSections(topic, material)
   const todayRecords = useMemo(() => records.filter(record => record.date === todayDateString()), [records])
   const todayLatestRecords = useMemo(() => latestRecords.filter(record => record.date === todayDateString()), [latestRecords])
   const doneTopics = new Set(records.map(record => record.topic)).size
@@ -628,6 +662,22 @@ export default function HrLaborPage() {
               <button onClick={saveRecord} className="rounded-lg bg-violet-800 px-4 py-3 text-sm font-black text-white">학습 기록 저장</button>
             </div>
           </aside>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-slate-50 p-5">
+            <p className="text-xs font-black tracking-[.18em] text-slate-500">FULL CHAPTER</p>
+            <h2 className="mt-1 text-xl font-black">오늘 챕터 전문</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">링크를 먼저 열지 않아도 오늘 분량을 읽고 학습할 수 있도록 정리한 본문입니다. 공식자료 원문은 확인용으로 함께 봅니다.</p>
+          </div>
+          <div className="grid gap-4 p-5">
+            {chapterSections.map(section => (
+              <article key={section.heading} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <h3 className="text-sm font-black text-slate-950">{section.heading}</h3>
+                <p className="mt-2 text-sm font-semibold leading-7 text-slate-700">{section.body}</p>
+              </article>
+            ))}
+          </div>
         </section>
 
         <section className="mb-5 grid gap-4 lg:grid-cols-[1fr_360px]">
