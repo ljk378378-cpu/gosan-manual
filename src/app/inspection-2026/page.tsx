@@ -180,7 +180,7 @@ export default function Inspection2026Page() {
           <div className="grid gap-7 lg:grid-cols-[1fr_360px]">
             <div>
               <div className="flex flex-wrap gap-2">
-                <span className="rounded-full bg-red-400/15 px-3 py-1 text-xs font-bold text-red-200">점검예정일 2026. 9. 18.</span>
+                <span className="rounded-full bg-red-400/15 px-3 py-1 text-xs font-bold text-red-200">점검확정일 2026. 9. 18.</span>
                 <span className="rounded-full bg-cyan-400/15 px-3 py-1 text-xs font-bold text-cyan-200">사전제출기한 2026. 7. 30.</span>
               </div>
               <h2 className="mt-4 text-3xl font-black tracking-tight">자료를 찾는 화면이 아니라,<br/>점검관에게 바로 보여주는 준비 화면</h2>
