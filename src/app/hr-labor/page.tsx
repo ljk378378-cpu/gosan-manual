@@ -482,7 +482,7 @@ function buildChapterSections(topic: Topic, material: Material): ChapterSection[
 export default function HrLaborPage() {
   const [topicIndex, setTopicIndex] = useState(todayTopicIndex())
   const [activeGuide, setActiveGuide] = useState<'facility' | 'labor'>('facility')
-  const [pdfZoom, setPdfZoom] = useState(190)
+  const [pdfZoom, setPdfZoom] = useState(210)
   const [records, setRecords] = useState<LearningRecord[]>([])
   const [latestRecords, setLatestRecords] = useState<LatestRecord[]>([])
   const [latestDraft, setLatestDraft] = useState({
@@ -516,7 +516,7 @@ export default function HrLaborPage() {
   const activePage = activeGuide === 'facility' ? guidePage : laborGuidePage
   const activeTitle = activeGuide === 'facility' ? '2026 사회복지시설 관리안내' : '사회복지관 인사노무 길라잡이'
   const activeSubtitle = activeGuide === 'facility' ? '공식 행정 기준' : '한국사회복지관협회 노무자문 사례집'
-  const activePdfSrc = `${activePdf}#page=${activePage}&zoom=${pdfZoom}`
+  const activePdfSrc = `${activePdf}#page=${activePage}&zoom=${pdfZoom},0,0`
   const todayRecords = useMemo(() => records.filter(record => record.date === todayDateString()), [records])
   const todayLatestRecords = useMemo(() => latestRecords.filter(record => record.date === todayDateString()), [latestRecords])
   const doneTopics = new Set(records.map(record => record.topic)).size
@@ -770,13 +770,13 @@ export default function HrLaborPage() {
         </section>
 
         <section className="relative left-1/2 mb-5 w-screen -translate-x-1/2 overflow-hidden border-y border-slate-200 bg-white shadow-sm">
-          <div className="mx-auto max-w-[1800px] px-4 py-5">
+          <div className="mx-auto max-w-[1640px] px-6 py-6">
             <div className="mb-4 flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 lg:flex-row lg:items-center">
               <div>
                 <p className="text-xs font-black tracking-[.18em] text-slate-500">ORIGINAL GUIDE</p>
                 <h2 className="mt-1 text-xl font-black">오늘의 원문 교재 정독 모드</h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  원문을 화면 폭에 맞춰 크게 띄웠습니다. 관리안내는 공식 기준, 인사노무 길라잡이는 사회복지관 사례 해설로 함께 봅니다.
+                  원문을 세로로 길게 읽을 수 있도록 정독창을 크게 만들었습니다. 화면 안 확대가 반영되지 않으면 큰 새창에서 브라우저 확대를 함께 사용합니다.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -792,8 +792,8 @@ export default function HrLaborPage() {
                 >
                   길라잡이
                 </button>
-                <a href={activePdfSrc} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-800">
-                  큰 새창
+                <a href={activePdfSrc} target="_blank" rel="noreferrer" className="rounded-lg bg-emerald-700 px-4 py-3 text-sm font-black text-white">
+                  큰 새창으로 읽기
                 </a>
                 <a href={officialGuideDownload} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-800">공식 ZIP</a>
               </div>
@@ -806,7 +806,7 @@ export default function HrLaborPage() {
               </div>
               <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3">
                 <span className="text-xs font-black text-slate-500">확대</span>
-                {[150, 175, 190, 210, 225].map(value => (
+                {[175, 200, 210, 225, 250].map(value => (
                   <button
                     key={value}
                     onClick={() => setPdfZoom(value)}
@@ -818,11 +818,13 @@ export default function HrLaborPage() {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-slate-300 bg-slate-100">
+            <div className="rounded-2xl border border-slate-300 bg-slate-100 p-2">
               <iframe
+                key={activePdfSrc}
                 title={`${activeTitle} 원문`}
                 src={activePdfSrc}
-                className="h-[92vh] min-h-[980px] w-full bg-white"
+                className="block w-full rounded-xl bg-white shadow-inner"
+                style={{ height: 'min(1280px, calc(100vh - 90px))', minHeight: '1040px' }}
               />
             </div>
           </div>
