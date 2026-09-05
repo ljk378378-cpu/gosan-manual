@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import PdfCanvasReader from '@/components/PdfCanvasReader'
 
 type Topic = {
   day: number
@@ -482,6 +483,7 @@ function buildChapterSections(topic: Topic, material: Material): ChapterSection[
 export default function HrLaborPage() {
   const [topicIndex, setTopicIndex] = useState(todayTopicIndex())
   const [activeGuide, setActiveGuide] = useState<'facility' | 'labor'>('facility')
+  const [pdfZoom, setPdfZoom] = useState(1.55)
   const [records, setRecords] = useState<LearningRecord[]>([])
   const [latestRecords, setLatestRecords] = useState<LatestRecord[]>([])
   const [latestDraft, setLatestDraft] = useState({
@@ -798,24 +800,26 @@ export default function HrLaborPage() {
               </div>
             </div>
 
-            <div className="mb-4 grid gap-3">
+            <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
               <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
                 <p className="text-sm font-black text-slate-900">{activeTitle}</p>
                 <p className="mt-1 text-xs font-bold text-slate-500">{activeSubtitle} · {topic.area} · {topic.title} · 오늘 시작 p.{activePage}</p>
               </div>
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                <span className="text-xs font-black text-slate-500">글자크기</span>
+                {[1.25, 1.5, 1.75, 2].map(value => (
+                  <button
+                    key={value}
+                    onClick={() => setPdfZoom(value)}
+                    className={`rounded-lg px-3 py-2 text-xs font-black ${pdfZoom === value ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-slate-50 text-slate-700'}`}
+                  >
+                    {Math.round(value * 100)}%
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div
-              className="overflow-hidden rounded-2xl border border-slate-300 bg-slate-100 p-2"
-              style={{ height: 'min(1480px, calc(100vh - 52px))', minHeight: '1160px' }}
-            >
-              <iframe
-                key={`${activePdf}-${activePage}`}
-                title={`${activeTitle} 원문`}
-                src={activePdfSrc}
-                className="block h-full w-full rounded-xl bg-white shadow-inner"
-              />
-            </div>
+            <PdfCanvasReader fileUrl={activePdf} initialPage={activePage} scale={pdfZoom} title={activeTitle} />
           </div>
         </section>
 
