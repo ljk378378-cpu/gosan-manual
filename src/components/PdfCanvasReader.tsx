@@ -22,9 +22,9 @@ export default function PdfCanvasReader({ fileUrl, initialPage, scale, title }: 
 
   useEffect(() => {
     let cancelled = false
-    let renderTask: { promise: Promise<void>; cancel: () => void } | null = null
-    let loadingTask: { promise: Promise<any>; destroy: () => void } | null = null
-    let pdfDocument: { destroy: () => Promise<void> } | null = null
+    let renderTask: { promise: Promise<void>; cancel?: () => void } | null = null
+    let loadingTask: { promise: Promise<any>; destroy?: () => void } | null = null
+    let pdfDocument: { destroy?: () => Promise<void> | void } | null = null
 
     async function renderPage() {
       const canvas = canvasRef.current
@@ -88,9 +88,9 @@ export default function PdfCanvasReader({ fileUrl, initialPage, scale, title }: 
 
     return () => {
       cancelled = true
-      renderTask?.cancel()
-      loadingTask?.destroy()
-      pdfDocument?.destroy()
+      renderTask?.cancel?.()
+      loadingTask?.destroy?.()
+      pdfDocument?.destroy?.()
     }
   }, [fileUrl, currentPage, scale])
 
