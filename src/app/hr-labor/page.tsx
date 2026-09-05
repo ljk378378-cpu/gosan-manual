@@ -100,6 +100,44 @@ const sourceCards = [
   { title: '우리 기관 규정', detail: '운영규정, 복무규정, 인사규정, 보수규정, 서비스규정과 실제 운영 비교', href: '#' },
 ]
 
+const updateCheckpoints2026 = [
+  {
+    title: '2026 표준 취업규칙',
+    tag: '규정 대조',
+    detail: '채용, 복무, 휴가, 징계, 직장 내 괴롭힘, 모성보호, 개인정보 조항을 기관 운영규정·복무규정과 대조한다.',
+    action: '취업규칙 성격의 내부규정과 신구대조표 작성 필요 여부 확인',
+    href: 'https://www.moel.go.kr/policy/policydata/view.do?bbs_seq=20260200740',
+  },
+  {
+    title: '2026 최저임금',
+    tag: '임금 기준',
+    detail: '2026년 최저임금은 시급 10,320원, 월 환산액 2,156,880원이다. 단시간·시간제·일용성 인력과 강사비 산정 시 함께 확인한다.',
+    action: '계약직·시간제·단시간 인력의 근로계약서와 지급기준 점검',
+    href: 'https://www.moel.go.kr/news/enews/report/enewsView.do?news_seq=18144',
+  },
+  {
+    title: '2026 인건비 가이드라인',
+    tag: '처우 개선',
+    detail: '사회복지시설 종사자 기본급 3.5% 인상, 야간수당·통상임금·유급병가·가족수당 현실화 흐름을 확인한다.',
+    action: '보수규정, 급여대장, 가족수당, 병가 규정의 실제 적용 여부 확인',
+    href: 'https://www.mohw.go.kr/gallery.es?act=view&bid=0003&list_no=379771',
+  },
+  {
+    title: '노동절 공휴일 법제화',
+    tag: '복무 운영',
+    detail: '공휴일에 관한 법률에 노동절이 포함되어 2026년 5월 1일부터 시행된다. 기관 운영일, 휴일근로, 대체근무 처리 기준을 확인한다.',
+    action: '5월 1일 운영계획, 근무명령, 휴일근로수당 또는 대체휴무 처리 기준 점검',
+    href: 'https://www.law.go.kr/',
+  },
+  {
+    title: '노동조합법 2·3조 개정',
+    tag: '위탁·용역',
+    detail: '실질적으로 근로조건을 지배·결정하는 주체의 사용자성 판단이 강화되었다. 위탁·용역·하청 구조가 있는 업무에서 참고한다.',
+    action: '용역·위탁계약, 시설관리, 외부인력 사용 구조가 있는 경우 노무 자문 필요 여부 확인',
+    href: 'https://moel.go.kr/news/enews/report/enewsView.do?news_seq=19047',
+  },
+]
+
 const guidePageByDay: Record<number, number> = {
   1: 38,
   2: 34,
@@ -635,6 +673,31 @@ export default function HrLaborPage() {
                 <p className="text-xs font-black text-violet-700">{item.phase}</p>
                 <h3 className="mt-1 text-sm font-black text-slate-950">{item.title}</h3>
                 <p className="mt-2 text-xs font-semibold leading-5 text-slate-600">{item.detail}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+          <div className="border-b border-emerald-100 bg-emerald-50 p-5">
+            <p className="text-xs font-black tracking-[.18em] text-emerald-700">2026 UPDATE CHECK</p>
+            <h2 className="mt-1 text-xl font-black">2025 길라잡이와 함께 볼 2026년 변경 체크포인트</h2>
+            <p className="mt-1 text-sm leading-6 text-emerald-900">
+              2025년 길라잡이는 사례 해설자료로 활용하고, 실제 판단은 2026년 관리안내·표준 취업규칙·최저임금·최신 법령과 대조합니다.
+            </p>
+          </div>
+          <div className="grid gap-3 p-5">
+            {updateCheckpoints2026.map(item => (
+              <article key={item.title} className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[190px_1fr_1fr_auto] lg:items-center">
+                <div>
+                  <p className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800">{item.tag}</p>
+                  <h3 className="mt-2 text-sm font-black text-slate-950">{item.title}</h3>
+                </div>
+                <p className="text-sm font-semibold leading-6 text-slate-700">{item.detail}</p>
+                <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold leading-6 text-amber-900">{item.action}</p>
+                <a href={item.href} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-center text-xs font-black text-slate-700">
+                  원문확인
+                </a>
               </article>
             ))}
           </div>
