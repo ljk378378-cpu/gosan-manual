@@ -481,6 +481,7 @@ function buildChapterSections(topic: Topic, material: Material): ChapterSection[
 
 export default function HrLaborPage() {
   const [topicIndex, setTopicIndex] = useState(todayTopicIndex())
+  const [activeGuide, setActiveGuide] = useState<'facility' | 'labor'>('facility')
   const [records, setRecords] = useState<LearningRecord[]>([])
   const [latestRecords, setLatestRecords] = useState<LatestRecord[]>([])
   const [latestDraft, setLatestDraft] = useState({
@@ -510,6 +511,10 @@ export default function HrLaborPage() {
   const chapterSections = buildChapterSections(topic, material)
   const guidePage = guidePageByDay[topic.day] || 1
   const laborGuidePage = laborGuidePageByDay[topic.day] || 1
+  const activePdf = activeGuide === 'facility' ? localGuidePdf : localLaborGuidePdf
+  const activePage = activeGuide === 'facility' ? guidePage : laborGuidePage
+  const activeTitle = activeGuide === 'facility' ? '2026 사회복지시설 관리안내' : '사회복지관 인사노무 길라잡이'
+  const activeSubtitle = activeGuide === 'facility' ? '공식 행정 기준' : '한국사회복지관협회 노무자문 사례집'
   const todayRecords = useMemo(() => records.filter(record => record.date === todayDateString()), [records])
   const todayLatestRecords = useMemo(() => latestRecords.filter(record => record.date === todayDateString()), [latestRecords])
   const doneTopics = new Set(records.map(record => record.topic)).size
@@ -780,35 +785,41 @@ export default function HrLaborPage() {
           <div className="grid gap-4 p-5 lg:grid-cols-[260px_1fr]">
             <aside className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-black text-slate-500">오늘 교재 위치</p>
-              <p className="mt-2 text-3xl font-black text-slate-950">p.{guidePage}</p>
+              <p className="mt-2 text-3xl font-black text-slate-950">p.{activePage}</p>
               <p className="mt-3 text-sm font-bold leading-6 text-slate-700">{topic.area} · {topic.title}</p>
+              <div className="mt-4 grid gap-2">
+                <button
+                  onClick={() => setActiveGuide('facility')}
+                  className={`rounded-lg px-3 py-3 text-left text-sm font-black ${activeGuide === 'facility' ? 'bg-slate-950 text-white' : 'border border-slate-200 bg-white text-slate-700'}`}
+                >
+                  관리안내 크게 보기
+                </button>
+                <button
+                  onClick={() => setActiveGuide('labor')}
+                  className={`rounded-lg px-3 py-3 text-left text-sm font-black ${activeGuide === 'labor' ? 'bg-violet-800 text-white' : 'border border-slate-200 bg-white text-slate-700'}`}
+                >
+                  길라잡이 크게 보기
+                </button>
+              </div>
               <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs font-bold leading-5 text-amber-900">
                 관리안내는 공식 기준입니다. 길라잡이는 현장 사례 해설 자료로 함께 읽되, 최신 법령 판단은 공식자료로 다시 확인합니다.
               </p>
             </aside>
-            <div className="grid gap-4 xl:grid-cols-2">
-              <div className="overflow-hidden rounded-xl border border-slate-300 bg-slate-100">
-                <div className="border-b border-slate-200 bg-white px-4 py-3">
-                  <p className="text-sm font-black text-slate-900">2026 사회복지시설 관리안내</p>
-                  <p className="text-xs font-bold text-slate-500">공식 행정 기준 · 오늘 시작 p.{guidePage}</p>
+            <div className="overflow-hidden rounded-xl border border-slate-300 bg-slate-100">
+              <div className="flex flex-col justify-between gap-2 border-b border-slate-200 bg-white px-4 py-3 md:flex-row md:items-center">
+                <div>
+                  <p className="text-sm font-black text-slate-900">{activeTitle}</p>
+                  <p className="text-xs font-bold text-slate-500">{activeSubtitle} · 오늘 시작 p.{activePage}</p>
                 </div>
-                <iframe
-                  title="2026 사회복지시설 관리안내 원문"
-                  src={`${localGuidePdf}#page=${guidePage}`}
-                  className="h-[720px] w-full bg-white"
-                />
+                <a href={`${activePdf}#page=${activePage}`} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-black text-slate-700">
+                  큰 새창으로 열기
+                </a>
               </div>
-              <div className="overflow-hidden rounded-xl border border-violet-200 bg-violet-50">
-                <div className="border-b border-violet-100 bg-white px-4 py-3">
-                  <p className="text-sm font-black text-slate-900">사회복지관 인사노무 길라잡이</p>
-                  <p className="text-xs font-bold text-slate-500">한국사회복지관협회 노무자문 사례집 · 사례 해설용</p>
-                </div>
-                <iframe
-                  title="사회복지관 인사노무 길라잡이"
-                  src={`${localLaborGuidePdf}#page=${laborGuidePage}`}
-                  className="h-[720px] w-full bg-white"
-                />
-              </div>
+              <iframe
+                title={`${activeTitle} 원문`}
+                src={`${activePdf}#page=${activePage}&zoom=125`}
+                className="h-[86vh] min-h-[820px] w-full bg-white"
+              />
             </div>
           </div>
         </section>
