@@ -482,7 +482,6 @@ function buildChapterSections(topic: Topic, material: Material): ChapterSection[
 export default function HrLaborPage() {
   const [topicIndex, setTopicIndex] = useState(todayTopicIndex())
   const [activeGuide, setActiveGuide] = useState<'facility' | 'labor'>('facility')
-  const [pdfZoom, setPdfZoom] = useState(150)
   const [records, setRecords] = useState<LearningRecord[]>([])
   const [latestRecords, setLatestRecords] = useState<LatestRecord[]>([])
   const [latestDraft, setLatestDraft] = useState({
@@ -517,8 +516,6 @@ export default function HrLaborPage() {
   const activeTitle = activeGuide === 'facility' ? '2026 사회복지시설 관리안내' : '사회복지관 인사노무 길라잡이'
   const activeSubtitle = activeGuide === 'facility' ? '공식 행정 기준' : '한국사회복지관협회 노무자문 사례집'
   const activePdfSrc = `${activePdf}#page=${activePage}`
-  const readerScale = pdfZoom / 100
-  const readerBaseHeight = 1200
   const todayRecords = useMemo(() => records.filter(record => record.date === todayDateString()), [records])
   const todayLatestRecords = useMemo(() => latestRecords.filter(record => record.date === todayDateString()), [latestRecords])
   const doneTopics = new Set(records.map(record => record.topic)).size
@@ -778,7 +775,7 @@ export default function HrLaborPage() {
                 <p className="text-xs font-black tracking-[.18em] text-slate-500">ORIGINAL GUIDE</p>
                 <h2 className="mt-1 text-xl font-black">오늘의 원문 교재 정독 모드</h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  원문을 세로로 길게 읽을 수 있도록 정독창을 크게 만들었습니다. 확대 버튼은 PDF 주소값이 아니라 읽기창의 실제 폭을 조절합니다.
+                  원문을 세로로 길게 읽을 수 있도록 정독창을 크게 만들었습니다. 더 크게 읽을 때는 큰 새창으로 열어 브라우저 확대를 사용합니다.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -801,48 +798,23 @@ export default function HrLaborPage() {
               </div>
             </div>
 
-            <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div className="mb-4 grid gap-3">
               <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
                 <p className="text-sm font-black text-slate-900">{activeTitle}</p>
                 <p className="mt-1 text-xs font-bold text-slate-500">{activeSubtitle} · {topic.area} · {topic.title} · 오늘 시작 p.{activePage}</p>
               </div>
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3">
-                <span className="text-xs font-black text-slate-500">화면크기</span>
-                {[100, 125, 150, 175, 200].map(value => (
-                  <button
-                    key={value}
-                    onClick={() => setPdfZoom(value)}
-                    className={`rounded-lg px-3 py-2 text-xs font-black ${pdfZoom === value ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-slate-50 text-slate-700'}`}
-                  >
-                    {value}%
-                  </button>
-                ))}
-              </div>
             </div>
 
             <div
-              className="overflow-auto rounded-2xl border border-slate-300 bg-slate-100 p-2"
-              style={{ height: 'min(1320px, calc(100vh - 70px))', minHeight: '1080px' }}
+              className="overflow-hidden rounded-2xl border border-slate-300 bg-slate-100 p-2"
+              style={{ height: 'min(1480px, calc(100vh - 52px))', minHeight: '1160px' }}
             >
-              <div
-                style={{
-                  width: `${pdfZoom}%`,
-                  height: `${Math.round(readerBaseHeight * readerScale)}px`,
-                }}
-              >
-                <iframe
-                  key={`${activePdf}-${activePage}`}
-                  title={`${activeTitle} 원문`}
-                  src={activePdfSrc}
-                  className="block rounded-xl bg-white shadow-inner"
-                  style={{
-                    width: `${100 / readerScale}%`,
-                    height: `${readerBaseHeight}px`,
-                    transform: `scale(${readerScale})`,
-                    transformOrigin: 'top left',
-                  }}
-                />
-              </div>
+              <iframe
+                key={`${activePdf}-${activePage}`}
+                title={`${activeTitle} 원문`}
+                src={activePdfSrc}
+                className="block h-full w-full rounded-xl bg-white shadow-inner"
+              />
             </div>
           </div>
         </section>
