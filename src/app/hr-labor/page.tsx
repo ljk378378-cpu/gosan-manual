@@ -482,7 +482,7 @@ function buildChapterSections(topic: Topic, material: Material): ChapterSection[
 export default function HrLaborPage() {
   const [topicIndex, setTopicIndex] = useState(todayTopicIndex())
   const [activeGuide, setActiveGuide] = useState<'facility' | 'labor'>('facility')
-  const [pdfZoom, setPdfZoom] = useState(140)
+  const [pdfZoom, setPdfZoom] = useState(150)
   const [records, setRecords] = useState<LearningRecord[]>([])
   const [latestRecords, setLatestRecords] = useState<LatestRecord[]>([])
   const [latestDraft, setLatestDraft] = useState({
@@ -517,6 +517,8 @@ export default function HrLaborPage() {
   const activeTitle = activeGuide === 'facility' ? '2026 사회복지시설 관리안내' : '사회복지관 인사노무 길라잡이'
   const activeSubtitle = activeGuide === 'facility' ? '공식 행정 기준' : '한국사회복지관협회 노무자문 사례집'
   const activePdfSrc = `${activePdf}#page=${activePage}`
+  const readerScale = pdfZoom / 100
+  const readerBaseHeight = 1200
   const todayRecords = useMemo(() => records.filter(record => record.date === todayDateString()), [records])
   const todayLatestRecords = useMemo(() => latestRecords.filter(record => record.date === todayDateString()), [latestRecords])
   const doneTopics = new Set(records.map(record => record.topic)).size
@@ -805,8 +807,8 @@ export default function HrLaborPage() {
                 <p className="mt-1 text-xs font-bold text-slate-500">{activeSubtitle} · {topic.area} · {topic.title} · 오늘 시작 p.{activePage}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3">
-                <span className="text-xs font-black text-slate-500">확대</span>
-                {[100, 125, 140, 160, 180].map(value => (
+                <span className="text-xs font-black text-slate-500">화면크기</span>
+                {[100, 125, 150, 175, 200].map(value => (
                   <button
                     key={value}
                     onClick={() => setPdfZoom(value)}
@@ -822,16 +824,25 @@ export default function HrLaborPage() {
               className="overflow-auto rounded-2xl border border-slate-300 bg-slate-100 p-2"
               style={{ height: 'min(1320px, calc(100vh - 70px))', minHeight: '1080px' }}
             >
-              <iframe
-                key={`${activePdf}-${activePage}`}
-                title={`${activeTitle} 원문`}
-                src={activePdfSrc}
-                className="block rounded-xl bg-white shadow-inner"
+              <div
                 style={{
                   width: `${pdfZoom}%`,
-                  height: `${Math.max(1180, Math.round(1180 * pdfZoom / 100))}px`,
+                  height: `${Math.round(readerBaseHeight * readerScale)}px`,
                 }}
-              />
+              >
+                <iframe
+                  key={`${activePdf}-${activePage}`}
+                  title={`${activeTitle} 원문`}
+                  src={activePdfSrc}
+                  className="block rounded-xl bg-white shadow-inner"
+                  style={{
+                    width: `${100 / readerScale}%`,
+                    height: `${readerBaseHeight}px`,
+                    transform: `scale(${readerScale})`,
+                    transformOrigin: 'top left',
+                  }}
+                />
+              </div>
             </div>
           </div>
         </section>
