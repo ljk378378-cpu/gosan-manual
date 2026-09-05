@@ -482,7 +482,7 @@ function buildChapterSections(topic: Topic, material: Material): ChapterSection[
 export default function HrLaborPage() {
   const [topicIndex, setTopicIndex] = useState(todayTopicIndex())
   const [activeGuide, setActiveGuide] = useState<'facility' | 'labor'>('facility')
-  const [pdfZoom, setPdfZoom] = useState(210)
+  const [pdfZoom, setPdfZoom] = useState(140)
   const [records, setRecords] = useState<LearningRecord[]>([])
   const [latestRecords, setLatestRecords] = useState<LatestRecord[]>([])
   const [latestDraft, setLatestDraft] = useState({
@@ -516,7 +516,7 @@ export default function HrLaborPage() {
   const activePage = activeGuide === 'facility' ? guidePage : laborGuidePage
   const activeTitle = activeGuide === 'facility' ? '2026 사회복지시설 관리안내' : '사회복지관 인사노무 길라잡이'
   const activeSubtitle = activeGuide === 'facility' ? '공식 행정 기준' : '한국사회복지관협회 노무자문 사례집'
-  const activePdfSrc = `${activePdf}#page=${activePage}&zoom=${pdfZoom},0,0`
+  const activePdfSrc = `${activePdf}#page=${activePage}`
   const todayRecords = useMemo(() => records.filter(record => record.date === todayDateString()), [records])
   const todayLatestRecords = useMemo(() => latestRecords.filter(record => record.date === todayDateString()), [latestRecords])
   const doneTopics = new Set(records.map(record => record.topic)).size
@@ -776,7 +776,7 @@ export default function HrLaborPage() {
                 <p className="text-xs font-black tracking-[.18em] text-slate-500">ORIGINAL GUIDE</p>
                 <h2 className="mt-1 text-xl font-black">오늘의 원문 교재 정독 모드</h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  원문을 세로로 길게 읽을 수 있도록 정독창을 크게 만들었습니다. 화면 안 확대가 반영되지 않으면 큰 새창에서 브라우저 확대를 함께 사용합니다.
+                  원문을 세로로 길게 읽을 수 있도록 정독창을 크게 만들었습니다. 확대 버튼은 PDF 주소값이 아니라 읽기창의 실제 폭을 조절합니다.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -806,7 +806,7 @@ export default function HrLaborPage() {
               </div>
               <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3">
                 <span className="text-xs font-black text-slate-500">확대</span>
-                {[175, 200, 210, 225, 250].map(value => (
+                {[100, 125, 140, 160, 180].map(value => (
                   <button
                     key={value}
                     onClick={() => setPdfZoom(value)}
@@ -818,13 +818,19 @@ export default function HrLaborPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-300 bg-slate-100 p-2">
+            <div
+              className="overflow-auto rounded-2xl border border-slate-300 bg-slate-100 p-2"
+              style={{ height: 'min(1320px, calc(100vh - 70px))', minHeight: '1080px' }}
+            >
               <iframe
-                key={activePdfSrc}
+                key={`${activePdf}-${activePage}`}
                 title={`${activeTitle} 원문`}
                 src={activePdfSrc}
-                className="block w-full rounded-xl bg-white shadow-inner"
-                style={{ height: 'min(1280px, calc(100vh - 90px))', minHeight: '1040px' }}
+                className="block rounded-xl bg-white shadow-inner"
+                style={{
+                  width: `${pdfZoom}%`,
+                  height: `${Math.max(1180, Math.round(1180 * pdfZoom / 100))}px`,
+                }}
               />
             </div>
           </div>
