@@ -86,16 +86,18 @@ const topics: Topic[] = [
   { day: 30, area: '월간정리', title: '한 달 학습 점검', keyPoint: '학습한 내용을 기관 규정, 평가, 지도점검, 팀 운영과 연결해 보완과제를 정리함', managerQuestion: '이번 달 학습을 통해 실제로 바꿀 업무기준은 무엇인가?', evidence: '학습기록, 보완과제, 규정개정 후보, 교육공유자료' },
 ]
 
+const localGuidePdf = '/reference/2026-social-welfare-facility-guide.pdf'
+const localLaborGuidePdf = '/reference/social-welfare-center-hr-labor-guide.pdf'
+const officialGuideDownload = 'https://www.mohw.go.kr/boardDownload.es?bid=0021&list_no=1488923&seq=1'
+
 const sourceCards = [
   { title: '보건복지부 사회복지시설 관리안내', detail: '사회복지시설 종사자 관리, 시설운영, 지도점검의 기본 기준자료', href: 'https://www.mohw.go.kr/board.es?act=view&bid=0021&list_no=1488923&mid=a10413000000' },
+  { title: '사회복지관 인사노무 길라잡이', detail: '한국사회복지관협회 노무자문 사례집을 현장 사례 해설 교재로 활용', href: localLaborGuidePdf },
   { title: '국가법령정보센터', detail: '근로기준법, 남녀고용평등법, 기간제법, 개인정보보호법 등 최신 법령 확인', href: 'https://www.law.go.kr/' },
   { title: '고용노동부 자료', detail: '개정 노동관계법, 행정해석, 정책자료, 사례 중심 교육자료 확인', href: 'https://www.moel.go.kr/' },
   { title: '직장 내 괴롭힘 예방·대응', detail: '관리자 조사 공정성, 판단기준, 예방교육 자료 확인', href: 'https://moel.go.kr/news/enews/report/enewsView.do?news_seq=19610' },
   { title: '우리 기관 규정', detail: '운영규정, 복무규정, 인사규정, 보수규정, 서비스규정과 실제 운영 비교', href: '#' },
 ]
-
-const localGuidePdf = '/reference/2026-social-welfare-facility-guide.pdf'
-const officialGuideDownload = 'https://www.mohw.go.kr/boardDownload.es?bid=0021&list_no=1488923&seq=1'
 
 const guidePageByDay: Record<number, number> = {
   1: 38,
@@ -127,6 +129,39 @@ const guidePageByDay: Record<number, number> = {
   27: 234,
   28: 260,
   29: 47,
+  30: 1,
+}
+
+const laborGuidePageByDay: Record<number, number> = {
+  1: 18,
+  2: 14,
+  3: 1,
+  4: 31,
+  5: 36,
+  6: 44,
+  7: 17,
+  8: 17,
+  9: 14,
+  10: 49,
+  11: 18,
+  12: 1,
+  13: 1,
+  14: 1,
+  15: 1,
+  16: 1,
+  17: 1,
+  18: 1,
+  19: 1,
+  20: 1,
+  21: 1,
+  22: 1,
+  23: 1,
+  24: 1,
+  25: 1,
+  26: 1,
+  27: 1,
+  28: 1,
+  29: 1,
   30: 1,
 }
 
@@ -474,6 +509,7 @@ export default function HrLaborPage() {
   const material = materialByArea[topic.area] ?? defaultMaterial
   const chapterSections = buildChapterSections(topic, material)
   const guidePage = guidePageByDay[topic.day] || 1
+  const laborGuidePage = laborGuidePageByDay[topic.day] || 1
   const todayRecords = useMemo(() => records.filter(record => record.date === todayDateString()), [records])
   const todayLatestRecords = useMemo(() => latestRecords.filter(record => record.date === todayDateString()), [latestRecords])
   const doneTopics = new Set(records.map(record => record.topic)).size
@@ -730,31 +766,49 @@ export default function HrLaborPage() {
           <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-slate-50 p-5 md:flex-row md:items-center">
             <div>
               <p className="text-xs font-black tracking-[.18em] text-slate-500">ORIGINAL GUIDE</p>
-              <h2 className="mt-1 text-xl font-black">사회복지시설 관리안내 원문 바로보기</h2>
+              <h2 className="mt-1 text-xl font-black">오늘의 원문 교재 바로보기</h2>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                오늘 주제와 연결되는 원문 시작 페이지입니다. 먼저 원문을 읽고, 아래 챕터 전문으로 해석한 뒤 기록합니다.
+                관리안내는 공식 기준, 인사노무 길라잡이는 사회복지관 사례 해설로 함께 봅니다. 먼저 원문을 읽고, 아래 챕터 전문으로 해석한 뒤 기록합니다.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <a href={`${localGuidePdf}#page=${guidePage}`} target="_blank" rel="noreferrer" className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">원문 새창</a>
+              <a href={`${localGuidePdf}#page=${guidePage}`} target="_blank" rel="noreferrer" className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">관리안내 새창</a>
+              <a href={`${localLaborGuidePdf}#page=${laborGuidePage}`} target="_blank" rel="noreferrer" className="rounded-lg bg-violet-800 px-4 py-3 text-sm font-black text-white">길라잡이 새창</a>
               <a href={officialGuideDownload} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-800">공식 ZIP 다운로드</a>
             </div>
           </div>
           <div className="grid gap-4 p-5 lg:grid-cols-[260px_1fr]">
             <aside className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-black text-slate-500">오늘 원문 위치</p>
+              <p className="text-xs font-black text-slate-500">오늘 교재 위치</p>
               <p className="mt-2 text-3xl font-black text-slate-950">p.{guidePage}</p>
               <p className="mt-3 text-sm font-bold leading-6 text-slate-700">{topic.area} · {topic.title}</p>
               <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs font-bold leading-5 text-amber-900">
-                로컬에서는 원문 PDF가 바로 보입니다. 배포본에서 보이지 않으면 공식 ZIP을 내려받아 로컬 `public/reference` 폴더에 PDF를 넣어야 합니다.
+                관리안내는 공식 기준입니다. 길라잡이는 현장 사례 해설 자료로 함께 읽되, 최신 법령 판단은 공식자료로 다시 확인합니다.
               </p>
             </aside>
-            <div className="overflow-hidden rounded-xl border border-slate-300 bg-slate-100">
-              <iframe
-                title="2026 사회복지시설 관리안내 원문"
-                src={`${localGuidePdf}#page=${guidePage}`}
-                className="h-[720px] w-full bg-white"
-              />
+            <div className="grid gap-4 xl:grid-cols-2">
+              <div className="overflow-hidden rounded-xl border border-slate-300 bg-slate-100">
+                <div className="border-b border-slate-200 bg-white px-4 py-3">
+                  <p className="text-sm font-black text-slate-900">2026 사회복지시설 관리안내</p>
+                  <p className="text-xs font-bold text-slate-500">공식 행정 기준 · 오늘 시작 p.{guidePage}</p>
+                </div>
+                <iframe
+                  title="2026 사회복지시설 관리안내 원문"
+                  src={`${localGuidePdf}#page=${guidePage}`}
+                  className="h-[720px] w-full bg-white"
+                />
+              </div>
+              <div className="overflow-hidden rounded-xl border border-violet-200 bg-violet-50">
+                <div className="border-b border-violet-100 bg-white px-4 py-3">
+                  <p className="text-sm font-black text-slate-900">사회복지관 인사노무 길라잡이</p>
+                  <p className="text-xs font-bold text-slate-500">한국사회복지관협회 노무자문 사례집 · 사례 해설용</p>
+                </div>
+                <iframe
+                  title="사회복지관 인사노무 길라잡이"
+                  src={`${localLaborGuidePdf}#page=${laborGuidePage}`}
+                  className="h-[720px] w-full bg-white"
+                />
+              </div>
             </div>
           </div>
         </section>
