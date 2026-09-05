@@ -94,6 +94,42 @@ const sourceCards = [
   { title: '우리 기관 규정', detail: '운영규정, 복무규정, 인사규정, 보수규정, 서비스규정과 실제 운영 비교', href: '#' },
 ]
 
+const localGuidePdf = '/reference/2026-social-welfare-facility-guide.pdf'
+const officialGuideDownload = 'https://www.mohw.go.kr/boardDownload.es?bid=0021&list_no=1488923&seq=1'
+
+const guidePageByDay: Record<number, number> = {
+  1: 38,
+  2: 34,
+  3: 43,
+  4: 48,
+  5: 260,
+  6: 272,
+  7: 45,
+  8: 45,
+  9: 260,
+  10: 272,
+  11: 178,
+  12: 178,
+  13: 64,
+  14: 47,
+  15: 46,
+  16: 47,
+  17: 40,
+  18: 22,
+  19: 234,
+  20: 64,
+  21: 61,
+  22: 47,
+  23: 43,
+  24: 61,
+  25: 151,
+  26: 234,
+  27: 234,
+  28: 260,
+  29: 47,
+  30: 1,
+}
+
 const defaultMaterial: Material = {
   source: '보건복지부 사회복지시설 관리안내 / 국가법령정보센터 / 고용노동부 자료',
   href: 'https://www.mohw.go.kr/board.es?act=view&bid=0021&list_no=1488923&mid=a10413000000',
@@ -437,6 +473,7 @@ export default function HrLaborPage() {
   const topic = topics[topicIndex]
   const material = materialByArea[topic.area] ?? defaultMaterial
   const chapterSections = buildChapterSections(topic, material)
+  const guidePage = guidePageByDay[topic.day] || 1
   const todayRecords = useMemo(() => records.filter(record => record.date === todayDateString()), [records])
   const todayLatestRecords = useMemo(() => latestRecords.filter(record => record.date === todayDateString()), [latestRecords])
   const doneTopics = new Set(records.map(record => record.topic)).size
@@ -687,6 +724,39 @@ export default function HrLaborPage() {
               <button onClick={saveRecord} className="rounded-lg bg-violet-800 px-4 py-3 text-sm font-black text-white">학습 기록 저장</button>
             </div>
           </aside>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-slate-50 p-5 md:flex-row md:items-center">
+            <div>
+              <p className="text-xs font-black tracking-[.18em] text-slate-500">ORIGINAL GUIDE</p>
+              <h2 className="mt-1 text-xl font-black">사회복지시설 관리안내 원문 바로보기</h2>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                오늘 주제와 연결되는 원문 시작 페이지입니다. 먼저 원문을 읽고, 아래 챕터 전문으로 해석한 뒤 기록합니다.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <a href={`${localGuidePdf}#page=${guidePage}`} target="_blank" rel="noreferrer" className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">원문 새창</a>
+              <a href={officialGuideDownload} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-800">공식 ZIP 다운로드</a>
+            </div>
+          </div>
+          <div className="grid gap-4 p-5 lg:grid-cols-[260px_1fr]">
+            <aside className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-black text-slate-500">오늘 원문 위치</p>
+              <p className="mt-2 text-3xl font-black text-slate-950">p.{guidePage}</p>
+              <p className="mt-3 text-sm font-bold leading-6 text-slate-700">{topic.area} · {topic.title}</p>
+              <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs font-bold leading-5 text-amber-900">
+                로컬에서는 원문 PDF가 바로 보입니다. 배포본에서 보이지 않으면 공식 ZIP을 내려받아 로컬 `public/reference` 폴더에 PDF를 넣어야 합니다.
+              </p>
+            </aside>
+            <div className="overflow-hidden rounded-xl border border-slate-300 bg-slate-100">
+              <iframe
+                title="2026 사회복지시설 관리안내 원문"
+                src={`${localGuidePdf}#page=${guidePage}`}
+                className="h-[720px] w-full bg-white"
+              />
+            </div>
+          </div>
         </section>
 
         <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
