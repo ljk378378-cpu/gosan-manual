@@ -482,6 +482,7 @@ function buildChapterSections(topic: Topic, material: Material): ChapterSection[
 export default function HrLaborPage() {
   const [topicIndex, setTopicIndex] = useState(todayTopicIndex())
   const [activeGuide, setActiveGuide] = useState<'facility' | 'labor'>('facility')
+  const [pdfZoom, setPdfZoom] = useState(190)
   const [records, setRecords] = useState<LearningRecord[]>([])
   const [latestRecords, setLatestRecords] = useState<LatestRecord[]>([])
   const [latestDraft, setLatestDraft] = useState({
@@ -515,6 +516,7 @@ export default function HrLaborPage() {
   const activePage = activeGuide === 'facility' ? guidePage : laborGuidePage
   const activeTitle = activeGuide === 'facility' ? '2026 사회복지시설 관리안내' : '사회복지관 인사노무 길라잡이'
   const activeSubtitle = activeGuide === 'facility' ? '공식 행정 기준' : '한국사회복지관협회 노무자문 사례집'
+  const activePdfSrc = `${activePdf}#page=${activePage}&zoom=${pdfZoom}`
   const todayRecords = useMemo(() => records.filter(record => record.date === todayDateString()), [records])
   const todayLatestRecords = useMemo(() => latestRecords.filter(record => record.date === todayDateString()), [latestRecords])
   const doneTopics = new Set(records.map(record => record.topic)).size
@@ -767,58 +769,60 @@ export default function HrLaborPage() {
           </aside>
         </section>
 
-        <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-slate-50 p-5 md:flex-row md:items-center">
-            <div>
-              <p className="text-xs font-black tracking-[.18em] text-slate-500">ORIGINAL GUIDE</p>
-              <h2 className="mt-1 text-xl font-black">오늘의 원문 교재 바로보기</h2>
-              <p className="mt-1 text-sm leading-6 text-slate-600">
-                관리안내는 공식 기준, 인사노무 길라잡이는 사회복지관 사례 해설로 함께 봅니다. 먼저 원문을 읽고, 아래 챕터 전문으로 해석한 뒤 기록합니다.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <a href={`${localGuidePdf}#page=${guidePage}`} target="_blank" rel="noreferrer" className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">관리안내 새창</a>
-              <a href={`${localLaborGuidePdf}#page=${laborGuidePage}`} target="_blank" rel="noreferrer" className="rounded-lg bg-violet-800 px-4 py-3 text-sm font-black text-white">길라잡이 새창</a>
-              <a href={officialGuideDownload} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-800">공식 ZIP 다운로드</a>
-            </div>
-          </div>
-          <div className="grid gap-4 p-5 lg:grid-cols-[260px_1fr]">
-            <aside className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-black text-slate-500">오늘 교재 위치</p>
-              <p className="mt-2 text-3xl font-black text-slate-950">p.{activePage}</p>
-              <p className="mt-3 text-sm font-bold leading-6 text-slate-700">{topic.area} · {topic.title}</p>
-              <div className="mt-4 grid gap-2">
+        <section className="relative left-1/2 mb-5 w-screen -translate-x-1/2 overflow-hidden border-y border-slate-200 bg-white shadow-sm">
+          <div className="mx-auto max-w-[1800px] px-4 py-5">
+            <div className="mb-4 flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 lg:flex-row lg:items-center">
+              <div>
+                <p className="text-xs font-black tracking-[.18em] text-slate-500">ORIGINAL GUIDE</p>
+                <h2 className="mt-1 text-xl font-black">오늘의 원문 교재 정독 모드</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  원문을 화면 폭에 맞춰 크게 띄웠습니다. 관리안내는 공식 기준, 인사노무 길라잡이는 사회복지관 사례 해설로 함께 봅니다.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setActiveGuide('facility')}
-                  className={`rounded-lg px-3 py-3 text-left text-sm font-black ${activeGuide === 'facility' ? 'bg-slate-950 text-white' : 'border border-slate-200 bg-white text-slate-700'}`}
+                  className={`rounded-lg px-4 py-3 text-sm font-black ${activeGuide === 'facility' ? 'bg-slate-950 text-white' : 'border border-slate-300 bg-white text-slate-800'}`}
                 >
-                  관리안내 크게 보기
+                  관리안내
                 </button>
                 <button
                   onClick={() => setActiveGuide('labor')}
-                  className={`rounded-lg px-3 py-3 text-left text-sm font-black ${activeGuide === 'labor' ? 'bg-violet-800 text-white' : 'border border-slate-200 bg-white text-slate-700'}`}
+                  className={`rounded-lg px-4 py-3 text-sm font-black ${activeGuide === 'labor' ? 'bg-violet-800 text-white' : 'border border-slate-300 bg-white text-slate-800'}`}
                 >
-                  길라잡이 크게 보기
+                  길라잡이
                 </button>
-              </div>
-              <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs font-bold leading-5 text-amber-900">
-                관리안내는 공식 기준입니다. 길라잡이는 현장 사례 해설 자료로 함께 읽되, 최신 법령 판단은 공식자료로 다시 확인합니다.
-              </p>
-            </aside>
-            <div className="overflow-hidden rounded-xl border border-slate-300 bg-slate-100">
-              <div className="flex flex-col justify-between gap-2 border-b border-slate-200 bg-white px-4 py-3 md:flex-row md:items-center">
-                <div>
-                  <p className="text-sm font-black text-slate-900">{activeTitle}</p>
-                  <p className="text-xs font-bold text-slate-500">{activeSubtitle} · 오늘 시작 p.{activePage}</p>
-                </div>
-                <a href={`${activePdf}#page=${activePage}`} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-black text-slate-700">
-                  큰 새창으로 열기
+                <a href={activePdfSrc} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-800">
+                  큰 새창
                 </a>
+                <a href={officialGuideDownload} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-800">공식 ZIP</a>
               </div>
+            </div>
+
+            <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                <p className="text-sm font-black text-slate-900">{activeTitle}</p>
+                <p className="mt-1 text-xs font-bold text-slate-500">{activeSubtitle} · {topic.area} · {topic.title} · 오늘 시작 p.{activePage}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                <span className="text-xs font-black text-slate-500">확대</span>
+                {[150, 175, 190, 210, 225].map(value => (
+                  <button
+                    key={value}
+                    onClick={() => setPdfZoom(value)}
+                    className={`rounded-lg px-3 py-2 text-xs font-black ${pdfZoom === value ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-slate-50 text-slate-700'}`}
+                  >
+                    {value}%
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-slate-300 bg-slate-100">
               <iframe
                 title={`${activeTitle} 원문`}
-                src={`${activePdf}#page=${activePage}&zoom=125`}
-                className="h-[86vh] min-h-[820px] w-full bg-white"
+                src={activePdfSrc}
+                className="h-[92vh] min-h-[980px] w-full bg-white"
               />
             </div>
           </div>
