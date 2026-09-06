@@ -191,7 +191,8 @@ export default function MoneyPage() {
   const totalCardActual = personalCardActual + sharedCardActual
   const currentCash = activeMonthRecord?.cashOnHand || 0
   const remainingFixedOut = activeMonthRecord?.fixedCost || 0
-  const cashAfterCardDue = currentCash - remainingFixedOut - totalCardActual
+  const realtimeCash = currentCash - monthlyInstantCashOut
+  const cashAfterCardDue = realtimeCash - remainingFixedOut - totalCardActual
   const relationTotal = currentLeaks.filter(item => item.type === '가족·관계').reduce((sum, item) => sum + item.amount, 0)
   const coffeeTotal = currentLeaks.filter(item => item.type === '커피충전').reduce((sum, item) => sum + item.amount, 0)
   const hyundaiOver = activeMonthRecord ? Math.max(0, activeMonthRecord.cardHyundaiActual - activeMonthRecord.cardHyundaiTarget) : 0
@@ -377,13 +378,18 @@ export default function MoneyPage() {
               <p className="text-xs font-black tracking-[.16em] text-cyan-100">{cardPaymentDay}일 후 예상잔액</p>
               <p className="mt-4 break-keep text-4xl font-black leading-tight">{activeMonthRecord ? won(cashAfterCardDue) : '-'}</p>
               <p className="mt-3 text-sm font-bold leading-6 text-cyan-50">
-                현재 통장잔액 - 남은 자동이체 - 카드 청구예정액
+                실시간 예상 통장잔액 - 남은 자동이체 - 카드 청구예정액
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="min-h-28 rounded-xl border border-cyan-100 bg-cyan-50 p-4">
-                <p className="text-xs font-black text-cyan-700">현재 통장잔액</p>
+                <p className="text-xs font-black text-cyan-700">입력한 통장잔액</p>
                 <p className="mt-3 break-keep text-xl font-black leading-tight text-cyan-950">{activeMonthRecord ? won(currentCash) : '-'}</p>
+              </div>
+              <div className="min-h-28 rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                <p className="text-xs font-black text-emerald-700">실시간 예상 통장잔액</p>
+                <p className={`mt-3 break-keep text-xl font-black leading-tight ${realtimeCash < 0 ? 'text-red-700' : 'text-emerald-900'}`}>{activeMonthRecord ? won(realtimeCash) : '-'}</p>
+                <p className="mt-1 text-xs font-bold text-emerald-700">현금·체크·계좌이체 반영</p>
               </div>
               <div className="min-h-28 rounded-xl border border-slate-200 bg-white p-4">
                 <p className="text-xs font-black text-slate-500">남은 자동이체</p>
@@ -422,13 +428,13 @@ export default function MoneyPage() {
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-black text-slate-500">현금 기준 해석</p>
               <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                {cardPaymentDay}일 후 예상잔액은 현재 통장잔액에서 남은 자동이체와 카드 청구예정액을 뺀 금액입니다.
+                {cardPaymentDay}일 후 예상잔액은 실시간 예상 통장잔액에서 남은 자동이체와 카드 청구예정액을 뺀 금액입니다.
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-black text-slate-500">현금성 지출 기록</p>
               <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                통장을 하나만 쓰는 경우 현재 통장잔액에는 이미 빠져나간 현금·체크·계좌이체가 반영되어 있을 수 있습니다.
+                현금·체크카드·계좌이체로 기록한 지출은 실시간 예상 통장잔액에서 바로 빠집니다.
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
