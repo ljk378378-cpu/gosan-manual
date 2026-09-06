@@ -5,7 +5,7 @@ import Nav from '@/components/Nav'
 
 type LeakType = '커피충전' | '배달음식' | '가족·관계' | '업무도구' | '생활구매' | '기타'
 type PayMethod = '현대 M카드' | '신한카드' | '롯데카드' | '국민카드' | '현금' | '체크카드' | '계좌이체'
-type SubscriptionNeed = '필수' | '유지검토' | '해지후보'
+type SubscriptionNeed = '필수' | '유지검토' | '해지예정' | '해지후보'
 
 type MonthRecord = {
   id: string
@@ -49,7 +49,7 @@ const leakKey = 'cheonggok-money-leak-v1'
 const subscriptionKey = 'cheonggok-money-subscription-v1'
 const leakTypes: LeakType[] = ['커피충전', '배달음식', '가족·관계', '업무도구', '생활구매', '기타']
 const payMethods: PayMethod[] = ['현대 M카드', '신한카드', '롯데카드', '국민카드', '현금', '체크카드', '계좌이체']
-const subscriptionNeeds: SubscriptionNeed[] = ['필수', '유지검토', '해지후보']
+const subscriptionNeeds: SubscriptionNeed[] = ['필수', '유지검토', '해지예정', '해지후보']
 const personalCards: PayMethod[] = ['현대 M카드', '신한카드']
 const sharedCards: PayMethod[] = ['롯데카드', '국민카드']
 const cardMethods: PayMethod[] = [...personalCards, ...sharedCards]
@@ -172,7 +172,7 @@ export default function MoneyPage() {
   const largestMethodTotal = Math.max(1, ...methodTotals.map(item => item.total))
   const subscriptionTotal = subscriptions.reduce((sum, item) => sum + item.amount, 0)
   const subscriptionCancelTotal = subscriptions
-    .filter(item => item.need === '해지후보')
+    .filter(item => item.need === '해지예정' || item.need === '해지후보')
     .reduce((sum, item) => sum + item.amount, 0)
   const yearlySubscriptionTotal = subscriptionTotal * 12
   const todayCardTotal = todayLeaks
@@ -299,6 +299,19 @@ export default function MoneyPage() {
     setSubscriptionDraft({ title: '', amount: '', method: '현대 M카드', payDay: '', need: '유지검토', memo: '' })
   }
 
+  const isGeminiSubscription = (record: SubscriptionRecord) => {
+    const text = `${record.title} ${record.memo}`.toLowerCase()
+    return text.includes('제미나이') || text.includes('gemini') || (text.includes('구글') && text.includes('ai'))
+  }
+
+  const markGeminiCancelScheduled = (record: SubscriptionRecord) => {
+    saveSubscriptions(subscriptions.map(item => item.id === record.id ? {
+      ...item,
+      need: '해지예정',
+      memo: '구독해제 신청 완료. 2026. 9. 11. 해지 예정.',
+    } : item))
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <Nav />
@@ -412,7 +425,7 @@ export default function MoneyPage() {
                 <p className="mt-2 text-2xl font-black text-slate-900">{won(yearlySubscriptionTotal)}</p>
               </div>
               <div className="rounded-xl bg-white p-4 shadow-sm">
-                <p className="text-xs font-black text-red-600">해지후보 절감액</p>
+                <p className="text-xs font-black text-red-600">해지예정·후보 절감액</p>
                 <p className="mt-2 text-2xl font-black text-red-700">{won(subscriptionCancelTotal)}</p>
               </div>
             </div>
@@ -443,8 +456,9 @@ export default function MoneyPage() {
                 <p className="text-sm font-black text-slate-900">{won(item.amount)}</p>
                 <p className="text-xs font-bold text-slate-500">{item.method}</p>
                 <p className="text-xs font-bold text-slate-500">{item.payDay ? `${item.payDay}일` : '결제일 미정'}</p>
-                <span className={`rounded-full px-3 py-1 text-center text-xs font-black ${item.need === '필수' ? 'bg-emerald-100 text-emerald-800' : item.need === '해지후보' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}`}>{item.need}</span>
-                <div className="flex gap-2">
+                <span className={`rounded-full px-3 py-1 text-center text-xs font-black ${item.need === '필수' ? 'bg-emerald-100 text-emerald-800' : item.need === '해지후보' ? 'bg-red-100 text-red-800' : item.need === '해지예정' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'}`}>{item.need}</span>
+                <div className="flex flex-wrap gap-2">
+                  {isGeminiSubscription(item) && item.need !== '해지예정' ? <button onClick={() => markGeminiCancelScheduled(item)} className="text-xs font-black text-rose-700">9/11 해지예정</button> : null}
                   <button onClick={() => editSubscription(item)} className="text-xs font-black text-slate-700">수정</button>
                   <button onClick={() => saveSubscriptions(subscriptions.filter(record => record.id !== item.id))} className="text-xs font-black text-red-700">삭제</button>
                 </div>
