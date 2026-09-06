@@ -326,24 +326,24 @@ export default function MoneyPage() {
           </p>
         </section>
 
-        <section className="mb-5 grid gap-3 md:grid-cols-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="mb-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="min-h-32 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-slate-500">현대 M카드 초과</p>
-            <p className={`mt-2 text-2xl font-black ${hyundaiOver ? 'text-red-700' : 'text-emerald-700'}`}>{activeMonthRecord ? won(hyundaiOver) : '-'}</p>
+            <p className={`mt-3 break-keep text-2xl font-black leading-tight ${hyundaiOver ? 'text-red-700' : 'text-emerald-700'}`}>{activeMonthRecord ? won(hyundaiOver) : '-'}</p>
           </div>
-          <div className="rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm">
+          <div className="min-h-32 rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-indigo-700">개인카드 합계</p>
-            <p className="mt-2 text-2xl font-black text-indigo-900">{activeMonthRecord ? won(personalCardActual) : '-'}</p>
+            <p className="mt-3 break-keep text-2xl font-black leading-tight text-indigo-900">{activeMonthRecord ? won(personalCardActual) : '-'}</p>
             <p className="mt-1 text-xs font-bold text-indigo-600">현대 M + 신한</p>
           </div>
-          <div className="rounded-2xl border border-violet-200 bg-white p-5 shadow-sm">
+          <div className="min-h-32 rounded-2xl border border-violet-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-violet-700">공동카드 합계</p>
-            <p className="mt-2 text-2xl font-black text-violet-900">{activeMonthRecord ? won(sharedCardActual) : '-'}</p>
+            <p className="mt-3 break-keep text-2xl font-black leading-tight text-violet-900">{activeMonthRecord ? won(sharedCardActual) : '-'}</p>
             <p className="mt-1 text-xs font-bold text-violet-600">롯데 + 국민</p>
           </div>
-          <div className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm">
+          <div className="min-h-32 rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-emerald-700">25일 이후 예상현금</p>
-            <p className={`mt-2 text-2xl font-black ${cashAfterCardDue < 0 ? 'text-red-700' : 'text-emerald-800'}`}>{activeMonthRecord ? won(cashAfterCardDue) : '-'}</p>
+            <p className={`mt-3 break-keep text-2xl font-black leading-tight ${cashAfterCardDue < 0 ? 'text-red-700' : 'text-emerald-800'}`}>{activeMonthRecord ? won(cashAfterCardDue) : '-'}</p>
           </div>
         </section>
 
@@ -364,44 +364,59 @@ export default function MoneyPage() {
         </section>
 
         <section className="mb-5 overflow-hidden rounded-2xl border border-cyan-200 bg-white shadow-sm">
-          <div className="grid gap-4 border-b border-cyan-100 bg-cyan-50 p-5 lg:grid-cols-[270px_1fr]">
-            <div>
-              <p className="text-xs font-black tracking-[.18em] text-cyan-700">CASH FLOW</p>
-              <h2 className="mt-1 text-xl font-black text-cyan-950">현금흐름 기준표</h2>
-              <p className="mt-2 text-sm font-bold text-cyan-800">모든 카드 결제일은 매월 {cardPaymentDay}일 기준으로 봅니다.</p>
+          <div className="border-b border-cyan-100 bg-cyan-50 p-5">
+            <p className="text-xs font-black tracking-[.18em] text-cyan-700">CASH FLOW</p>
+            <h2 className="mt-1 text-xl font-black text-cyan-950">현금흐름 기준표</h2>
+            <p className="mt-2 text-sm font-bold leading-6 text-cyan-800">
+              통장 하나에서 카드값·적금·보험료가 모두 빠지는 구조로 봅니다. 모든 카드 결제일은 매월 {cardPaymentDay}일입니다.
+            </p>
+          </div>
+
+          <div className="grid gap-4 border-b border-cyan-100 p-5 xl:grid-cols-[minmax(260px,0.9fr)_minmax(0,1.4fr)]">
+            <div className={`min-h-48 rounded-2xl p-6 text-white shadow-sm ${cashAfterCardDue < 0 ? 'bg-red-700' : 'bg-cyan-900'}`}>
+              <p className="text-xs font-black tracking-[.16em] text-cyan-100">{cardPaymentDay}일 후 예상잔액</p>
+              <p className="mt-4 break-keep text-4xl font-black leading-tight">{activeMonthRecord ? won(cashAfterCardDue) : '-'}</p>
+              <p className="mt-3 text-sm font-bold leading-6 text-cyan-50">
+                현재 통장잔액 - 남은 자동이체 - 카드 청구예정액
+              </p>
             </div>
-            <div className="grid gap-3 md:grid-cols-5">
-              <div className="rounded-xl bg-white p-4 shadow-sm">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="min-h-28 rounded-xl border border-cyan-100 bg-cyan-50 p-4">
                 <p className="text-xs font-black text-cyan-700">현재 통장잔액</p>
-                <p className="mt-2 text-2xl font-black text-cyan-950">{activeMonthRecord ? won(currentCash) : '-'}</p>
+                <p className="mt-3 break-keep text-xl font-black leading-tight text-cyan-950">{activeMonthRecord ? won(currentCash) : '-'}</p>
               </div>
-              <div className="rounded-xl bg-white p-4 shadow-sm">
+              <div className="min-h-28 rounded-xl border border-slate-200 bg-white p-4">
                 <p className="text-xs font-black text-slate-500">남은 자동이체</p>
-                <p className="mt-2 text-2xl font-black text-slate-900">{activeMonthRecord ? won(remainingFixedOut) : '-'}</p>
+                <p className="mt-3 break-keep text-xl font-black leading-tight text-slate-900">{activeMonthRecord ? won(remainingFixedOut) : '-'}</p>
               </div>
-              <div className="rounded-xl bg-white p-4 shadow-sm">
+              <div className="min-h-28 rounded-xl border border-indigo-100 bg-indigo-50 p-4">
                 <p className="text-xs font-black text-indigo-700">{cardPaymentDay}일 청구예정액</p>
-                <p className="mt-2 text-2xl font-black text-indigo-900">{activeMonthRecord ? won(totalCardActual) : '-'}</p>
+                <p className="mt-3 break-keep text-xl font-black leading-tight text-indigo-950">{activeMonthRecord ? won(totalCardActual) : '-'}</p>
               </div>
-              <div className="rounded-xl bg-white p-4 shadow-sm">
+              <div className="min-h-28 rounded-xl border border-slate-200 bg-white p-4">
                 <p className="text-xs font-black text-slate-500">기록된 카드사용액</p>
-                <p className="mt-2 text-2xl font-black text-slate-900">{won(recordedCardSpend)}</p>
-              </div>
-              <div className="rounded-xl bg-white p-4 shadow-sm">
-                <p className="text-xs font-black text-emerald-700">{cardPaymentDay}일 후 예상잔액</p>
-                <p className={`mt-2 text-2xl font-black ${cashAfterCardDue < 0 ? 'text-red-700' : 'text-emerald-800'}`}>{activeMonthRecord ? won(cashAfterCardDue) : '-'}</p>
+                <p className="mt-3 break-keep text-xl font-black leading-tight text-slate-900">{won(recordedCardSpend)}</p>
               </div>
             </div>
           </div>
-          <div className="grid gap-3 border-b border-cyan-100 p-5 lg:grid-cols-[135px_1fr_1fr_1fr_1fr_1fr_130px]">
-            <input type="month" value={monthDraft.month} onChange={event => setMonthDraft(previous => ({ ...previous, month: event.target.value }))} className="rounded-lg border border-cyan-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
-            <input value={monthDraft.cashOnHand} onChange={event => setMonthDraft(previous => ({ ...previous, cashOnHand: event.target.value }))} placeholder="현재 통장잔액" className="rounded-lg border border-cyan-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
-            <input value={monthDraft.fixedCost} onChange={event => setMonthDraft(previous => ({ ...previous, fixedCost: event.target.value }))} placeholder="남은 자동이체" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
-            <input value={monthDraft.cardHyundaiActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardHyundaiActual: event.target.value }))} placeholder="현대 청구액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
-            <input value={monthDraft.cardShinhanActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardShinhanActual: event.target.value }))} placeholder="신한 청구액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
-            <input value={monthDraft.cardKookminActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardKookminActual: event.target.value }))} placeholder="국민 청구액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
-            <button onClick={addMonth} className="rounded-lg bg-cyan-700 px-4 py-3 text-sm font-black text-white">현금흐름 저장</button>
-            <input value={monthDraft.cardLotteActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardLotteActual: event.target.value }))} placeholder="롯데 청구액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700 lg:col-start-4" />
+
+          <div className="grid gap-4 border-b border-cyan-100 p-5 xl:grid-cols-[220px_1fr]">
+            <div className="rounded-xl border border-cyan-100 bg-cyan-50 p-4">
+              <p className="text-xs font-black text-cyan-700">현금흐름 입력</p>
+              <p className="mt-2 text-sm font-bold leading-6 text-cyan-900">
+                카드앱에서 확인한 실제 청구예정액과 현재 통장잔액을 적습니다.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <input type="month" value={monthDraft.month} onChange={event => setMonthDraft(previous => ({ ...previous, month: event.target.value }))} className="rounded-lg border border-cyan-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
+              <input value={monthDraft.cashOnHand} onChange={event => setMonthDraft(previous => ({ ...previous, cashOnHand: event.target.value }))} placeholder="현재 통장잔액" className="rounded-lg border border-cyan-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
+              <input value={monthDraft.fixedCost} onChange={event => setMonthDraft(previous => ({ ...previous, fixedCost: event.target.value }))} placeholder="남은 자동이체" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
+              <input value={monthDraft.cardHyundaiActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardHyundaiActual: event.target.value }))} placeholder="현대 청구액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
+              <input value={monthDraft.cardShinhanActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardShinhanActual: event.target.value }))} placeholder="신한 청구액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
+              <input value={monthDraft.cardLotteActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardLotteActual: event.target.value }))} placeholder="롯데 청구액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
+              <input value={monthDraft.cardKookminActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardKookminActual: event.target.value }))} placeholder="국민 청구액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
+              <button onClick={addMonth} className="rounded-lg bg-cyan-700 px-4 py-3 text-sm font-black text-white xl:col-span-4">현금흐름 저장</button>
+            </div>
           </div>
           <div className="grid gap-3 p-5 md:grid-cols-3">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
