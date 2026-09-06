@@ -243,7 +243,7 @@ export default function MoneyPage() {
               </select>
               <input value={leakDraft.amount} onChange={event => setLeakDraft(previous => ({ ...previous, amount: event.target.value }))} placeholder="금액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
               <input value={leakDraft.title} onChange={event => setLeakDraft(previous => ({ ...previous, title: event.target.value }))} placeholder="내용 예: 커피 5만원 충전" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
-              <textarea value={leakDraft.reason} onChange={event => setLeakDraft(previous => ({ ...previous, reason: event.target.value }))} placeholder="왜 썼는지: 부장님 커피, 스트레스, 가족식사, 업무 불편 해결 등" className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-emerald-700 md:col-span-2" />
+              <textarea value={leakDraft.reason} onChange={event => setLeakDraft(previous => ({ ...previous, reason: event.target.value }))} placeholder="왜 썼는지: 관계상 지출, 스트레스, 가족식사, 업무 불편 해결 등" className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-emerald-700 md:col-span-2" />
               <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold text-slate-700 md:col-span-2">
                 <input type="checkbox" checked={leakDraft.keep} onChange={event => setLeakDraft(previous => ({ ...previous, keep: event.target.checked }))} />
                 이 지출은 유지해도 되는 지출임
