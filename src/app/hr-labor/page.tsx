@@ -617,9 +617,9 @@ export default function HrLaborPage() {
   }
 
   const latestSearchPrompt = [
-    '오늘의 사회복지시설 인사노무 학습 챕터를 하나 만들어줘.',
-    '최신 공식자료를 우선으로 보고, 보건복지부 사회복지시설 관리안내, 고용노동부 보도자료·정책자료, 국가법령정보센터 법령 개정사항 중 오늘 관리자가 학습할 만한 주제 하나를 선정해줘.',
-    '구성은 1. 오늘의 챕터 제목 2. 왜 지금 중요한지 3. 기본개념 설명 4. 공식자료 핵심 5. 사회복지관에 적용할 점 6. 내가 스스로 점검할 질문 3개 7. 노무사에게 확인할 질문 1개로 정리해줘.',
+    '오늘 내가 공부할 사회복지시설 인사노무 학습자료를 만들어줘.',
+    '보건복지부 사회복지시설 관리안내, 사회복지관 인사노무 길라잡이, 고용노동부 공식자료, 국가법령정보센터 최신 법령을 기준으로 과장인 내가 직원에게 설명할 수 있게 정리해줘.',
+    '구성은 1. 오늘 공부할 주제 2. 왜 지금 중요한지 3. 원문 기준 핵심 4. 2026년 변경사항 또는 확인사항 5. 우리 기관에서 점검할 자료 6. 직원에게 설명할 쉬운 문장 7. 노무사나 부장에게 확인할 질문으로 작성해줘.',
   ].join(' ')
 
   const summary = [
@@ -754,10 +754,10 @@ export default function HrLaborPage() {
             <div className="border-t border-slate-100 p-5">
               <div className="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center">
                 <div>
-                  <p className="text-sm font-black leading-6 text-slate-800">ChatGPT Work용 챕터 생성 문장</p>
-                  <p className="text-xs font-bold leading-5 text-slate-600">최신자료를 그냥 찾는 것이 아니라, 매일 공부할 수 있는 하나의 수업 형태로 만들어 달라는 문장입니다.</p>
+                  <p className="text-sm font-black leading-6 text-slate-800">오늘 학습질문 복사</p>
+                  <p className="text-xs font-bold leading-5 text-slate-600">원문과 최신 변경사항을 바탕으로, 과장님이 설명할 수 있는 학습자료를 만들어 달라는 질문입니다.</p>
                 </div>
-                <button onClick={() => navigator.clipboard.writeText(latestSearchPrompt)} className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">챕터문장 복사</button>
+                <button onClick={() => navigator.clipboard.writeText(latestSearchPrompt)} className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">학습질문 복사</button>
               </div>
               <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-bold leading-5 text-amber-900">
                 목표는 매일 한 가지를 깊게 익히는 것입니다. 읽은 자료, 이해한 개념, 궁금한 질문, 우리 기관 적용점을 남기면 나중에 과장님의 인사노무 학습노트가 됩니다.
