@@ -132,6 +132,16 @@ export default function MoneyPage() {
   const selectedTotal = selectedLeaks.reduce((sum, item) => sum + item.amount, 0)
   const spentDays = Object.keys(dailyTotals).length
   const averageDailySpend = spentDays ? leakTotal / spentDays : 0
+  const typeTotals = leakTypes.map(type => ({
+    type,
+    total: currentLeaks.filter(item => item.type === type).reduce((sum, item) => sum + item.amount, 0),
+  }))
+  const methodTotals = payMethods.map(method => ({
+    method,
+    total: currentLeaks.filter(item => item.method === method).reduce((sum, item) => sum + item.amount, 0),
+  }))
+  const largestTypeTotal = Math.max(1, ...typeTotals.map(item => item.total))
+  const largestMethodTotal = Math.max(1, ...methodTotals.map(item => item.total))
   const todayCardTotal = todayLeaks
     .filter(item => personalCards.includes(item.method) || sharedCards.includes(item.method))
     .reduce((sum, item) => sum + item.amount, 0)
@@ -290,6 +300,45 @@ export default function MoneyPage() {
                   <button key={amount} onClick={() => setLeakDraft(previous => ({ ...previous, amount }))} className="rounded-full border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:border-emerald-500 hover:text-emerald-800">
                     {won(Number(amount))}
                   </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="grid gap-4 border-b border-slate-100 p-5 lg:grid-cols-[260px_1fr_1fr]">
+            <div className="rounded-2xl bg-slate-950 p-5 text-white">
+              <p className="text-xs font-black tracking-[.18em] text-emerald-300">LIVE TOTAL</p>
+              <h2 className="mt-2 text-xl font-black">이번 달 실시간 누적</h2>
+              <p className="mt-4 text-3xl font-black">{won(leakTotal)}</p>
+              <p className="mt-2 text-xs font-bold text-slate-300">{visibleMonth} · {currentLeaks.length}건 기록 · 기록일 평균 {won(averageDailySpend)}</p>
+            </div>
+            <div>
+              <p className="mb-3 text-xs font-black text-slate-500">분류별 누적</p>
+              <div className="grid gap-2">
+                {typeTotals.map(item => (
+                  <div key={item.type} className="grid grid-cols-[78px_1fr_86px] items-center gap-2">
+                    <p className="text-xs font-black text-slate-600">{item.type}</p>
+                    <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.max(4, (item.total / largestTypeTotal) * 100)}%` }} />
+                    </div>
+                    <p className="text-right text-xs font-black text-slate-800">{won(item.total)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="mb-3 text-xs font-black text-slate-500">결제수단별 누적</p>
+              <div className="grid gap-2">
+                {methodTotals.map(item => (
+                  <div key={item.method} className="grid grid-cols-[78px_1fr_86px] items-center gap-2">
+                    <p className="text-xs font-black text-slate-600">{item.method}</p>
+                    <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-indigo-500" style={{ width: `${Math.max(4, (item.total / largestMethodTotal) * 100)}%` }} />
+                    </div>
+                    <p className="text-right text-xs font-black text-slate-800">{won(item.total)}</p>
+                  </div>
                 ))}
               </div>
             </div>
