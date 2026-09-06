@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import Nav from '@/components/Nav'
 
 type LeakType = '커피충전' | '배달음식' | '가족·관계' | '업무도구' | '생활구매' | '기타'
-type PayMethod = '현대카드' | '국민카드' | '현금' | '체크카드' | '계좌이체'
+type PayMethod = '현대 M카드' | '신한카드' | '롯데카드' | '국민카드' | '현금' | '체크카드' | '계좌이체'
 
 type MonthRecord = {
   id: string
@@ -13,6 +13,8 @@ type MonthRecord = {
   fixedCost: number
   cardHyundaiTarget: number
   cardHyundaiActual: number
+  cardShinhanActual: number
+  cardLotteActual: number
   cardKookminActual: number
   coffeeTarget: number
   coffeeActual: number
@@ -33,7 +35,9 @@ type LeakRecord = {
 const monthKey = 'cheonggok-money-month-simple-v1'
 const leakKey = 'cheonggok-money-leak-v1'
 const leakTypes: LeakType[] = ['커피충전', '배달음식', '가족·관계', '업무도구', '생활구매', '기타']
-const payMethods: PayMethod[] = ['현대카드', '국민카드', '현금', '체크카드', '계좌이체']
+const payMethods: PayMethod[] = ['현대 M카드', '신한카드', '롯데카드', '국민카드', '현금', '체크카드', '계좌이체']
+const personalCards: PayMethod[] = ['현대 M카드', '신한카드']
+const sharedCards: PayMethod[] = ['롯데카드', '국민카드']
 
 function today() {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(new Date())
@@ -66,6 +70,8 @@ export default function MoneyPage() {
     fixedCost: '',
     cardHyundaiTarget: '500000',
     cardHyundaiActual: '',
+    cardShinhanActual: '',
+    cardLotteActual: '',
     cardKookminActual: '',
     coffeeTarget: '2',
     coffeeActual: '',
@@ -73,7 +79,7 @@ export default function MoneyPage() {
   })
   const [leakDraft, setLeakDraft] = useState({
     type: '커피충전' as LeakType,
-    method: '현대카드' as PayMethod,
+    method: '현대 M카드' as PayMethod,
     amount: '',
     title: '',
     reason: '',
@@ -86,13 +92,18 @@ export default function MoneyPage() {
   const todayLeaks = useMemo(() => leaks.filter(item => item.date === today()), [leaks])
   const leakTotal = currentLeaks.reduce((sum, item) => sum + item.amount, 0)
   const todayTotal = todayLeaks.reduce((sum, item) => sum + item.amount, 0)
-  const todayCardTotal = todayLeaks.filter(item => item.method === '현대카드' || item.method === '국민카드').reduce((sum, item) => sum + item.amount, 0)
-  const monthHyundaiMemoTotal = currentLeaks.filter(item => item.method === '현대카드').reduce((sum, item) => sum + item.amount, 0)
+  const todayCardTotal = todayLeaks
+    .filter(item => personalCards.includes(item.method) || sharedCards.includes(item.method))
+    .reduce((sum, item) => sum + item.amount, 0)
+  const monthHyundaiMemoTotal = currentLeaks.filter(item => item.method === '현대 M카드').reduce((sum, item) => sum + item.amount, 0)
+  const personalCardActual = latest ? latest.cardHyundaiActual + (latest.cardShinhanActual || 0) : 0
+  const sharedCardActual = latest ? (latest.cardLotteActual || 0) + latest.cardKookminActual : 0
+  const totalCardActual = personalCardActual + sharedCardActual
   const relationTotal = currentLeaks.filter(item => item.type === '가족·관계').reduce((sum, item) => sum + item.amount, 0)
   const coffeeTotal = currentLeaks.filter(item => item.type === '커피충전').reduce((sum, item) => sum + item.amount, 0)
   const hyundaiOver = latest ? Math.max(0, latest.cardHyundaiActual - latest.cardHyundaiTarget) : 0
   const coffeeOver = latest ? Math.max(0, latest.coffeeActual - latest.coffeeTarget) : 0
-  const afterCards = latest ? latest.income - latest.fixedCost - latest.cardHyundaiActual - latest.cardKookminActual : 0
+  const afterCards = latest ? latest.income - latest.fixedCost - totalCardActual : 0
 
   const saveMonths = (next: MonthRecord[]) => {
     setMonths(next)
@@ -112,6 +123,8 @@ export default function MoneyPage() {
       fixedCost: parseAmount(monthDraft.fixedCost),
       cardHyundaiTarget: parseAmount(monthDraft.cardHyundaiTarget),
       cardHyundaiActual: parseAmount(monthDraft.cardHyundaiActual),
+      cardShinhanActual: parseAmount(monthDraft.cardShinhanActual),
+      cardLotteActual: parseAmount(monthDraft.cardLotteActual),
       cardKookminActual: parseAmount(monthDraft.cardKookminActual),
       coffeeTarget: parseAmount(monthDraft.coffeeTarget),
       coffeeActual: parseAmount(monthDraft.coffeeActual),
@@ -133,7 +146,7 @@ export default function MoneyPage() {
       keep: leakDraft.keep,
     }
     saveLeaks([record, ...leaks].slice(0, 500))
-    setLeakDraft({ type: '커피충전', method: '현대카드', amount: '', title: '', reason: '', keep: false })
+    setLeakDraft({ type: '커피충전', method: '현대 M카드', amount: '', title: '', reason: '', keep: false })
   }
 
   return (
@@ -144,28 +157,45 @@ export default function MoneyPage() {
           <p className="text-xs font-bold tracking-[.22em] text-emerald-300">MONEY CONTROL</p>
           <h1 className="mt-3 text-3xl font-black tracking-tight">소비패턴 점검실</h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
-            모든 결제를 적는 가계부가 아니라, 이번 달 돈을 흔드는 핵심만 봅니다.
-            현대카드 과사용, 커피 충전, 가족·관계성 지출, 업무도구 구매를 쉽게 기록합니다.
+            모든 결제를 복잡하게 적는 가계부가 아니라, 이번 달 돈을 흔드는 핵심만 봅니다.
+            개인용 카드(현대 M·신한), 공동사용 카드(롯데·국민), 현금 지출과 커피 충전을 함께 점검합니다.
           </p>
         </section>
 
         <section className="mb-5 grid gap-3 md:grid-cols-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black text-slate-500">현대카드 초과</p>
+            <p className="text-xs font-black text-slate-500">현대 M카드 초과</p>
             <p className={`mt-2 text-2xl font-black ${hyundaiOver ? 'text-red-700' : 'text-emerald-700'}`}>{latest ? won(hyundaiOver) : '-'}</p>
           </div>
-          <div className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black text-amber-700">커피 충전 초과</p>
-            <p className={`mt-2 text-3xl font-black ${coffeeOver ? 'text-red-700' : 'text-emerald-700'}`}>{latest ? `${coffeeOver}회` : '-'}</p>
+          <div className="rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-black text-indigo-700">개인카드 합계</p>
+            <p className="mt-2 text-2xl font-black text-indigo-900">{latest ? won(personalCardActual) : '-'}</p>
+            <p className="mt-1 text-xs font-bold text-indigo-600">현대 M + 신한</p>
           </div>
-          <div className="rounded-2xl border border-sky-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black text-sky-700">오늘 지출 메모</p>
-            <p className="mt-2 text-2xl font-black text-sky-900">{won(todayTotal)}</p>
-            <p className="mt-1 text-xs font-bold text-sky-700">카드 {won(todayCardTotal)}</p>
+          <div className="rounded-2xl border border-violet-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-black text-violet-700">공동카드 합계</p>
+            <p className="mt-2 text-2xl font-black text-violet-900">{latest ? won(sharedCardActual) : '-'}</p>
+            <p className="mt-1 text-xs font-bold text-violet-600">롯데 + 국민</p>
           </div>
           <div className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-emerald-700">카드 반영 후 잔액</p>
             <p className={`mt-2 text-2xl font-black ${afterCards < 0 ? 'text-red-700' : 'text-emerald-800'}`}>{latest ? won(afterCards) : '-'}</p>
+          </div>
+        </section>
+
+        <section className="mb-5 grid gap-3 md:grid-cols-3">
+          <div className="rounded-2xl border border-sky-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-black text-sky-700">오늘 지출</p>
+            <p className="mt-2 text-2xl font-black text-sky-900">{won(todayTotal)}</p>
+            <p className="mt-1 text-xs font-bold text-sky-700">카드 {won(todayCardTotal)}</p>
+          </div>
+          <div className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-black text-amber-700">커피 충전 초과</p>
+            <p className={`mt-2 text-2xl font-black ${coffeeOver ? 'text-red-700' : 'text-emerald-700'}`}>{latest ? `${coffeeOver}회` : '-'}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-black text-slate-500">이번 달 누수 메모</p>
+            <p className="mt-2 text-2xl font-black text-slate-900">{won(leakTotal)}</p>
           </div>
         </section>
 
@@ -181,10 +211,14 @@ export default function MoneyPage() {
               <input value={monthDraft.income} onChange={event => setMonthDraft(previous => ({ ...previous, income: event.target.value }))} placeholder="이번 달 입금액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
               <input value={monthDraft.fixedCost} onChange={event => setMonthDraft(previous => ({ ...previous, fixedCost: event.target.value }))} placeholder="고정지출 합계" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
               <div className="grid gap-3 md:grid-cols-2">
-                <input value={monthDraft.cardHyundaiTarget} onChange={event => setMonthDraft(previous => ({ ...previous, cardHyundaiTarget: event.target.value }))} placeholder="현대카드 목표" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
-                <input value={monthDraft.cardHyundaiActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardHyundaiActual: event.target.value }))} placeholder="현대카드 실제" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
+                <input value={monthDraft.cardHyundaiTarget} onChange={event => setMonthDraft(previous => ({ ...previous, cardHyundaiTarget: event.target.value }))} placeholder="현대 M카드 목표" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
+                <input value={monthDraft.cardHyundaiActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardHyundaiActual: event.target.value }))} placeholder="현대 M카드 실제" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
               </div>
-              <input value={monthDraft.cardKookminActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardKookminActual: event.target.value }))} placeholder="국민카드 실제" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
+              <div className="grid gap-3 md:grid-cols-3">
+                <input value={monthDraft.cardShinhanActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardShinhanActual: event.target.value }))} placeholder="신한카드 실제" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
+                <input value={monthDraft.cardLotteActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardLotteActual: event.target.value }))} placeholder="롯데카드 실제" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
+                <input value={monthDraft.cardKookminActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardKookminActual: event.target.value }))} placeholder="국민카드 실제" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
+              </div>
               <div className="grid gap-3 md:grid-cols-2">
                 <input value={monthDraft.coffeeTarget} onChange={event => setMonthDraft(previous => ({ ...previous, coffeeTarget: event.target.value }))} placeholder="커피 충전 목표 횟수" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
                 <input value={monthDraft.coffeeActual} onChange={event => setMonthDraft(previous => ({ ...previous, coffeeActual: event.target.value }))} placeholder="커피 충전 실제 횟수" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
