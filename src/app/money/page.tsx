@@ -175,14 +175,14 @@ export default function MoneyPage() {
 
   const addLeak = () => {
     const amount = parseAmount(leakDraft.amount)
-    if (!amount) return
+    if (!amount || !leakDraft.title.trim()) return
     const record: LeakRecord = {
       id: `${Date.now()}`,
       date: leakDraft.date || today(),
       type: leakDraft.type,
       method: leakDraft.method,
       amount,
-      title: leakDraft.title.trim() || `${leakDraft.type} ${won(amount)}`,
+      title: leakDraft.title.trim(),
       reason: leakDraft.reason.trim(),
       keep: leakDraft.keep,
     }
@@ -258,9 +258,9 @@ export default function MoneyPage() {
           <div className="border-b border-emerald-100 bg-emerald-50 p-5">
             <p className="text-xs font-black tracking-[.18em] text-emerald-700">QUICK LOG</p>
             <h2 className="mt-1 text-xl font-black text-emerald-950">10초 지출 기록</h2>
-            <p className="mt-1 text-sm font-bold text-emerald-800">금액만 입력해도 저장됩니다. 자세한 사유는 기억나는 지출만 남깁니다.</p>
+            <p className="mt-1 text-sm font-bold text-emerald-800">사용처와 금액만 입력하면 저장됩니다. 자세한 사유는 기억나는 지출만 남깁니다.</p>
           </div>
-          <div className="grid gap-3 p-5 lg:grid-cols-[150px_150px_150px_1fr_120px]">
+          <div className="grid gap-3 p-5 lg:grid-cols-[145px_145px_145px_1fr_130px_110px]">
             <input type="date" value={leakDraft.date} onChange={event => setLeakDraft(previous => ({ ...previous, date: event.target.value }))} className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-emerald-700" />
             <select value={leakDraft.type} onChange={event => setLeakDraft(previous => ({ ...previous, type: event.target.value as LeakType }))} className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-emerald-700">
               {leakTypes.map(type => <option key={type}>{type}</option>)}
@@ -268,7 +268,8 @@ export default function MoneyPage() {
             <select value={leakDraft.method} onChange={event => setLeakDraft(previous => ({ ...previous, method: event.target.value as PayMethod }))} className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-emerald-700">
               {payMethods.map(method => <option key={method}>{method}</option>)}
             </select>
-            <input value={leakDraft.amount} onChange={event => setLeakDraft(previous => ({ ...previous, amount: event.target.value }))} onKeyDown={event => event.key === 'Enter' && addLeak()} placeholder="금액만 입력 후 Enter" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-emerald-700" />
+            <input value={leakDraft.title} onChange={event => setLeakDraft(previous => ({ ...previous, title: event.target.value }))} placeholder="어디에 썼는지" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-emerald-700" />
+            <input value={leakDraft.amount} onChange={event => setLeakDraft(previous => ({ ...previous, amount: event.target.value }))} onKeyDown={event => event.key === 'Enter' && addLeak()} placeholder="금액 입력 후 Enter" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-emerald-700" />
             <button onClick={addLeak} className="rounded-lg bg-emerald-700 px-4 py-3 text-sm font-black text-white">바로 저장</button>
           </div>
           <div className="grid gap-3 border-t border-slate-100 p-5 lg:grid-cols-[1fr_1fr]">
@@ -422,7 +423,7 @@ export default function MoneyPage() {
                 {payMethods.map(method => <option key={method}>{method}</option>)}
               </select>
               <input value={leakDraft.amount} onChange={event => setLeakDraft(previous => ({ ...previous, amount: event.target.value }))} placeholder="금액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
-              <input value={leakDraft.title} onChange={event => setLeakDraft(previous => ({ ...previous, title: event.target.value }))} placeholder="내용 선택 입력: 비우면 분류명으로 저장" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
+              <input value={leakDraft.title} onChange={event => setLeakDraft(previous => ({ ...previous, title: event.target.value }))} placeholder="어디에 썼는지 필수 입력: 예) 직장 앞 커피, 약국, 마트" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
               <textarea value={leakDraft.reason} onChange={event => setLeakDraft(previous => ({ ...previous, reason: event.target.value }))} placeholder="왜 썼는지: 관계상 지출, 스트레스, 가족식사, 업무 불편 해결 등" className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-emerald-700 md:col-span-2" />
               <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold text-slate-700 md:col-span-2">
                 <input type="checkbox" checked={leakDraft.keep} onChange={event => setLeakDraft(previous => ({ ...previous, keep: event.target.checked }))} />
