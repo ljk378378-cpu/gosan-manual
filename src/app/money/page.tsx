@@ -143,8 +143,9 @@ export default function MoneyPage() {
     memo: '',
   })
 
-  const latest = months[0]
   const visibleMonth = monthDraft.month || currentMonth()
+  const latest = months[0]
+  const activeMonthRecord = months.find(item => item.month === visibleMonth) || latest
   const currentLeaks = useMemo(() => leaks.filter(item => item.date.startsWith(visibleMonth)), [leaks, visibleMonth])
   const todayLeaks = useMemo(() => leaks.filter(item => item.date === today()), [leaks])
   const selectedLeaks = useMemo(() => leaks.filter(item => item.date === selectedDate), [leaks, selectedDate])
@@ -185,15 +186,16 @@ export default function MoneyPage() {
     .filter(item => instantCashMethods.includes(item.method))
     .reduce((sum, item) => sum + item.amount, 0)
   const monthHyundaiMemoTotal = currentLeaks.filter(item => item.method === '현대 M카드').reduce((sum, item) => sum + item.amount, 0)
-  const personalCardActual = latest ? latest.cardHyundaiActual + (latest.cardShinhanActual || 0) : 0
-  const sharedCardActual = latest ? (latest.cardLotteActual || 0) + latest.cardKookminActual : 0
+  const personalCardActual = activeMonthRecord ? activeMonthRecord.cardHyundaiActual + (activeMonthRecord.cardShinhanActual || 0) : 0
+  const sharedCardActual = activeMonthRecord ? (activeMonthRecord.cardLotteActual || 0) + activeMonthRecord.cardKookminActual : 0
   const totalCardActual = personalCardActual + sharedCardActual
-  const currentCash = latest?.cashOnHand || 0
-  const cashAfterCardDue = currentCash - totalCardActual
+  const currentCash = activeMonthRecord?.cashOnHand || 0
+  const remainingFixedOut = activeMonthRecord?.fixedCost || 0
+  const cashAfterCardDue = currentCash - remainingFixedOut - totalCardActual
   const relationTotal = currentLeaks.filter(item => item.type === '가족·관계').reduce((sum, item) => sum + item.amount, 0)
   const coffeeTotal = currentLeaks.filter(item => item.type === '커피충전').reduce((sum, item) => sum + item.amount, 0)
-  const hyundaiOver = latest ? Math.max(0, latest.cardHyundaiActual - latest.cardHyundaiTarget) : 0
-  const coffeeOver = latest ? Math.max(0, latest.coffeeActual - latest.coffeeTarget) : 0
+  const hyundaiOver = activeMonthRecord ? Math.max(0, activeMonthRecord.cardHyundaiActual - activeMonthRecord.cardHyundaiTarget) : 0
+  const coffeeOver = activeMonthRecord ? Math.max(0, activeMonthRecord.coffeeActual - activeMonthRecord.coffeeTarget) : 0
 
   const saveMonths = (next: MonthRecord[]) => {
     setMonths(next)
@@ -211,8 +213,9 @@ export default function MoneyPage() {
   }
 
   const addMonth = () => {
+    const existing = months.find(item => item.month === (monthDraft.month || currentMonth()))
     const record: MonthRecord = {
-      id: `${Date.now()}`,
+      id: existing?.id || `${Date.now()}`,
       month: monthDraft.month || currentMonth(),
       income: parseAmount(monthDraft.income),
       cashOnHand: parseAmount(monthDraft.cashOnHand),
@@ -326,21 +329,21 @@ export default function MoneyPage() {
         <section className="mb-5 grid gap-3 md:grid-cols-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-slate-500">현대 M카드 초과</p>
-            <p className={`mt-2 text-2xl font-black ${hyundaiOver ? 'text-red-700' : 'text-emerald-700'}`}>{latest ? won(hyundaiOver) : '-'}</p>
+            <p className={`mt-2 text-2xl font-black ${hyundaiOver ? 'text-red-700' : 'text-emerald-700'}`}>{activeMonthRecord ? won(hyundaiOver) : '-'}</p>
           </div>
           <div className="rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-indigo-700">개인카드 합계</p>
-            <p className="mt-2 text-2xl font-black text-indigo-900">{latest ? won(personalCardActual) : '-'}</p>
+            <p className="mt-2 text-2xl font-black text-indigo-900">{activeMonthRecord ? won(personalCardActual) : '-'}</p>
             <p className="mt-1 text-xs font-bold text-indigo-600">현대 M + 신한</p>
           </div>
           <div className="rounded-2xl border border-violet-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-violet-700">공동카드 합계</p>
-            <p className="mt-2 text-2xl font-black text-violet-900">{latest ? won(sharedCardActual) : '-'}</p>
+            <p className="mt-2 text-2xl font-black text-violet-900">{activeMonthRecord ? won(sharedCardActual) : '-'}</p>
             <p className="mt-1 text-xs font-bold text-violet-600">롯데 + 국민</p>
           </div>
           <div className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-emerald-700">25일 이후 예상현금</p>
-            <p className={`mt-2 text-2xl font-black ${cashAfterCardDue < 0 ? 'text-red-700' : 'text-emerald-800'}`}>{latest ? won(cashAfterCardDue) : '-'}</p>
+            <p className={`mt-2 text-2xl font-black ${cashAfterCardDue < 0 ? 'text-red-700' : 'text-emerald-800'}`}>{activeMonthRecord ? won(cashAfterCardDue) : '-'}</p>
           </div>
         </section>
 
@@ -352,7 +355,7 @@ export default function MoneyPage() {
           </div>
           <div className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-amber-700">커피 충전 초과</p>
-            <p className={`mt-2 text-2xl font-black ${coffeeOver ? 'text-red-700' : 'text-emerald-700'}`}>{latest ? `${coffeeOver}회` : '-'}</p>
+            <p className={`mt-2 text-2xl font-black ${coffeeOver ? 'text-red-700' : 'text-emerald-700'}`}>{activeMonthRecord ? `${coffeeOver}회` : '-'}</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-slate-500">이번 달 누수 메모</p>
@@ -367,36 +370,50 @@ export default function MoneyPage() {
               <h2 className="mt-1 text-xl font-black text-cyan-950">현금흐름 기준표</h2>
               <p className="mt-2 text-sm font-bold text-cyan-800">모든 카드 결제일은 매월 {cardPaymentDay}일 기준으로 봅니다.</p>
             </div>
-            <div className="grid gap-3 md:grid-cols-4">
+            <div className="grid gap-3 md:grid-cols-5">
               <div className="rounded-xl bg-white p-4 shadow-sm">
-                <p className="text-xs font-black text-cyan-700">현재 보유현금</p>
-                <p className="mt-2 text-2xl font-black text-cyan-950">{latest ? won(currentCash) : '-'}</p>
+                <p className="text-xs font-black text-cyan-700">현재 통장잔액</p>
+                <p className="mt-2 text-2xl font-black text-cyan-950">{activeMonthRecord ? won(currentCash) : '-'}</p>
+              </div>
+              <div className="rounded-xl bg-white p-4 shadow-sm">
+                <p className="text-xs font-black text-slate-500">남은 자동이체</p>
+                <p className="mt-2 text-2xl font-black text-slate-900">{activeMonthRecord ? won(remainingFixedOut) : '-'}</p>
               </div>
               <div className="rounded-xl bg-white p-4 shadow-sm">
                 <p className="text-xs font-black text-indigo-700">{cardPaymentDay}일 청구예정액</p>
-                <p className="mt-2 text-2xl font-black text-indigo-900">{latest ? won(totalCardActual) : '-'}</p>
+                <p className="mt-2 text-2xl font-black text-indigo-900">{activeMonthRecord ? won(totalCardActual) : '-'}</p>
               </div>
               <div className="rounded-xl bg-white p-4 shadow-sm">
                 <p className="text-xs font-black text-slate-500">기록된 카드사용액</p>
                 <p className="mt-2 text-2xl font-black text-slate-900">{won(recordedCardSpend)}</p>
               </div>
               <div className="rounded-xl bg-white p-4 shadow-sm">
-                <p className="text-xs font-black text-emerald-700">{cardPaymentDay}일 후 남는 돈</p>
-                <p className={`mt-2 text-2xl font-black ${cashAfterCardDue < 0 ? 'text-red-700' : 'text-emerald-800'}`}>{latest ? won(cashAfterCardDue) : '-'}</p>
+                <p className="text-xs font-black text-emerald-700">{cardPaymentDay}일 후 예상잔액</p>
+                <p className={`mt-2 text-2xl font-black ${cashAfterCardDue < 0 ? 'text-red-700' : 'text-emerald-800'}`}>{activeMonthRecord ? won(cashAfterCardDue) : '-'}</p>
               </div>
             </div>
+          </div>
+          <div className="grid gap-3 border-b border-cyan-100 p-5 lg:grid-cols-[135px_1fr_1fr_1fr_1fr_1fr_130px]">
+            <input type="month" value={monthDraft.month} onChange={event => setMonthDraft(previous => ({ ...previous, month: event.target.value }))} className="rounded-lg border border-cyan-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
+            <input value={monthDraft.cashOnHand} onChange={event => setMonthDraft(previous => ({ ...previous, cashOnHand: event.target.value }))} placeholder="현재 통장잔액" className="rounded-lg border border-cyan-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
+            <input value={monthDraft.fixedCost} onChange={event => setMonthDraft(previous => ({ ...previous, fixedCost: event.target.value }))} placeholder="남은 자동이체" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
+            <input value={monthDraft.cardHyundaiActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardHyundaiActual: event.target.value }))} placeholder="현대 청구액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
+            <input value={monthDraft.cardShinhanActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardShinhanActual: event.target.value }))} placeholder="신한 청구액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
+            <input value={monthDraft.cardKookminActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardKookminActual: event.target.value }))} placeholder="국민 청구액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
+            <button onClick={addMonth} className="rounded-lg bg-cyan-700 px-4 py-3 text-sm font-black text-white">현금흐름 저장</button>
+            <input value={monthDraft.cardLotteActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardLotteActual: event.target.value }))} placeholder="롯데 청구액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700 lg:col-start-4" />
           </div>
           <div className="grid gap-3 p-5 md:grid-cols-3">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-black text-slate-500">현금 기준 해석</p>
               <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                {cardPaymentDay}일 청구예정액은 월 점검에 입력한 현대 M·신한·롯데·국민카드 실제 금액 합계입니다.
+                {cardPaymentDay}일 후 예상잔액은 현재 통장잔액에서 남은 자동이체와 카드 청구예정액을 뺀 금액입니다.
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-black text-slate-500">현금성 지출 기록</p>
               <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                현금·체크카드·계좌이체 기록은 이번 달에 돈이 어디로 빠졌는지 확인하는 참고값입니다. 현재 통장잔액에는 이미 반영된 금액일 수 있습니다.
+                통장을 하나만 쓰는 경우 현재 통장잔액에는 이미 빠져나간 현금·체크·계좌이체가 반영되어 있을 수 있습니다.
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -641,8 +658,8 @@ export default function MoneyPage() {
             <div className="grid gap-3 p-5">
               <input type="month" value={monthDraft.month} onChange={event => setMonthDraft(previous => ({ ...previous, month: event.target.value }))} className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
               <input value={monthDraft.income} onChange={event => setMonthDraft(previous => ({ ...previous, income: event.target.value }))} placeholder="이번 달 입금액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
-              <input value={monthDraft.cashOnHand} onChange={event => setMonthDraft(previous => ({ ...previous, cashOnHand: event.target.value }))} placeholder="현재 보유현금" className="rounded-lg border border-cyan-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
-              <input value={monthDraft.fixedCost} onChange={event => setMonthDraft(previous => ({ ...previous, fixedCost: event.target.value }))} placeholder="고정지출 합계" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
+              <input value={monthDraft.cashOnHand} onChange={event => setMonthDraft(previous => ({ ...previous, cashOnHand: event.target.value }))} placeholder="현재 통장잔액" className="rounded-lg border border-cyan-300 px-3 py-3 text-sm font-bold outline-none focus:border-cyan-700" />
+              <input value={monthDraft.fixedCost} onChange={event => setMonthDraft(previous => ({ ...previous, fixedCost: event.target.value }))} placeholder="25일까지 남은 자동이체·고정출금" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
               <div className="grid gap-3 md:grid-cols-2">
                 <input value={monthDraft.cardHyundaiTarget} onChange={event => setMonthDraft(previous => ({ ...previous, cardHyundaiTarget: event.target.value }))} placeholder="현대 M카드 목표" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
                 <input value={monthDraft.cardHyundaiActual} onChange={event => setMonthDraft(previous => ({ ...previous, cardHyundaiActual: event.target.value }))} placeholder="현대 M카드 실제" className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
