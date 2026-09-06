@@ -61,9 +61,28 @@ function parseAmount(value: string) {
   return Number(value.replaceAll(',', '').trim()) || 0
 }
 
+function monthOffset(month: string, offset: number) {
+  const [year, monthIndex] = month.split('-').map(Number)
+  const date = new Date(year, monthIndex - 1 + offset, 1)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function calendarDays(month: string) {
+  const [year, monthIndex] = month.split('-').map(Number)
+  const firstDate = new Date(year, monthIndex - 1, 1)
+  const lastDate = new Date(year, monthIndex, 0)
+  const blanks = Array.from({ length: firstDate.getDay() }, () => null)
+  const days = Array.from({ length: lastDate.getDate() }, (_, index) => {
+    const day = String(index + 1).padStart(2, '0')
+    return `${month}-${day}`
+  })
+  return [...blanks, ...days]
+}
+
 export default function MoneyPage() {
   const [months, setMonths] = useState<MonthRecord[]>(() => load(monthKey, []))
   const [leaks, setLeaks] = useState<LeakRecord[]>(() => load(leakKey, []))
+  const [selectedDate, setSelectedDate] = useState(today())
   const [monthDraft, setMonthDraft] = useState({
     month: currentMonth(),
     income: '',
@@ -78,6 +97,7 @@ export default function MoneyPage() {
     memo: '',
   })
   const [leakDraft, setLeakDraft] = useState({
+    date: today(),
     type: '커피충전' as LeakType,
     method: '현대 M카드' as PayMethod,
     amount: '',
@@ -90,8 +110,19 @@ export default function MoneyPage() {
   const visibleMonth = monthDraft.month || currentMonth()
   const currentLeaks = useMemo(() => leaks.filter(item => item.date.startsWith(visibleMonth)), [leaks, visibleMonth])
   const todayLeaks = useMemo(() => leaks.filter(item => item.date === today()), [leaks])
+  const selectedLeaks = useMemo(() => leaks.filter(item => item.date === selectedDate), [leaks, selectedDate])
+  const calendarDates = useMemo(() => calendarDays(visibleMonth), [visibleMonth])
+  const dailyTotals = useMemo(() => {
+    return currentLeaks.reduce<Record<string, number>>((totals, item) => {
+      totals[item.date] = (totals[item.date] || 0) + item.amount
+      return totals
+    }, {})
+  }, [currentLeaks])
   const leakTotal = currentLeaks.reduce((sum, item) => sum + item.amount, 0)
   const todayTotal = todayLeaks.reduce((sum, item) => sum + item.amount, 0)
+  const selectedTotal = selectedLeaks.reduce((sum, item) => sum + item.amount, 0)
+  const spentDays = Object.keys(dailyTotals).length
+  const averageDailySpend = spentDays ? leakTotal / spentDays : 0
   const todayCardTotal = todayLeaks
     .filter(item => personalCards.includes(item.method) || sharedCards.includes(item.method))
     .reduce((sum, item) => sum + item.amount, 0)
@@ -137,7 +168,7 @@ export default function MoneyPage() {
     if (!leakDraft.title.trim()) return
     const record: LeakRecord = {
       id: `${Date.now()}`,
-      date: today(),
+      date: leakDraft.date || today(),
       type: leakDraft.type,
       method: leakDraft.method,
       amount: parseAmount(leakDraft.amount),
@@ -146,7 +177,9 @@ export default function MoneyPage() {
       keep: leakDraft.keep,
     }
     saveLeaks([record, ...leaks].slice(0, 500))
-    setLeakDraft({ type: '커피충전', method: '현대 M카드', amount: '', title: '', reason: '', keep: false })
+    setSelectedDate(record.date)
+    setMonthDraft(previous => ({ ...previous, month: record.date.slice(0, 7) }))
+    setLeakDraft({ date: today(), type: '커피충전', method: '현대 M카드', amount: '', title: '', reason: '', keep: false })
   }
 
   return (
@@ -199,6 +232,89 @@ export default function MoneyPage() {
           </div>
         </section>
 
+        <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 p-5">
+            <div>
+              <p className="text-xs font-black tracking-[.18em] text-slate-500">SPENDING CALENDAR</p>
+              <h2 className="mt-1 text-xl font-black">월간 소비 달력</h2>
+              <p className="mt-1 text-sm font-bold text-slate-600">
+                {visibleMonth} 합계 {won(leakTotal)} · 기록일 평균 {won(averageDailySpend)}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => {
+                const nextMonth = monthOffset(visibleMonth, -1)
+                setMonthDraft(previous => ({ ...previous, month: nextMonth }))
+                setSelectedDate(`${nextMonth}-01`)
+              }} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-black text-slate-700">이전달</button>
+              <button onClick={() => {
+                const nextMonth = currentMonth()
+                setMonthDraft(previous => ({ ...previous, month: nextMonth }))
+                setSelectedDate(today())
+              }} className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-black text-emerald-800">이번달</button>
+              <button onClick={() => {
+                const nextMonth = monthOffset(visibleMonth, 1)
+                setMonthDraft(previous => ({ ...previous, month: nextMonth }))
+                setSelectedDate(`${nextMonth}-01`)
+              }} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-black text-slate-700">다음달</button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-100 text-center text-xs font-black text-slate-500">
+            {['일', '월', '화', '수', '목', '금', '토'].map(day => <div key={day} className="py-2">{day}</div>)}
+          </div>
+          <div className="grid grid-cols-7">
+            {calendarDates.map((date, index) => {
+              const total = date ? dailyTotals[date] || 0 : 0
+              const isSelected = date === selectedDate
+              const isToday = date === today()
+              return (
+                <button
+                  key={date || `blank-${index}`}
+                  disabled={!date}
+                  onClick={() => date && setSelectedDate(date)}
+                  className={`min-h-24 border-b border-r border-slate-100 p-2 text-left transition ${isSelected ? 'bg-emerald-50 ring-2 ring-inset ring-emerald-500' : 'bg-white hover:bg-slate-50'} ${!date ? 'cursor-default bg-slate-50' : ''}`}
+                >
+                  {date ? (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-black ${isToday ? 'bg-slate-950 text-white' : 'text-slate-700'}`}>{Number(date.slice(-2))}</span>
+                        {total > 0 ? <span className="rounded-full bg-amber-100 px-2 py-1 text-[11px] font-black text-amber-800">{currentLeaks.filter(item => item.date === date).length}건</span> : null}
+                      </div>
+                      <p className={`mt-3 text-sm font-black ${total > 0 ? 'text-slate-950' : 'text-slate-300'}`}>{total > 0 ? won(total) : '-'}</p>
+                    </>
+                  ) : null}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="grid gap-4 p-5 lg:grid-cols-[220px_1fr]">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+              <p className="text-xs font-black text-emerald-700">선택한 날짜</p>
+              <p className="mt-2 text-xl font-black text-emerald-950">{selectedDate}</p>
+              <p className="mt-1 text-sm font-black text-emerald-800">{won(selectedTotal)}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              {selectedLeaks.length ? (
+                <div className="grid gap-2">
+                  {selectedLeaks.map(item => (
+                    <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2">
+                      <div>
+                        <p className="text-sm font-black text-slate-900">{item.title}</p>
+                        <p className="text-xs font-bold text-slate-500">{item.method || '결제수단 미기록'} · {item.type} · {item.keep ? '유지 가능' : '조정 후보'}</p>
+                      </div>
+                      <p className="text-sm font-black text-slate-900">{won(item.amount)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="py-8 text-center text-sm font-bold text-slate-500">선택한 날짜에 기록된 지출이 없습니다.</p>
+              )}
+            </div>
+          </div>
+        </section>
+
         <section className="mb-5 grid gap-4 lg:grid-cols-[420px_1fr]">
           <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 bg-slate-50 p-5">
@@ -235,6 +351,7 @@ export default function MoneyPage() {
               <p className="mt-1 text-sm leading-6 text-slate-600">현금이든 카드든 오늘 쓴 돈은 금액과 결제수단만 빠르게 남깁니다. 이유는 필요한 지출만 적습니다.</p>
             </div>
             <div className="grid gap-3 p-5 md:grid-cols-2">
+              <input type="date" value={leakDraft.date} onChange={event => setLeakDraft(previous => ({ ...previous, date: event.target.value }))} className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700" />
               <select value={leakDraft.type} onChange={event => setLeakDraft(previous => ({ ...previous, type: event.target.value as LeakType }))} className="rounded-lg border border-slate-300 px-3 py-3 text-sm outline-none focus:border-emerald-700">
                 {leakTypes.map(type => <option key={type}>{type}</option>)}
               </select>
