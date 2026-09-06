@@ -106,6 +106,7 @@ export default function MoneyPage() {
   const [leaks, setLeaks] = useState<LeakRecord[]>(() => load(leakKey, []))
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>(() => load(subscriptionKey, []))
   const [selectedDate, setSelectedDate] = useState(today())
+  const [editingSubscriptionId, setEditingSubscriptionId] = useState('')
   const [monthDraft, setMonthDraft] = useState({
     month: currentMonth(),
     income: '',
@@ -250,7 +251,7 @@ export default function MoneyPage() {
     const amount = parseAmount(subscriptionDraft.amount)
     if (!amount || !subscriptionDraft.title.trim()) return
     const record: SubscriptionRecord = {
-      id: `${Date.now()}`,
+      id: editingSubscriptionId || `${Date.now()}`,
       title: subscriptionDraft.title.trim(),
       amount,
       method: subscriptionDraft.method,
@@ -258,7 +259,28 @@ export default function MoneyPage() {
       need: subscriptionDraft.need,
       memo: subscriptionDraft.memo.trim(),
     }
-    saveSubscriptions([record, ...subscriptions].slice(0, 100))
+    const next = editingSubscriptionId
+      ? subscriptions.map(item => item.id === editingSubscriptionId ? record : item)
+      : [record, ...subscriptions].slice(0, 100)
+    saveSubscriptions(next)
+    setEditingSubscriptionId('')
+    setSubscriptionDraft({ title: '', amount: '', method: '현대 M카드', payDay: '', need: '유지검토', memo: '' })
+  }
+
+  const editSubscription = (record: SubscriptionRecord) => {
+    setEditingSubscriptionId(record.id)
+    setSubscriptionDraft({
+      title: record.title,
+      amount: `${record.amount}`,
+      method: record.method,
+      payDay: record.payDay,
+      need: record.need,
+      memo: record.memo,
+    })
+  }
+
+  const cancelSubscriptionEdit = () => {
+    setEditingSubscriptionId('')
     setSubscriptionDraft({ title: '', amount: '', method: '현대 M카드', payDay: '', need: '유지검토', memo: '' })
   }
 
@@ -345,11 +367,14 @@ export default function MoneyPage() {
               {subscriptionNeeds.map(need => <option key={need}>{need}</option>)}
             </select>
             <textarea value={subscriptionDraft.memo} onChange={event => setSubscriptionDraft(previous => ({ ...previous, memo: event.target.value }))} placeholder="판단 메모: 자주 쓰는지, 대체 가능한지, 해지 예정일 등" className="min-h-16 rounded-lg border border-slate-300 p-3 text-sm font-bold outline-none focus:border-rose-600 lg:col-span-4" />
-            <button onClick={addSubscription} className="rounded-lg bg-rose-700 px-4 py-3 text-sm font-black text-white">구독 저장</button>
+            <div className="grid gap-2">
+              <button onClick={addSubscription} className="rounded-lg bg-rose-700 px-4 py-3 text-sm font-black text-white">{editingSubscriptionId ? '수정 저장' : '구독 저장'}</button>
+              {editingSubscriptionId ? <button onClick={cancelSubscriptionEdit} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-black text-slate-600">수정 취소</button> : null}
+            </div>
           </div>
           <div className="divide-y divide-slate-100 border-t border-slate-100">
             {subscriptions.length ? subscriptions.map(item => (
-              <div key={item.id} className="grid gap-2 p-4 md:grid-cols-[1fr_120px_130px_90px_100px_52px] md:items-center">
+              <div key={item.id} className="grid gap-2 p-4 md:grid-cols-[1fr_120px_130px_90px_100px_92px] md:items-center">
                 <div>
                   <p className="font-black text-slate-900">{item.title}</p>
                   <p className="text-xs font-bold text-slate-500">{item.memo || '판단 메모 없음'}</p>
@@ -358,7 +383,10 @@ export default function MoneyPage() {
                 <p className="text-xs font-bold text-slate-500">{item.method}</p>
                 <p className="text-xs font-bold text-slate-500">{item.payDay ? `${item.payDay}일` : '결제일 미정'}</p>
                 <span className={`rounded-full px-3 py-1 text-center text-xs font-black ${item.need === '필수' ? 'bg-emerald-100 text-emerald-800' : item.need === '해지후보' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}`}>{item.need}</span>
-                <button onClick={() => saveSubscriptions(subscriptions.filter(record => record.id !== item.id))} className="justify-self-start text-xs font-black text-red-700">삭제</button>
+                <div className="flex gap-2">
+                  <button onClick={() => editSubscription(item)} className="text-xs font-black text-slate-700">수정</button>
+                  <button onClick={() => saveSubscriptions(subscriptions.filter(record => record.id !== item.id))} className="text-xs font-black text-red-700">삭제</button>
+                </div>
               </div>
             )) : (
               <p className="p-8 text-center text-sm font-bold text-slate-500">등록된 월구독료가 없습니다.</p>
