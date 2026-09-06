@@ -120,7 +120,7 @@ const updateCheckpoints2026 = [
     tag: '처우 개선',
     detail: '사회복지시설 종사자 기본급 3.5% 인상, 야간수당·통상임금·유급병가·가족수당 현실화 흐름을 확인한다.',
     action: '보수규정, 급여대장, 가족수당, 병가 규정의 실제 적용 여부 확인',
-    href: 'https://www.mohw.go.kr/gallery.es?act=view&bid=0003&list_no=379771',
+    href: 'https://www.mohw.go.kr/board.es?act=view&bid=0021&list_no=1488526&mid=a10413000000&nPage=1&tag=',
   },
   {
     title: '노동절 공휴일 법제화',
