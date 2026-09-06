@@ -5,6 +5,7 @@ import Nav from '@/components/Nav'
 
 type LeakType = '커피충전' | '배달음식' | '가족·관계' | '업무도구' | '생활구매' | '기타'
 type PayMethod = '현대 M카드' | '신한카드' | '롯데카드' | '국민카드' | '현금' | '체크카드' | '계좌이체'
+type SubscriptionNeed = '필수' | '유지검토' | '해지후보'
 
 type MonthRecord = {
   id: string
@@ -32,10 +33,22 @@ type LeakRecord = {
   keep: boolean
 }
 
+type SubscriptionRecord = {
+  id: string
+  title: string
+  amount: number
+  method: PayMethod
+  payDay: string
+  need: SubscriptionNeed
+  memo: string
+}
+
 const monthKey = 'cheonggok-money-month-simple-v1'
 const leakKey = 'cheonggok-money-leak-v1'
+const subscriptionKey = 'cheonggok-money-subscription-v1'
 const leakTypes: LeakType[] = ['커피충전', '배달음식', '가족·관계', '업무도구', '생활구매', '기타']
 const payMethods: PayMethod[] = ['현대 M카드', '신한카드', '롯데카드', '국민카드', '현금', '체크카드', '계좌이체']
+const subscriptionNeeds: SubscriptionNeed[] = ['필수', '유지검토', '해지후보']
 const personalCards: PayMethod[] = ['현대 M카드', '신한카드']
 const sharedCards: PayMethod[] = ['롯데카드', '국민카드']
 const quickAmounts = ['5000', '10000', '20000', '30000', '50000']
@@ -91,6 +104,7 @@ function calendarDays(month: string) {
 export default function MoneyPage() {
   const [months, setMonths] = useState<MonthRecord[]>(() => load(monthKey, []))
   const [leaks, setLeaks] = useState<LeakRecord[]>(() => load(leakKey, []))
+  const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>(() => load(subscriptionKey, []))
   const [selectedDate, setSelectedDate] = useState(today())
   const [monthDraft, setMonthDraft] = useState({
     month: currentMonth(),
@@ -113,6 +127,14 @@ export default function MoneyPage() {
     title: '',
     reason: '',
     keep: false,
+  })
+  const [subscriptionDraft, setSubscriptionDraft] = useState({
+    title: '',
+    amount: '',
+    method: '현대 M카드' as PayMethod,
+    payDay: '',
+    need: '유지검토' as SubscriptionNeed,
+    memo: '',
   })
 
   const latest = months[0]
@@ -142,6 +164,11 @@ export default function MoneyPage() {
   }))
   const largestTypeTotal = Math.max(1, ...typeTotals.map(item => item.total))
   const largestMethodTotal = Math.max(1, ...methodTotals.map(item => item.total))
+  const subscriptionTotal = subscriptions.reduce((sum, item) => sum + item.amount, 0)
+  const subscriptionCancelTotal = subscriptions
+    .filter(item => item.need === '해지후보')
+    .reduce((sum, item) => sum + item.amount, 0)
+  const yearlySubscriptionTotal = subscriptionTotal * 12
   const todayCardTotal = todayLeaks
     .filter(item => personalCards.includes(item.method) || sharedCards.includes(item.method))
     .reduce((sum, item) => sum + item.amount, 0)
@@ -163,6 +190,11 @@ export default function MoneyPage() {
   const saveLeaks = (next: LeakRecord[]) => {
     setLeaks(next)
     localStorage.setItem(leakKey, JSON.stringify(next))
+  }
+
+  const saveSubscriptions = (next: SubscriptionRecord[]) => {
+    setSubscriptions(next)
+    localStorage.setItem(subscriptionKey, JSON.stringify(next))
   }
 
   const addMonth = () => {
@@ -214,6 +246,22 @@ export default function MoneyPage() {
     }))
   }
 
+  const addSubscription = () => {
+    const amount = parseAmount(subscriptionDraft.amount)
+    if (!amount || !subscriptionDraft.title.trim()) return
+    const record: SubscriptionRecord = {
+      id: `${Date.now()}`,
+      title: subscriptionDraft.title.trim(),
+      amount,
+      method: subscriptionDraft.method,
+      payDay: subscriptionDraft.payDay.trim(),
+      need: subscriptionDraft.need,
+      memo: subscriptionDraft.memo.trim(),
+    }
+    saveSubscriptions([record, ...subscriptions].slice(0, 100))
+    setSubscriptionDraft({ title: '', amount: '', method: '현대 M카드', payDay: '', need: '유지검토', memo: '' })
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <Nav />
@@ -261,6 +309,60 @@ export default function MoneyPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-slate-500">이번 달 누수 메모</p>
             <p className="mt-2 text-2xl font-black text-slate-900">{won(leakTotal)}</p>
+          </div>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-rose-200 bg-white shadow-sm">
+          <div className="grid gap-4 border-b border-rose-100 bg-rose-50 p-5 lg:grid-cols-[260px_1fr]">
+            <div>
+              <p className="text-xs font-black tracking-[.18em] text-rose-700">SUBSCRIPTION CHECK</p>
+              <h2 className="mt-1 text-xl font-black text-rose-950">월구독료 점검</h2>
+              <p className="mt-2 text-sm font-bold text-rose-800">정기적으로 빠져나가는 돈을 한 번에 보고, 필요 없는 구독은 해지후보로 표시합니다.</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-xl bg-white p-4 shadow-sm">
+                <p className="text-xs font-black text-rose-600">월 구독 합계</p>
+                <p className="mt-2 text-2xl font-black text-rose-950">{won(subscriptionTotal)}</p>
+              </div>
+              <div className="rounded-xl bg-white p-4 shadow-sm">
+                <p className="text-xs font-black text-slate-500">연간 환산</p>
+                <p className="mt-2 text-2xl font-black text-slate-900">{won(yearlySubscriptionTotal)}</p>
+              </div>
+              <div className="rounded-xl bg-white p-4 shadow-sm">
+                <p className="text-xs font-black text-red-600">해지후보 절감액</p>
+                <p className="mt-2 text-2xl font-black text-red-700">{won(subscriptionCancelTotal)}</p>
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-3 p-5 lg:grid-cols-[1fr_130px_145px_90px_120px]">
+            <input value={subscriptionDraft.title} onChange={event => setSubscriptionDraft(previous => ({ ...previous, title: event.target.value }))} placeholder="구독명 예: ChatGPT, 음악앱, 클라우드" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-rose-600" />
+            <input value={subscriptionDraft.amount} onChange={event => setSubscriptionDraft(previous => ({ ...previous, amount: event.target.value }))} onKeyDown={event => event.key === 'Enter' && addSubscription()} placeholder="월 금액" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-rose-600" />
+            <select value={subscriptionDraft.method} onChange={event => setSubscriptionDraft(previous => ({ ...previous, method: event.target.value as PayMethod }))} className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-rose-600">
+              {payMethods.map(method => <option key={method}>{method}</option>)}
+            </select>
+            <input value={subscriptionDraft.payDay} onChange={event => setSubscriptionDraft(previous => ({ ...previous, payDay: event.target.value }))} placeholder="결제일" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-rose-600" />
+            <select value={subscriptionDraft.need} onChange={event => setSubscriptionDraft(previous => ({ ...previous, need: event.target.value as SubscriptionNeed }))} className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-rose-600">
+              {subscriptionNeeds.map(need => <option key={need}>{need}</option>)}
+            </select>
+            <textarea value={subscriptionDraft.memo} onChange={event => setSubscriptionDraft(previous => ({ ...previous, memo: event.target.value }))} placeholder="판단 메모: 자주 쓰는지, 대체 가능한지, 해지 예정일 등" className="min-h-16 rounded-lg border border-slate-300 p-3 text-sm font-bold outline-none focus:border-rose-600 lg:col-span-4" />
+            <button onClick={addSubscription} className="rounded-lg bg-rose-700 px-4 py-3 text-sm font-black text-white">구독 저장</button>
+          </div>
+          <div className="divide-y divide-slate-100 border-t border-slate-100">
+            {subscriptions.length ? subscriptions.map(item => (
+              <div key={item.id} className="grid gap-2 p-4 md:grid-cols-[1fr_120px_130px_90px_100px_52px] md:items-center">
+                <div>
+                  <p className="font-black text-slate-900">{item.title}</p>
+                  <p className="text-xs font-bold text-slate-500">{item.memo || '판단 메모 없음'}</p>
+                </div>
+                <p className="text-sm font-black text-slate-900">{won(item.amount)}</p>
+                <p className="text-xs font-bold text-slate-500">{item.method}</p>
+                <p className="text-xs font-bold text-slate-500">{item.payDay ? `${item.payDay}일` : '결제일 미정'}</p>
+                <span className={`rounded-full px-3 py-1 text-center text-xs font-black ${item.need === '필수' ? 'bg-emerald-100 text-emerald-800' : item.need === '해지후보' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}`}>{item.need}</span>
+                <button onClick={() => saveSubscriptions(subscriptions.filter(record => record.id !== item.id))} className="justify-self-start text-xs font-black text-red-700">삭제</button>
+              </div>
+            )) : (
+              <p className="p-8 text-center text-sm font-bold text-slate-500">등록된 월구독료가 없습니다.</p>
+            )}
           </div>
         </section>
 
