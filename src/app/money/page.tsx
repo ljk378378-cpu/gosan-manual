@@ -178,7 +178,7 @@ export default function MoneyPage() {
   const todayCardTotal = todayLeaks
     .filter(item => cardMethods.includes(item.method))
     .reduce((sum, item) => sum + item.amount, 0)
-  const monthlyCardDue = currentLeaks
+  const recordedCardSpend = currentLeaks
     .filter(item => cardMethods.includes(item.method))
     .reduce((sum, item) => sum + item.amount, 0)
   const monthlyInstantCashOut = currentLeaks
@@ -189,13 +189,11 @@ export default function MoneyPage() {
   const sharedCardActual = latest ? (latest.cardLotteActual || 0) + latest.cardKookminActual : 0
   const totalCardActual = personalCardActual + sharedCardActual
   const currentCash = latest?.cashOnHand || 0
-  const cashAfterCardDue = currentCash - monthlyCardDue
-  const cashAfterKnownOut = currentCash - monthlyCardDue - monthlyInstantCashOut
+  const cashAfterCardDue = currentCash - totalCardActual
   const relationTotal = currentLeaks.filter(item => item.type === '가족·관계').reduce((sum, item) => sum + item.amount, 0)
   const coffeeTotal = currentLeaks.filter(item => item.type === '커피충전').reduce((sum, item) => sum + item.amount, 0)
   const hyundaiOver = latest ? Math.max(0, latest.cardHyundaiActual - latest.cardHyundaiTarget) : 0
   const coffeeOver = latest ? Math.max(0, latest.coffeeActual - latest.coffeeTarget) : 0
-  const afterCards = latest ? latest.income - latest.fixedCost - totalCardActual : 0
 
   const saveMonths = (next: MonthRecord[]) => {
     setMonths(next)
@@ -375,12 +373,12 @@ export default function MoneyPage() {
                 <p className="mt-2 text-2xl font-black text-cyan-950">{latest ? won(currentCash) : '-'}</p>
               </div>
               <div className="rounded-xl bg-white p-4 shadow-sm">
-                <p className="text-xs font-black text-indigo-700">{cardPaymentDay}일 카드예정액</p>
-                <p className="mt-2 text-2xl font-black text-indigo-900">{won(monthlyCardDue)}</p>
+                <p className="text-xs font-black text-indigo-700">{cardPaymentDay}일 청구예정액</p>
+                <p className="mt-2 text-2xl font-black text-indigo-900">{latest ? won(totalCardActual) : '-'}</p>
               </div>
               <div className="rounded-xl bg-white p-4 shadow-sm">
-                <p className="text-xs font-black text-slate-500">현금성 지출</p>
-                <p className="mt-2 text-2xl font-black text-slate-900">{won(monthlyInstantCashOut)}</p>
+                <p className="text-xs font-black text-slate-500">기록된 카드사용액</p>
+                <p className="mt-2 text-2xl font-black text-slate-900">{won(recordedCardSpend)}</p>
               </div>
               <div className="rounded-xl bg-white p-4 shadow-sm">
                 <p className="text-xs font-black text-emerald-700">{cardPaymentDay}일 후 남는 돈</p>
@@ -392,18 +390,18 @@ export default function MoneyPage() {
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-black text-slate-500">현금 기준 해석</p>
               <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                카드 사용액은 오늘 돈이 빠지지 않아도 {cardPaymentDay}일에 현금으로 결제될 예정액입니다.
+                {cardPaymentDay}일 청구예정액은 월 점검에 입력한 현대 M·신한·롯데·국민카드 실제 금액 합계입니다.
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-black text-slate-500">즉시 빠진 돈</p>
+              <p className="text-xs font-black text-slate-500">현금성 지출 기록</p>
               <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                현금·체크카드·계좌이체는 이미 보유현금에서 빠졌거나 바로 빠지는 지출로 따로 봅니다.
+                현금·체크카드·계좌이체 기록은 이번 달에 돈이 어디로 빠졌는지 확인하는 참고값입니다. 현재 통장잔액에는 이미 반영된 금액일 수 있습니다.
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-black text-slate-500">카드+현금성 반영</p>
-              <p className={`mt-2 text-xl font-black ${cashAfterKnownOut < 0 ? 'text-red-700' : 'text-slate-900'}`}>{latest ? won(cashAfterKnownOut) : '-'}</p>
+              <p className="text-xs font-black text-slate-500">현금성 지출 합계</p>
+              <p className="mt-2 text-xl font-black text-slate-900">{won(monthlyInstantCashOut)}</p>
             </div>
           </div>
         </section>
