@@ -754,10 +754,10 @@ export default function HrLaborPage() {
             <div className="border-t border-slate-100 p-5">
               <div className="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center">
                 <div>
-                  <p className="text-sm font-black leading-6 text-slate-800">오늘 학습질문 복사</p>
+                  <p className="text-sm font-black leading-6 text-slate-800">오늘 공부자료 만들 질문 복사</p>
                   <p className="text-xs font-bold leading-5 text-slate-600">원문과 최신 변경사항을 바탕으로, 과장님이 설명할 수 있는 학습자료를 만들어 달라는 질문입니다.</p>
                 </div>
-                <button onClick={() => navigator.clipboard.writeText(latestSearchPrompt)} className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">학습질문 복사</button>
+                <button onClick={() => navigator.clipboard.writeText(latestSearchPrompt)} className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">질문 복사</button>
               </div>
               <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-bold leading-5 text-amber-900">
                 목표는 매일 한 가지를 깊게 익히는 것입니다. 읽은 자료, 이해한 개념, 궁금한 질문, 우리 기관 적용점을 남기면 나중에 과장님의 인사노무 학습노트가 됩니다.
