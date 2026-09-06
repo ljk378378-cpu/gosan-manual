@@ -31,6 +31,13 @@ const primaryCards = [
     tone: 'border-violet-200 bg-violet-50 text-violet-950',
   },
   {
+    href: '/money',
+    label: '생활관리',
+    title: '소비패턴 점검실',
+    desc: '현대카드 과사용, 커피 충전, 가족·관계성 지출, 업무도구 구매를 쉽게 기록',
+    tone: 'border-lime-200 bg-lime-50 text-lime-950',
+  },
+  {
     href: '/ai-system',
     label: '사용원칙',
     title: 'AI 업무시스템',

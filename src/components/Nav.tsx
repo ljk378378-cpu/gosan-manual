@@ -8,6 +8,7 @@ const navItems = [
   { href: '/inspection-2026', label: '지도점검' },
   { href: '/team-command', label: '팀 운영' },
   { href: '/hr-labor', label: '인사노무' },
+  { href: '/money', label: '소비점검' },
   { href: '/ai-system', label: 'AI원칙' },
 ]
 
