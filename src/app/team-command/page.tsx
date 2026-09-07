@@ -318,6 +318,15 @@ export default function TeamCommandPage() {
       const parsed = JSON.parse(closingRaw)
       setClosingNote({ ...closingDefaults, ...(parsed[todayDateString()] || {}) })
     }
+    const yesterday = yesterdayDateString()
+    const moneyRaw = localStorage.getItem(MONEY_LEAK_KEY)
+    if (moneyRaw) {
+      const moneyParsed = JSON.parse(moneyRaw)
+      const cleanedMoney = moneyParsed.filter((item: { date?: string; title?: string }) => !(item.date === yesterday && item.title === '어제 소액 소비'))
+      if (cleanedMoney.length !== moneyParsed.length) {
+        localStorage.setItem(MONEY_LEAK_KEY, JSON.stringify(cleanedMoney))
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -719,27 +728,11 @@ export default function TeamCommandPage() {
         tomorrow3: '결재·상의 시간 원칙을 다시 적용하기',
       },
     }))
-    const moneyRaw = localStorage.getItem(MONEY_LEAK_KEY)
-    const moneyParsed = moneyRaw ? JSON.parse(moneyRaw) : []
-    const moneyWithoutYesterdayMemo = moneyParsed.filter((item: { date?: string; title?: string }) => !(item.date === yesterday && item.title === '어제 소액 소비'))
-    localStorage.setItem(MONEY_LEAK_KEY, JSON.stringify([
-      {
-        id: `${Date.now()}-yesterday-spend`,
-        date: yesterday,
-        type: '기타',
-        method: '현금',
-        amount: 4000,
-        title: '어제 소액 소비',
-        reason: '하루 복원 기록에서 확인한 약 4,000원 소비',
-        keep: false,
-      },
-      ...moneyWithoutYesterdayMemo,
-    ].slice(0, 500)))
     setRecords(nextRecords)
     setConditionHistory(nextConditionHistory)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRecords))
     localStorage.setItem(CONDITION_KEY, JSON.stringify(nextConditionHistory))
-    alert('어제 하루 복원 기록을 팀 운영과 소비점검에 반영했습니다.')
+    alert('어제 하루 복원 기록을 팀 운영에 반영했습니다. 소비점검에는 별도 지출을 추가하지 않았습니다.')
   }
 
   return (
@@ -792,7 +785,7 @@ export default function TeamCommandPage() {
               <p className="text-xs font-black tracking-[.18em] text-violet-700">DAY RECOVERY</p>
               <h2 className="mt-1 text-xl font-black text-violet-950">어제 하루 복원 반영</h2>
               <p className="mt-2 text-sm font-bold leading-6 text-violet-900">
-                긴 하루 기록을 사건 6개, 감정소모 원인, 내일 업무 3개, 소비 4,000원으로 익명화해 반영합니다.
+                긴 하루 기록을 사건 6개, 감정소모 원인, 내일 업무 3개로 익명화해 반영합니다.
               </p>
             </div>
             <button onClick={importYesterdayRecovery} className="rounded-xl bg-violet-800 px-5 py-3 text-sm font-black text-white">
