@@ -88,7 +88,7 @@ const topics: Topic[] = [
 ]
 
 const localGuidePdf = '/reference/2026-social-welfare-facility-guide.pdf'
-const localLaborGuidePdf = '/reference/social-welfare-center-hr-labor-guide.pdf'
+const localLaborGuidePdf = '/reference/social-welfare-center-hr-labor-guide-web.pdf'
 const officialGuideDownload = 'https://www.mohw.go.kr/boardDownload.es?bid=0021&list_no=1488923&seq=1'
 
 const sourceCards = [
