@@ -204,6 +204,28 @@ const laborGuidePageByDay: Record<number, number> = {
   30: 1,
 }
 
+const facilityGuideBookmarks = [
+  { label: '처음/목차', page: 1 },
+  { label: '채용·종사자 관리', page: 38 },
+  { label: '인력 관리·임면', page: 61 },
+  { label: '교육·훈련 확인', page: 64 },
+  { label: '재무회계·보조금', page: 151 },
+  { label: '퇴직·사회보험', page: 178 },
+  { label: '운영규정·위원회', page: 234 },
+  { label: '근로시간·보수 점검', page: 260 },
+  { label: '시간외근무·수당', page: 272 },
+]
+
+const laborGuideBookmarks = [
+  { label: '처음/목차', page: 1 },
+  { label: '채용·근로계약', page: 14 },
+  { label: '퇴직적립금', page: 18 },
+  { label: '경력·호봉', page: 31 },
+  { label: '근로시간', page: 36 },
+  { label: '시간외근무', page: 44 },
+  { label: '가족수당', page: 49 },
+]
+
 const defaultMaterial: Material = {
   source: '보건복지부 사회복지시설 관리안내 / 국가법령정보센터 / 고용노동부 자료',
   href: 'https://www.mohw.go.kr/board.es?act=view&bid=0021&list_no=1488923&mid=a10413000000',
@@ -521,7 +543,6 @@ function buildChapterSections(topic: Topic, material: Material): ChapterSection[
 export default function HrLaborPage() {
   const [topicIndex, setTopicIndex] = useState(todayTopicIndex())
   const [activeGuide, setActiveGuide] = useState<'facility' | 'labor'>('facility')
-  const [pdfZoom, setPdfZoom] = useState(1.55)
   const [records, setRecords] = useState<LearningRecord[]>([])
   const [latestRecords, setLatestRecords] = useState<LatestRecord[]>([])
   const [latestDraft, setLatestDraft] = useState({
@@ -556,6 +577,7 @@ export default function HrLaborPage() {
   const activeTitle = activeGuide === 'facility' ? '2026 사회복지시설 관리안내' : '사회복지관 인사노무 길라잡이'
   const activeSubtitle = activeGuide === 'facility' ? '공식 행정 기준' : '한국사회복지관협회 노무자문 사례집'
   const activePdfSrc = `${activePdf}#page=${activePage}`
+  const activeBookmarks = activeGuide === 'facility' ? facilityGuideBookmarks : laborGuideBookmarks
   const todayRecords = useMemo(() => records.filter(record => record.date === todayDateString()), [records])
   const todayLatestRecords = useMemo(() => latestRecords.filter(record => record.date === todayDateString()), [latestRecords])
   const doneTopics = new Set(records.map(record => record.topic)).size
@@ -863,26 +885,14 @@ export default function HrLaborPage() {
               </div>
             </div>
 
-            <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div className="mb-4">
               <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
                 <p className="text-sm font-black text-slate-900">{activeTitle}</p>
-                <p className="mt-1 text-xs font-bold text-slate-500">{activeSubtitle} · {topic.area} · {topic.title} · 오늘 시작 p.{activePage}</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3">
-                <span className="text-xs font-black text-slate-500">글자크기</span>
-                {[1.25, 1.5, 1.75, 2].map(value => (
-                  <button
-                    key={value}
-                    onClick={() => setPdfZoom(value)}
-                    className={`rounded-lg px-3 py-2 text-xs font-black ${pdfZoom === value ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-slate-50 text-slate-700'}`}
-                  >
-                    {Math.round(value * 100)}%
-                  </button>
-                ))}
+                <p className="mt-1 text-xs font-bold text-slate-500">{activeSubtitle} · {topic.area} · {topic.title} · 오늘 시작 p.{activePage} · 화면맞춤/확대/쪽이동은 원문창 안에서 조정</p>
               </div>
             </div>
 
-            <PdfCanvasReader fileUrl={activePdf} initialPage={activePage} scale={pdfZoom} title={activeTitle} />
+            <PdfCanvasReader fileUrl={activePdf} initialPage={activePage} scale={1.55} title={activeTitle} bookmarks={activeBookmarks} />
           </div>
         </section>
 
