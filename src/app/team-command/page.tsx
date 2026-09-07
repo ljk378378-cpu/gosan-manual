@@ -58,6 +58,7 @@ type ReportRecord = {
 const STORAGE_KEY = 'cheonggok-team-command-reports-v1'
 const CONDITION_KEY = 'cheonggok-team-command-condition-v1'
 const CLOSING_KEY = 'cheonggok-team-command-closing-v1'
+const MONEY_LEAK_KEY = 'cheonggok-money-leak-v1'
 const teamKeys: TeamKey[] = ['지역사회조직팀', '서비스제공팀', '공통']
 const staffKeys: StaffKey[] = ['1차 판단 지원 필요', '기본업무 누락관리 필요', '실행형 업무 중심 배정', '겸직 우선순위 조정 필요', '공통']
 const reportTypes: ReportType[] = ['당일 결재', '익일 문서 제출', '익일 사전검토', '시간외 상의', '단순 공유', '즉시보고', '퇴근 이후 문의']
@@ -265,6 +266,10 @@ function dateStringDaysAgo(daysAgo: number) {
   const date = new Date()
   date.setDate(date.getDate() - daysAgo)
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(date)
+}
+
+function yesterdayDateString() {
+  return dateStringDaysAgo(1)
 }
 
 function statusTone(status: ReportStatus) {
@@ -580,6 +585,163 @@ export default function TeamCommandPage() {
     localStorage.setItem(CONDITION_KEY, JSON.stringify(nextHistory))
   }
 
+  const importYesterdayRecovery = () => {
+    const yesterday = yesterdayDateString()
+    const importedPrefix = '어제복원'
+    const recoveredRecords: ReportRecord[] = [
+      {
+        id: `${Date.now()}-garden`,
+        date: yesterday,
+        team: '공통',
+        staff: '공통',
+        type: '단순 공유',
+        title: `${importedPrefix} 3층 화단 정리 후 소통 미흡`,
+        issue: '도착 직후 3층 화단 정리와 제초를 진행했으나 사전 공유 없이 진행되어 관리자의 반응이 좋지 않았고, 열심히 한 일에 대한 평가가 엇갈리며 감정소모가 발생함',
+        staffOption: '다음 환경정비나 공간 변경 전에는 사전 공유 후 진행',
+        requestedDecision: '공간 정비는 의도가 좋아도 사전 공유와 확인 절차를 우선 적용',
+        feedback: '열심히 한 일과 별개로, 공동공간 변경은 먼저 말하고 진행하는 기준 필요',
+        nextDue: '',
+        status: '완료',
+        burdenReason: '역할불명확',
+        boundaryAction: '담당자 역할 재확인',
+        minutes: 30,
+      },
+      {
+        id: `${Date.now()}-minutes`,
+        date: yesterday,
+        team: '공통',
+        staff: '기본업무 누락관리 필요',
+        type: '시간외 상의',
+        title: `${importedPrefix} 직원회의록 작성 미비로 팀 피드백`,
+        issue: '직원회의록 작성이 제대로 되지 않은 것을 계기로 미비사항을 팀 단톡에 강하게 안내함. 피드백 전달 방식과 직원의 스트레스 반응이 함께 발생함',
+        staffOption: '',
+        requestedDecision: '회의록 작성 기준을 개인 지적이 아니라 공통 체크리스트로 전환',
+        feedback: '회의록, 결과보고, 결재문서 등 반복누락 항목은 구두 피드백보다 제출 전 체크리스트로 관리',
+        nextDue: '',
+        status: '추적필요',
+        burdenReason: '반복누락',
+        boundaryAction: '체크리스트 요구',
+        minutes: 40,
+      },
+      {
+        id: `${Date.now()}-staff-support`,
+        date: yesterday,
+        team: '공통',
+        staff: '공통',
+        type: '즉시보고',
+        title: `${importedPrefix} 직원 스트레스 상황 지원`,
+        issue: '피드백 과정 중 직원 한 명의 스트레스 반응이 확인되어 즉시 지원하고 상황을 수습함. 동시에 관리자로서 현타와 감정소모가 발생함',
+        staffOption: '직원 컨디션 확인과 즉시 안정 지원',
+        requestedDecision: '직원 보호와 업무 기준 안내를 분리해서 처리',
+        feedback: '감정 상황은 먼저 안정화하고, 업무기준은 별도 시간에 다시 안내',
+        nextDue: '',
+        status: '판단완료',
+        burdenReason: '긴급예외',
+        boundaryAction: '즉시 대응',
+        minutes: 30,
+      },
+      {
+        id: `${Date.now()}-approval`,
+        date: yesterday,
+        team: '공통',
+        staff: '공통',
+        type: '당일 결재',
+        title: `${importedPrefix} 오전 결재와 상의 집중으로 업무 지연`,
+        issue: '오전 결재와 여러 상의·판단 요청이 몰리면서 개인 업무 진행이 거의 어려웠고 오전 시간이 소진됨',
+        staffOption: '',
+        requestedDecision: '결재와 상의 시간을 다시 분리하고, 직원안 없는 상의는 즉시 받지 않기',
+        feedback: '09:00~09:30 당일 결재, 그 외 상의는 긴급 사안 외 정해진 시간에 처리',
+        nextDue: '',
+        status: '추적필요',
+        burdenReason: '과장 결정 의존',
+        boundaryAction: '정해진 시간 재상담',
+        minutes: 120,
+      },
+      {
+        id: `${Date.now()}-meeting-market`,
+        date: yesterday,
+        team: '공통',
+        staff: '공통',
+        type: '단순 공유',
+        title: `${importedPrefix} 오후 회의 및 후원자·자원봉사자 선물 시장조사`,
+        issue: '13시부터 이어진 회의와 이후 선물 구매를 위한 대형마트 시장조사로 오후 시간이 사용됨',
+        staffOption: '회의 참석 및 선물 품목 비교 확인',
+        requestedDecision: '시장조사 결과를 구매 판단 자료로 정리',
+        feedback: '다음에는 조사 목적, 예산범위, 비교항목을 먼저 정하고 이동',
+        nextDue: '',
+        status: '완료',
+        burdenReason: '기한임박',
+        boundaryAction: '과장 판단 후 종료',
+        minutes: 210,
+      },
+      {
+        id: `${Date.now()}-team-risk`,
+        date: yesterday,
+        team: '지역사회조직팀',
+        staff: '공통',
+        type: '단순 공유',
+        title: `${importedPrefix} 조직팀 업무진행 부진 질책 상황`,
+        issue: '복귀 후 조직팀 대상 강한 질책 상황을 확인함. 최근 조직팀 업무 진행 부진과 반복누락에 대한 조직 차원의 위기 신호로 해석됨',
+        staffOption: '',
+        requestedDecision: '조직팀 업무를 개인 노력 문제가 아니라 진행률·역할·증빙 기준으로 재정렬',
+        feedback: '축제, 동아리, 주민조직 업무는 담당자별 실행표와 주간 확인자료로 관리 필요',
+        nextDue: '',
+        status: '추적필요',
+        burdenReason: '반복누락',
+        boundaryAction: '체크리스트 요구',
+        minutes: 30,
+      },
+    ]
+    const existing = records.filter(record => !(record.date === yesterday && record.title.startsWith(importedPrefix)))
+    const nextRecords = [...recoveredRecords, ...existing].slice(0, 300)
+    const nextConditionHistory = {
+      ...conditionHistory,
+      [yesterday]: {
+        water: conditionHistory[yesterday]?.water || 0,
+        restroom: conditionHistory[yesterday]?.restroom || 0,
+        coffee: conditionHistory[yesterday]?.coffee || 0,
+        neckBackPain: conditionHistory[yesterday]?.neckBackPain || 0,
+        fatigue: 7,
+        overload: 8,
+      },
+    }
+    const closingRaw = localStorage.getItem(CLOSING_KEY)
+    const closingParsed = closingRaw ? JSON.parse(closingRaw) : {}
+    localStorage.setItem(CLOSING_KEY, JSON.stringify({
+      ...closingParsed,
+      [yesterday]: {
+        done: '3층 화단 정리, 오전 결재 처리, 직원 스트레스 상황 지원, 오후 회의 참석, 후원자·자원봉사자 선물 시장조사, 가족과 저녁시간 확보',
+        carry: '조직팀 업무진행 부진 원인 정리, 회의록 작성 기준 재안내, 결재·상의 시간 보호선 재적용',
+        staffMessage: '직원안 없는 상의는 받지 않고, 회의록·결재문서는 제출 전 체크리스트로 확인한다.',
+        emotionalDrain: '열심히 한 환경정비가 사전공유 부족으로 좋게 받아들여지지 않은 점, 반복누락과 조직팀 질책 상황을 함께 감당한 점',
+        tomorrow1: '조직팀 업무 현황을 사업별로 30분 안에 분류',
+        tomorrow2: '회의록 작성 체크리스트를 짧게 만들기',
+        tomorrow3: '결재·상의 시간 원칙을 다시 적용하기',
+      },
+    }))
+    const moneyRaw = localStorage.getItem(MONEY_LEAK_KEY)
+    const moneyParsed = moneyRaw ? JSON.parse(moneyRaw) : []
+    const moneyWithoutYesterdayMemo = moneyParsed.filter((item: { date?: string; title?: string }) => !(item.date === yesterday && item.title === '어제 소액 소비'))
+    localStorage.setItem(MONEY_LEAK_KEY, JSON.stringify([
+      {
+        id: `${Date.now()}-yesterday-spend`,
+        date: yesterday,
+        type: '기타',
+        method: '현금',
+        amount: 4000,
+        title: '어제 소액 소비',
+        reason: '하루 복원 기록에서 확인한 약 4,000원 소비',
+        keep: false,
+      },
+      ...moneyWithoutYesterdayMemo,
+    ].slice(0, 500)))
+    setRecords(nextRecords)
+    setConditionHistory(nextConditionHistory)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRecords))
+    localStorage.setItem(CONDITION_KEY, JSON.stringify(nextConditionHistory))
+    alert('어제 하루 복원 기록을 팀 운영과 소비점검에 반영했습니다.')
+  }
+
   return (
     <main className="min-h-screen bg-[#f5f7f6] text-slate-900">
       <header className="bg-slate-950 text-white">
@@ -621,6 +783,35 @@ export default function TeamCommandPage() {
           <div className="rounded-2xl border border-red-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-red-600">전체 미완료</p>
             <p className="mt-2 text-3xl font-black">{stats.active}</p>
+          </div>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-violet-200 bg-white shadow-sm">
+          <div className="grid gap-4 bg-violet-50 p-5 xl:grid-cols-[1fr_auto] xl:items-center">
+            <div>
+              <p className="text-xs font-black tracking-[.18em] text-violet-700">DAY RECOVERY</p>
+              <h2 className="mt-1 text-xl font-black text-violet-950">어제 하루 복원 반영</h2>
+              <p className="mt-2 text-sm font-bold leading-6 text-violet-900">
+                긴 하루 기록을 사건 6개, 감정소모 원인, 내일 업무 3개, 소비 4,000원으로 익명화해 반영합니다.
+              </p>
+            </div>
+            <button onClick={importYesterdayRecovery} className="rounded-xl bg-violet-800 px-5 py-3 text-sm font-black text-white">
+              어제 기록 반영
+            </button>
+          </div>
+          <div className="grid gap-3 border-t border-violet-100 p-5 md:grid-cols-3">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-black text-slate-500">앞으로 쓰는 법</p>
+              <p className="mt-2 text-sm font-bold leading-6 text-slate-700">사건, 빼앗긴 시간, 감정소모, 내일 3개만 남기면 됩니다.</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-black text-slate-500">이름 기록 기준</p>
+              <p className="mt-2 text-sm font-bold leading-6 text-slate-700">실명 대신 역할과 패턴으로 남겨도 관리 데이터로 충분합니다.</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-black text-slate-500">소비 기록 기준</p>
+              <p className="mt-2 text-sm font-bold leading-6 text-slate-700">금액만 기억나면 기타·현금으로 먼저 저장하고 나중에 수정합니다.</p>
+            </div>
           </div>
         </section>
 
