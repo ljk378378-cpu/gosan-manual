@@ -17,20 +17,20 @@ export default function Nav() {
   return (
     <nav className="bg-slate-950 text-white no-print">
       <div className="mx-auto max-w-6xl px-4">
-        <div className="flex items-center justify-between h-14">
-          <div className="flex items-center gap-2">
+        <div className="flex min-h-14 flex-col gap-3 py-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+          <div className="flex shrink-0 items-center gap-2">
             <span className="text-xs font-black rounded bg-emerald-400 px-2 py-1 text-slate-950">AI</span>
             <span className="font-bold text-sm">청곡 AI 업무시스템</span>
           </div>
-          <div className="flex gap-1 overflow-x-auto">
+          <div className="flex flex-wrap gap-2">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`px-3 py-2 rounded text-sm transition-colors ${
-                  pathname === item.href
+                className={`rounded-lg px-3 py-2 text-sm font-bold leading-none transition-colors ${
+                  pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
                     ? 'bg-emerald-500 font-bold text-slate-950'
-                    : 'hover:bg-white/10'
+                    : 'bg-white/5 text-slate-200 hover:bg-white/15 hover:text-white'
                 }`}
               >
                 <span>{item.label}</span>
