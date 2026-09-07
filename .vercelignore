@@ -12,6 +12,11 @@
 public/reports
 public/reports/**
 
+# Keep only web-ready reference PDFs in the deployed app.
+public/reference/*.pdf
+!public/reference/2026-social-welfare-facility-guide.pdf
+!public/reference/social-welfare-center-hr-labor-guide-web.pdf
+
 # Keep build and package configuration.
 !package.json
 !package-lock.json
