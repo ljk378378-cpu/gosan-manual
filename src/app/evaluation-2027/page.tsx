@@ -648,6 +648,7 @@ export default function Evaluation2027Page() {
           <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
             <div><p className="text-xs font-bold tracking-[.2em] text-emerald-200">CHEONGGOK · EVALUATION SPECIAL TEAM</p><h1 className="mt-2 text-2xl font-black md:text-3xl">27년 사회복지관 평가 대비 특별반</h1><p className="mt-2 text-sm text-emerald-100">평가기간 2024. 1. 1. ~ 2026. 12. 31. · 현재 전체 미착수</p></div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <Link href="/" className="no-print rounded-lg border border-white/30 px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-white/10">전체 홈</Link>
               <button onClick={() => window.print()} className="no-print rounded-lg border border-white/30 bg-white px-4 py-2 text-sm font-black text-emerald-950 shadow-sm">점검표 출력</button>
               <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm"><b>전체 준비율 {progress}%</b><div className="mt-2 h-2 w-56 overflow-hidden rounded-full bg-black/20"><div className="h-full bg-emerald-300" style={{width:`${progress}%`}} /></div></div>
             </div>
@@ -657,6 +658,7 @@ export default function Evaluation2027Page() {
 
       <div className="mx-auto max-w-[1500px] px-5 py-6 md:px-8">
         <div className="mb-5 flex flex-wrap gap-2">
+          <Link href="/" className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-slate-700 hover:text-slate-950">전체 홈</Link>
           <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white">27년 평가 특별반</button>
           <Link href="/inspection-2026" className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-cyan-500 hover:text-cyan-700">2026 수성구청 지도점검 →</Link>
           <Link href="/team-command" className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-emerald-500 hover:text-emerald-700">팀 운영 컨트롤타워 →</Link>

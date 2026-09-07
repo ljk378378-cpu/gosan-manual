@@ -748,6 +748,7 @@ export default function TeamCommandPage() {
               </p>
             </div>
             <div className="flex gap-2">
+              <a href="/" className="rounded-lg border border-white/20 px-4 py-2 text-sm font-black text-white hover:bg-white/10">전체 홈</a>
               <a href="/evaluation-2027" className="rounded-lg border border-white/20 px-4 py-2 text-sm font-black text-white hover:bg-white/10">27년 평가 특별반으로 이동</a>
               <button onClick={() => window.print()} className="rounded-lg bg-white px-4 py-2 text-sm font-black text-slate-950">출력</button>
             </div>
