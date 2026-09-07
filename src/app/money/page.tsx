@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Nav from '@/components/Nav'
 
 type LeakType = '커피충전' | '배달음식' | '가족·관계' | '업무도구' | '생활구매' | '기타'
@@ -106,9 +106,9 @@ function calendarDays(month: string) {
 }
 
 export default function MoneyPage() {
-  const [months, setMonths] = useState<MonthRecord[]>(() => load(monthKey, []))
-  const [leaks, setLeaks] = useState<LeakRecord[]>(() => load(leakKey, []))
-  const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>(() => load(subscriptionKey, []))
+  const [months, setMonths] = useState<MonthRecord[]>([])
+  const [leaks, setLeaks] = useState<LeakRecord[]>([])
+  const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([])
   const [selectedDate, setSelectedDate] = useState(today())
   const [editingSubscriptionId, setEditingSubscriptionId] = useState('')
   const [monthDraft, setMonthDraft] = useState({
@@ -142,6 +142,12 @@ export default function MoneyPage() {
     need: '유지검토' as SubscriptionNeed,
     memo: '',
   })
+
+  useEffect(() => {
+    setMonths(load(monthKey, []))
+    setLeaks(load(leakKey, []))
+    setSubscriptions(load(subscriptionKey, []))
+  }, [])
 
   const visibleMonth = monthDraft.month || currentMonth()
   const latest = months[0]
