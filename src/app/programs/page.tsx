@@ -350,6 +350,18 @@ function getDocumentActionUrl(document: ProgramDocument) {
     : document.driveUrl
 }
 
+function mergeProgramsWithBase(records: ProgramRecord[]) {
+  const merged = new Map<string, ProgramRecord>([[baseProgram.id, baseProgram]])
+  records.forEach(program => merged.set(program.id, program))
+  return Array.from(merged.values())
+}
+
+function mergeDocumentsWithBase(records: ProgramDocument[]) {
+  const merged = new Map(baseDocuments.map(document => [document.id, document]))
+  records.forEach(document => merged.set(document.id, document))
+  return Array.from(merged.values())
+}
+
 function load<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback
   const raw = localStorage.getItem(key)
@@ -418,11 +430,11 @@ export default function ProgramsPage() {
   })
 
   useEffect(() => {
-    const localPrograms = load(programsKey, [baseProgram])
-    const localDocuments = load(documentsKey, baseDocuments)
+    const localPrograms = mergeProgramsWithBase(load(programsKey, [baseProgram]))
+    const localDocuments = mergeDocumentsWithBase(load(documentsKey, baseDocuments))
     const localLogs = load(logsKey, [] as ProgramLog[])
-    setPrograms(localPrograms.length ? localPrograms : [baseProgram])
-    setDocuments(localDocuments.length ? localDocuments : baseDocuments)
+    setPrograms(localPrograms)
+    setDocuments(localDocuments)
     setLogs(localLogs)
 
     supabase.auth.getSession().then(({ data }) => {
@@ -485,10 +497,11 @@ export default function ProgramsPage() {
     const cloudDocuments = ((documentResult.data ?? []) as DocumentRow[]).map(documentFromRow)
     const cloudLogs = ((logResult.data ?? []) as LogRow[]).map(logFromRow)
     if (cloudPrograms.length) {
-      savePrograms(cloudPrograms)
-      setSelectedProgramId(cloudPrograms[0].id)
+      const mergedPrograms = mergeProgramsWithBase(cloudPrograms)
+      savePrograms(mergedPrograms)
+      setSelectedProgramId(mergedPrograms[0].id)
     }
-    if (cloudDocuments.length) saveDocuments(cloudDocuments)
+    if (cloudDocuments.length) saveDocuments(mergeDocumentsWithBase(cloudDocuments))
     if (cloudLogs.length) saveLogs(cloudLogs)
     setCloudStatus(cloudPrograms.length || cloudDocuments.length || cloudLogs.length ? '클라우드 동기화됨' : '클라우드 연결됨 · 기본자료 업로드 필요')
   }
