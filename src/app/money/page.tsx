@@ -670,6 +670,11 @@ export default function MoneyPage() {
               <div className="flex flex-wrap gap-2">
                 <button onClick={() => loadCloudMoney(user.id)} className="rounded-lg border border-emerald-300 bg-white px-4 py-3 text-sm font-black text-emerald-800">클라우드 다시 불러오기</button>
                 <button onClick={uploadLocalToCloud} className="rounded-lg bg-emerald-700 px-4 py-3 text-sm font-black text-white">현재 로컬자료 올리기</button>
+                <button onClick={exportMoneyData} className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-700">자료 백업</button>
+                <label className="cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-700">
+                  백업 불러오기
+                  <input type="file" accept="application/json,.json" onChange={importMoneyData} className="hidden" />
+                </label>
                 <button onClick={signOut} className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-700">로그아웃</button>
               </div>
             ) : (
@@ -679,6 +684,7 @@ export default function MoneyPage() {
                 <button onClick={signInWithPassword} className="rounded-lg bg-emerald-700 px-4 py-3 text-sm font-black text-white">로그인</button>
               </div>
             )}
+            {transferNotice ? <p className="px-5 pb-4 text-xs font-bold text-emerald-700 lg:col-span-2">{transferNotice}</p> : null}
           </div>
         </section>
 
