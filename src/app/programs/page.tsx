@@ -805,7 +805,7 @@ export default function ProgramsPage() {
           </div>
         </section>
 
-        <section className="mb-5 grid gap-4 lg:grid-cols-[1fr_360px]">
+        <section className="mb-5">
           <article className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black tracking-[.18em] text-amber-700">HWP TO PDF</p>
             <h2 className="mt-1 text-xl font-black text-amber-950">PDF 변환 대기 목록</h2>
@@ -820,16 +820,6 @@ export default function ProgramsPage() {
               ))}
             </div>
           </article>
-          <aside className="rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white shadow-sm">
-            <p className="text-xs font-black tracking-[.18em] text-teal-300">SAFE WORK RULE</p>
-            <h2 className="mt-1 text-xl font-black">밤사이 자동작업 기준</h2>
-            <p className="mt-3 text-sm font-bold leading-6 text-slate-300">
-              삭제, 공유권한 변경, 개인정보 원문 분석은 보류합니다. 폴더 구조 확인, PDF 공개범위 내 분석, 대시보드 보강, 안전한 점검폴더 생성만 진행합니다.
-            </p>
-            <a href="https://drive.google.com/drive/folders/1Nj6-bYB-P5D4b6hdELYhpGc87VSPiZKa" target="_blank" rel="noreferrer" className="mt-4 inline-flex rounded-lg bg-teal-400 px-4 py-3 text-sm font-black text-slate-950">
-              00_AI_점검결과 열기
-            </a>
-          </aside>
         </section>
 
         <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
