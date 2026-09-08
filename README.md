@@ -67,11 +67,15 @@
 ### 페이지
 | 경로 | 설명 |
 |------|------|
-| `/` | 홈 대시보드 (전체 진행률, 주간 현황, 일일 스케줄) |
-| `/storyboard` | 파트별 진행 관리 + 집필가이드 탭 + HWP 원고 업로드 |
-| `/daily` | 데일리 채널 (팀 공지·업데이트) |
-| `/comments` | 의견게시판 |
-| `/report` | 보고서 출력 (인쇄·PDF) |
+| `/` | 청곡 AI 업무시스템 홈 |
+| `/evaluation-2027` | 2027년 사회복지관 평가 대비 특별반 |
+| `/inspection-2026` | 2026년 9월 18일 구청 지도점검 준비실 |
+| `/team-command` | 팀 운영 컨트롤타워 |
+| `/programs` | 개별사업 컨트롤타워 |
+| `/hr-labor` | 인사노무 학습실 |
+| `/money` | 소비패턴 점검실 |
+| `/ai-system` | AI 업무시스템 사용 원칙 |
+| `/report` | 현재 업무시스템 보고서 출력 허브 |
 
 ### 기술 스택
 - **프레임워크**: Next.js (App Router, `use client`)
@@ -95,11 +99,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 ```
 
 ### DB 스키마
-`supabase-schema.sql` 참고. 주요 테이블:
-- `parts`: 파트 목록 (title, subtitle, assignee, progress, status)
-- `part_files`: 파트별 HWP 원고 파일
-- `daily_updates`: 데일리 채널 게시물
-- `comments`: 의견게시판
+주요 테이블:
+- `evaluation_2027_items`: 2027년 평가 지표별 준비 상태
+- `evaluation_2027_ai_tasks`: 평가 관련 AI 작업함
+- `money_months`, `money_spends`, `money_subscriptions`: 소비점검 자료
+- `work_programs`, `work_program_documents`, `work_program_logs`: 개별사업 관리 자료
+
+예전 주민이 그린 고산 매뉴얼 제작용 테이블은 보존하되, 현재 앱 화면에서는 사용하지 않는다.
 
 ---
 
