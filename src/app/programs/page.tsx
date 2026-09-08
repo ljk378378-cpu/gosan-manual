@@ -335,6 +335,21 @@ function today() {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(new Date())
 }
 
+function isHwpDocument(document: ProgramDocument) {
+  return document.fileType.toUpperCase().includes('HWP') || /\.hwpx?$/i.test(document.title.trim())
+}
+
+function getDocumentActionUrl(document: ProgramDocument) {
+  if (!isHwpDocument(document)) return document.driveUrl
+
+  const fileId = document.driveUrl.match(/\/file\/d\/([^/?]+)/)?.[1]
+    ?? document.driveUrl.match(/[?&]id=([^&]+)/)?.[1]
+
+  return fileId
+    ? `https://drive.google.com/uc?export=download&id=${encodeURIComponent(fileId)}`
+    : document.driveUrl
+}
+
 function load<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback
   const raw = localStorage.getItem(key)
@@ -826,11 +841,13 @@ export default function ProgramsPage() {
           <div className="border-b border-slate-100 bg-slate-50 p-5">
             <p className="text-xs font-black tracking-[.18em] text-slate-500">DOCUMENT FLOW</p>
             <h2 className="mt-1 text-xl font-black">문서·증빙 흐름</h2>
-            <p className="mt-1 text-sm font-bold text-slate-600">파일이 있다는 사실과 과장이 확인했다는 사실을 분리해서 관리합니다.</p>
+            <p className="mt-1 text-sm font-bold leading-6 text-slate-600">
+              PDF와 폴더는 브라우저에서 열고, HWP는 내려받아 기기에 연결된 한글 앱으로 엽니다.
+            </p>
           </div>
           <div className="divide-y divide-slate-100">
             {programDocuments.map(document => (
-              <div key={document.id} className="grid gap-3 p-4 lg:grid-cols-[160px_1fr_130px_120px] lg:items-center">
+              <div key={document.id} className="grid gap-3 p-4 lg:grid-cols-[160px_1fr_130px_140px] lg:items-center">
                 <div>
                   <p className="text-xs font-black text-slate-500">{document.stage}</p>
                   <p className="mt-1 text-xs font-bold text-slate-400">{document.fileType}</p>
@@ -852,8 +869,8 @@ export default function ProgramsPage() {
                 >
                   {statusOptions.map(status => <option key={status}>{status}</option>)}
                 </select>
-                <a href={document.driveUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-teal-300 bg-white px-4 py-3 text-center text-sm font-black text-teal-800">
-                  자료 열기
+                <a href={getDocumentActionUrl(document)} target="_blank" rel="noreferrer" className="rounded-lg border border-teal-300 bg-white px-4 py-3 text-center text-sm font-black text-teal-800">
+                  {isHwpDocument(document) ? 'HWP 내려받기' : '자료 열기'}
                 </a>
               </div>
             ))}
