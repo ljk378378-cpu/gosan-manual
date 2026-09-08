@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import Nav from '@/components/Nav'
+import { supabase } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
 
 type LeakType = '커피충전' | '배달음식' | '가족·관계' | '업무도구' | '생활구매' | '기타'
 type PayMethod = '현대 M카드' | '신한카드' | '롯데카드' | '국민카드' | '현금' | '체크카드' | '계좌이체'
@@ -51,6 +53,42 @@ type MoneyBackup = {
   months?: MonthRecord[]
   leaks?: LeakRecord[]
   subscriptions?: SubscriptionRecord[]
+}
+
+type MoneyMonthRow = {
+  month: string
+  income: number
+  cash_on_hand: number
+  fixed_cost: number
+  card_hyundai_target: number
+  card_hyundai_actual: number
+  card_shinhan_actual: number
+  card_lotte_actual: number
+  card_kookmin_actual: number
+  coffee_target: number
+  coffee_actual: number
+  memo: string
+}
+
+type MoneySpendRow = {
+  id: string
+  spend_date: string
+  type: LeakType
+  method: PayMethod
+  amount: number
+  title: string
+  reason: string
+  keep: boolean
+}
+
+type MoneySubscriptionRow = {
+  id: string
+  title: string
+  amount: number
+  method: PayMethod
+  pay_day: string
+  need: SubscriptionNeed
+  memo: string
 }
 
 const monthKey = 'cheonggok-money-month-simple-v1'
@@ -123,6 +161,11 @@ export default function MoneyPage() {
   const [months, setMonths] = useState<MonthRecord[]>([])
   const [leaks, setLeaks] = useState<LeakRecord[]>([])
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([])
+  const [user, setUser] = useState<User | null>(null)
+  const [cloudStatus, setCloudStatus] = useState('로컬 저장')
+  const [cloudError, setCloudError] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [selectedDate, setSelectedDate] = useState(today())
   const [editingSubscriptionId, setEditingSubscriptionId] = useState('')
   const [transferNotice, setTransferNotice] = useState('')
@@ -159,10 +202,194 @@ export default function MoneyPage() {
   })
 
   useEffect(() => {
+    loadLocalMoney()
+    supabase.auth.getSession().then(({ data }) => {
+      const sessionUser = data.session?.user ?? null
+      setUser(sessionUser)
+      if (sessionUser) loadCloudMoney(sessionUser.id)
+    })
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const sessionUser = session?.user ?? null
+      setUser(sessionUser)
+      if (sessionUser) loadCloudMoney(sessionUser.id)
+      else setCloudStatus('로컬 저장')
+    })
+    return () => data.subscription.unsubscribe()
+  }, [])
+
+  function loadLocalMoney() {
     setMonths(load(monthKey, []))
     setLeaks(load(leakKey, []))
     setSubscriptions(load(subscriptionKey, []))
-  }, [])
+  }
+
+  function monthFromRow(row: MoneyMonthRow): MonthRecord {
+    return {
+      id: row.month,
+      month: row.month,
+      income: Number(row.income || 0),
+      cashOnHand: Number(row.cash_on_hand || 0),
+      fixedCost: Number(row.fixed_cost || 0),
+      cardHyundaiTarget: Number(row.card_hyundai_target || 0),
+      cardHyundaiActual: Number(row.card_hyundai_actual || 0),
+      cardShinhanActual: Number(row.card_shinhan_actual || 0),
+      cardLotteActual: Number(row.card_lotte_actual || 0),
+      cardKookminActual: Number(row.card_kookmin_actual || 0),
+      coffeeTarget: Number(row.coffee_target || 0),
+      coffeeActual: Number(row.coffee_actual || 0),
+      memo: row.memo || '',
+    }
+  }
+
+  function spendFromRow(row: MoneySpendRow): LeakRecord {
+    return {
+      id: row.id,
+      date: row.spend_date,
+      type: row.type,
+      method: row.method,
+      amount: Number(row.amount || 0),
+      title: row.title || '',
+      reason: row.reason || '',
+      keep: !!row.keep,
+    }
+  }
+
+  function subscriptionFromRow(row: MoneySubscriptionRow): SubscriptionRecord {
+    return {
+      id: row.id,
+      title: row.title || '',
+      amount: Number(row.amount || 0),
+      method: row.method,
+      payDay: row.pay_day || '',
+      need: row.need,
+      memo: row.memo || '',
+    }
+  }
+
+  async function loadCloudMoney(userId: string) {
+    setCloudStatus('클라우드 불러오는 중')
+    setCloudError('')
+    const [monthResult, spendResult, subscriptionResult] = await Promise.all([
+      supabase.from('money_months').select('*').eq('user_id', userId).order('month', { ascending: false }),
+      supabase.from('money_spends').select('*').eq('user_id', userId).order('spend_date', { ascending: false }),
+      supabase.from('money_subscriptions').select('*').eq('user_id', userId).order('updated_at', { ascending: false }),
+    ])
+
+    const firstError = monthResult.error || spendResult.error || subscriptionResult.error
+    if (firstError) {
+      setCloudStatus('로컬 저장')
+      setCloudError(`클라우드 저장 준비 필요: ${firstError.message}`)
+      return
+    }
+
+    const cloudMonths = ((monthResult.data ?? []) as MoneyMonthRow[]).map(monthFromRow)
+    const cloudSpends = ((spendResult.data ?? []) as MoneySpendRow[]).map(spendFromRow)
+    const cloudSubscriptions = ((subscriptionResult.data ?? []) as MoneySubscriptionRow[]).map(subscriptionFromRow)
+
+    if (cloudMonths.length) {
+      setMonths(cloudMonths)
+      localStorage.setItem(monthKey, JSON.stringify(cloudMonths))
+    }
+    if (cloudSpends.length) {
+      setLeaks(cloudSpends)
+      localStorage.setItem(leakKey, JSON.stringify(cloudSpends))
+    }
+    if (cloudSubscriptions.length) {
+      setSubscriptions(cloudSubscriptions)
+      localStorage.setItem(subscriptionKey, JSON.stringify(cloudSubscriptions))
+    }
+
+    setCloudStatus(cloudMonths.length || cloudSpends.length || cloudSubscriptions.length ? '클라우드 동기화됨' : '클라우드 연결됨 · 로컬자료 업로드 필요')
+  }
+
+  async function signInWithPassword() {
+    if (!email.trim() || !password) return
+    setCloudStatus('로그인 중')
+    setCloudError('')
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+    if (error) {
+      setCloudStatus('로컬 저장')
+      setCloudError(error.message)
+    } else {
+      setPassword('')
+      setCloudStatus('클라우드 연결됨')
+    }
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut()
+    setUser(null)
+    setCloudStatus('로컬 저장')
+  }
+
+  async function saveCloudMonth(record: MonthRecord) {
+    if (!user) return
+    const { error } = await supabase.from('money_months').upsert({
+      user_id: user.id,
+      month: record.month,
+      income: record.income,
+      cash_on_hand: record.cashOnHand,
+      fixed_cost: record.fixedCost,
+      card_hyundai_target: record.cardHyundaiTarget,
+      card_hyundai_actual: record.cardHyundaiActual,
+      card_shinhan_actual: record.cardShinhanActual,
+      card_lotte_actual: record.cardLotteActual,
+      card_kookmin_actual: record.cardKookminActual,
+      coffee_target: record.coffeeTarget,
+      coffee_actual: record.coffeeActual,
+      memo: record.memo,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,month' })
+    if (error) setCloudError(`월 기준 저장 실패: ${error.message}`)
+    else setCloudStatus('클라우드 저장됨')
+  }
+
+  async function saveCloudSpend(record: LeakRecord) {
+    if (!user) return
+    const { error } = await supabase.from('money_spends').upsert({
+      user_id: user.id,
+      id: record.id,
+      spend_date: record.date,
+      type: record.type,
+      method: record.method,
+      amount: record.amount,
+      title: record.title,
+      reason: record.reason,
+      keep: record.keep,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,id' })
+    if (error) setCloudError(`지출 저장 실패: ${error.message}`)
+    else setCloudStatus('클라우드 저장됨')
+  }
+
+  async function saveCloudSubscription(record: SubscriptionRecord) {
+    if (!user) return
+    const { error } = await supabase.from('money_subscriptions').upsert({
+      user_id: user.id,
+      id: record.id,
+      title: record.title,
+      amount: record.amount,
+      method: record.method,
+      pay_day: record.payDay,
+      need: record.need,
+      memo: record.memo,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,id' })
+    if (error) setCloudError(`구독 저장 실패: ${error.message}`)
+    else setCloudStatus('클라우드 저장됨')
+  }
+
+  async function uploadLocalToCloud() {
+    if (!user) return
+    setCloudStatus('로컬자료 클라우드 업로드 중')
+    setCloudError('')
+    await Promise.all([
+      ...months.map(saveCloudMonth),
+      ...leaks.map(saveCloudSpend),
+      ...subscriptions.map(saveCloudSubscription),
+    ])
+    setCloudStatus('로컬자료 클라우드 반영됨')
+  }
 
   const visibleMonth = monthDraft.month || currentMonth()
   const latest = months[0]
@@ -293,6 +520,7 @@ export default function MoneyPage() {
       memo: monthDraft.memo.trim(),
     }
     saveMonths([record, ...months.filter(item => item.month !== record.month)].slice(0, 36))
+    saveCloudMonth(record)
   }
 
   const addLeak = () => {
@@ -309,6 +537,7 @@ export default function MoneyPage() {
       keep: leakDraft.keep,
     }
     saveLeaks([record, ...leaks].slice(0, 500))
+    saveCloudSpend(record)
     setSelectedDate(record.date)
     setMonthDraft(previous => ({ ...previous, month: record.date.slice(0, 7) }))
     setLeakDraft({ date: today(), type: '커피충전', method: '현대 M카드', amount: '', title: '', reason: '', keep: false })
@@ -342,6 +571,7 @@ export default function MoneyPage() {
       ? subscriptions.map(item => item.id === editingSubscriptionId ? record : item)
       : [record, ...subscriptions].slice(0, 100)
     saveSubscriptions(next)
+    saveCloudSubscription(record)
     setEditingSubscriptionId('')
     setSubscriptionDraft({ title: '', amount: '', method: '현대 M카드', payDay: '', need: '유지검토', memo: '' })
   }
@@ -369,11 +599,29 @@ export default function MoneyPage() {
   }
 
   const markGeminiCancelScheduled = (record: SubscriptionRecord) => {
-    saveSubscriptions(subscriptions.map(item => item.id === record.id ? {
-      ...item,
+    const updated: SubscriptionRecord = {
+      ...record,
       need: '해지예정',
       memo: '구독해제 신청 완료. 2026. 9. 11. 해지 예정.',
-    } : item))
+    }
+    saveSubscriptions(subscriptions.map(item => item.id === record.id ? updated : item))
+    saveCloudSubscription(updated)
+  }
+
+  const removeLeak = async (id: string) => {
+    saveLeaks(leaks.filter(record => record.id !== id))
+    if (!user) return
+    const { error } = await supabase.from('money_spends').delete().eq('user_id', user.id).eq('id', id)
+    if (error) setCloudError(`지출 삭제 실패: ${error.message}`)
+    else setCloudStatus('클라우드 삭제됨')
+  }
+
+  const removeSubscription = async (id: string) => {
+    saveSubscriptions(subscriptions.filter(record => record.id !== id))
+    if (!user) return
+    const { error } = await supabase.from('money_subscriptions').delete().eq('user_id', user.id).eq('id', id)
+    if (error) setCloudError(`구독 삭제 실패: ${error.message}`)
+    else setCloudStatus('클라우드 삭제됨')
   }
 
   return (
@@ -405,6 +653,32 @@ export default function MoneyPage() {
               </p>
               {transferNotice ? <p className="mt-2 max-w-sm text-xs font-bold text-emerald-300">{transferNotice}</p> : null}
             </div>
+          </div>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+          <div className="grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <p className="text-xs font-black tracking-[.18em] text-emerald-700">CLOUD SYNC</p>
+              <h2 className="mt-1 text-lg font-black text-slate-950">저장 방식: {cloudStatus}</h2>
+              <p className="mt-1 text-sm font-bold leading-6 text-slate-600">
+                {user ? `${user.email} 계정으로 연결됨 · 맥/윈도우/휴대폰에서 같은 자료를 봅니다.` : '로그인 전에는 현재 브라우저에만 저장됩니다.'}
+              </p>
+              {cloudError ? <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-700">{cloudError}</p> : null}
+            </div>
+            {user ? (
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => loadCloudMoney(user.id)} className="rounded-lg border border-emerald-300 bg-white px-4 py-3 text-sm font-black text-emerald-800">클라우드 다시 불러오기</button>
+                <button onClick={uploadLocalToCloud} className="rounded-lg bg-emerald-700 px-4 py-3 text-sm font-black text-white">현재 로컬자료 올리기</button>
+                <button onClick={signOut} className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-700">로그아웃</button>
+              </div>
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-[220px_160px_auto]">
+                <input value={email} onChange={event => setEmail(event.target.value)} placeholder="이메일" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-emerald-700" />
+                <input value={password} onChange={event => setPassword(event.target.value)} type="password" placeholder="비밀번호" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-emerald-700" />
+                <button onClick={signInWithPassword} className="rounded-lg bg-emerald-700 px-4 py-3 text-sm font-black text-white">로그인</button>
+              </div>
+            )}
           </div>
         </section>
 
@@ -577,7 +851,7 @@ export default function MoneyPage() {
                 <div className="flex flex-wrap gap-2">
                   {isGeminiSubscription(item) && item.need !== '해지예정' ? <button onClick={() => markGeminiCancelScheduled(item)} className="text-xs font-black text-rose-700">9/11 해지예정</button> : null}
                   <button onClick={() => editSubscription(item)} className="text-xs font-black text-slate-700">수정</button>
-                  <button onClick={() => saveSubscriptions(subscriptions.filter(record => record.id !== item.id))} className="text-xs font-black text-red-700">삭제</button>
+                  <button onClick={() => removeSubscription(item.id)} className="text-xs font-black text-red-700">삭제</button>
                 </div>
               </div>
             )) : (
@@ -835,7 +1109,7 @@ export default function MoneyPage() {
                   </div>
                   <p className="text-xs font-bold text-slate-500">{item.date} · {item.method} · {item.type} · {item.keep ? '유지 가능' : '조정 후보'}</p>
                   <p className="text-sm font-semibold leading-6 text-slate-700">{item.reason || '사유 미기록'}</p>
-                  <button onClick={() => saveLeaks(leaks.filter(record => record.id !== item.id))} className="justify-self-start text-xs font-black text-red-700">삭제</button>
+                  <button onClick={() => removeLeak(item.id)} className="justify-self-start text-xs font-black text-red-700">삭제</button>
                 </div>
               )) : (
                 <p className="p-8 text-center text-sm font-bold text-slate-500">아직 기록이 없습니다.</p>
