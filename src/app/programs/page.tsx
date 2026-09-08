@@ -112,6 +112,108 @@ const lifeCouponFindings = [
   },
 ]
 
+const lifeCouponSessionChecks = [
+  {
+    program: '청년안심쿠폰',
+    round: '1회기',
+    folder: '발행대장',
+    evidence: '발행대장 HWP 확인',
+    status: 'PDF 변환필요',
+    note: '1인 40,000원 지급 기준과 수령 확인을 개인정보 가림 처리 후 점검해야 합니다.',
+  },
+  {
+    program: '청년안심쿠폰',
+    round: '2회기',
+    folder: '발행대장',
+    evidence: '발행대장 HWP 확인',
+    status: 'PDF 변환필요',
+    note: '작은만남 2회기 일지에는 10명 전원 쿠폰 지급 내용이 확인됩니다.',
+  },
+  {
+    program: '청년안심쿠폰',
+    round: '3회기',
+    folder: '발행대장',
+    evidence: '발행대장 HWP 확인',
+    status: 'PDF 변환필요',
+    note: '작은만남 3회기 기록지와 사진 폴더가 있어 활동 증빙 연결 가능성이 높습니다.',
+  },
+  {
+    program: '청년안심쿠폰',
+    round: '4회기',
+    folder: '발행대장/활동일지',
+    evidence: '발행대장 HWP 중복 위치 확인',
+    status: '정리필요',
+    note: '발행대장 4회기가 발행대장 폴더와 활동일지 폴더 양쪽에 보여 중복 여부 확인이 필요합니다.',
+  },
+  {
+    program: '청년안심쿠폰',
+    round: '5회기',
+    folder: '발행대장',
+    evidence: '발행대장 HWP 확인',
+    status: 'PDF 변환필요',
+    note: '회기별 결과보고서와 지급대장 연결 여부를 확인해야 합니다.',
+  },
+  {
+    program: '청년안심쿠폰',
+    round: '6회기',
+    folder: '발행대장',
+    evidence: '발행대장 HWP 확인',
+    status: 'PDF 변환필요',
+    note: '회기별 결과보고서와 지급대장 연결 여부를 확인해야 합니다.',
+  },
+  {
+    program: '작은만남',
+    round: '1회기',
+    folder: '활동일지',
+    evidence: '일지 HWP 확인',
+    status: 'PDF 변환필요',
+    note: '활동일지 원문이 HWP라 분석 전 PDF/HWPX 변환이 필요합니다.',
+  },
+  {
+    program: '작은만남',
+    round: '2회기',
+    folder: '활동일지',
+    evidence: '일지 PDF 확인',
+    status: '내용확인',
+    note: '2026.6.18.~6.19. 영화감상, 기록지 작성, 10명 전원 미션 완료, 2회차 쿠폰 지급 확인.',
+  },
+  {
+    program: '작은만남',
+    round: '3회기',
+    folder: '활동일지',
+    evidence: '일지 HWP, 사진 5장, 참여기록지 PDF 확인',
+    status: '부분확인',
+    note: '참여기록지는 확인됨. 회기 일지 본문은 HWP라 PDF 변환 후 최종 확인 필요.',
+  },
+  {
+    program: '하루 한 걸음',
+    round: '1회기',
+    folder: '활동일지',
+    evidence: '일지 HWP 확인',
+    status: 'PDF 변환필요',
+    note: '파일 용량이 커서 사진 포함 가능성이 높습니다. 개인정보와 사진 초상권 확인 필요.',
+  },
+  {
+    program: '하루 한 걸음',
+    round: '2회기',
+    folder: '활동일지',
+    evidence: '일지 HWP 확인',
+    status: 'PDF 변환필요',
+    note: '파일 용량이 커서 사진 포함 가능성이 높습니다. 개인정보와 사진 초상권 확인 필요.',
+  },
+]
+
+const hwpConversionQueue = [
+  '청년생활쿠폰지원사업 지방보조금 교부신청서.hwp',
+  '생활쿠폰 신청서(최종).hwp',
+  '■리제너레이션 참여자 명단1.hwp',
+  '청년안심쿠폰 지원 실시건.hwp',
+  '청년안심쿠폰 발행대장(1~6회기).hwp',
+  '청년안심쿠폰 작은만남 일지(1·3회기).hwp',
+  '청년안심쿠폰 하루한걸음 일지(1·2회기).hwp',
+  '청년안심쿠폰 사진 .hwp',
+]
+
 const baseProgram: ProgramRecord = {
   id: 'life-coupon-2026',
   title: '생활쿠폰지원사업',
@@ -127,6 +229,16 @@ const baseProgram: ProgramRecord = {
 }
 
 const baseDocuments: ProgramDocument[] = [
+  {
+    id: 'doc-ai-review-folder',
+    programId: 'life-coupon-2026',
+    stage: 'AI 점검결과',
+    title: '00_AI_점검결과',
+    status: '확인완료',
+    driveUrl: 'https://drive.google.com/drive/folders/1Nj6-bYB-P5D4b6hdELYhpGc87VSPiZKa',
+    fileType: '폴더',
+    note: '2026.9.9. 안전한 점검결과 보관용으로 신규 생성. 기존 파일은 이동하거나 변경하지 않음.',
+  },
   {
     id: 'doc-root-grant-hwp',
     programId: 'life-coupon-2026',
@@ -646,6 +758,78 @@ export default function ProgramsPage() {
               <textarea value={selectedProgram.memo} onChange={event => updateProgram('memo', event.target.value)} placeholder="관리 메모" className="min-h-20 rounded-lg border border-slate-300 p-3 text-sm font-bold outline-none focus:border-teal-700 md:col-span-2" />
             </div>
           </section>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-teal-200 bg-white shadow-sm">
+          <div className="border-b border-teal-100 bg-teal-50 p-5">
+            <p className="text-xs font-black tracking-[.18em] text-teal-700">SESSION CHECK</p>
+            <h2 className="mt-1 text-xl font-black text-teal-950">회기별 증빙 체크</h2>
+            <p className="mt-1 text-sm font-bold leading-6 text-teal-800">
+              드라이브 폴더에서 확인된 자료를 기준으로, 회기별로 PDF 분석 가능 여부와 다음 확인 포인트를 나눴습니다.
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[920px] border-collapse text-sm">
+              <thead className="bg-slate-950 text-white">
+                <tr>
+                  <th className="px-4 py-3 text-left">구분</th>
+                  <th className="px-4 py-3 text-left">회기</th>
+                  <th className="px-4 py-3 text-left">위치</th>
+                  <th className="px-4 py-3 text-left">확인자료</th>
+                  <th className="px-4 py-3 text-left">상태</th>
+                  <th className="px-4 py-3 text-left">다음 확인</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lifeCouponSessionChecks.map((item, index) => (
+                  <tr key={`${item.program}-${item.round}-${index}`} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                    <td className="border-b border-slate-100 px-4 py-3 font-black text-slate-950">{item.program}</td>
+                    <td className="border-b border-slate-100 px-4 py-3 font-bold text-slate-700">{item.round}</td>
+                    <td className="border-b border-slate-100 px-4 py-3 font-bold text-slate-600">{item.folder}</td>
+                    <td className="border-b border-slate-100 px-4 py-3 font-bold text-slate-600">{item.evidence}</td>
+                    <td className="border-b border-slate-100 px-4 py-3">
+                      <span className={`rounded-full px-3 py-1 text-xs font-black ${
+                        item.status === '내용확인' ? 'bg-emerald-100 text-emerald-800'
+                          : item.status === '부분확인' ? 'bg-indigo-100 text-indigo-800'
+                            : item.status === '정리필요' ? 'bg-amber-100 text-amber-800'
+                              : 'bg-rose-100 text-rose-800'
+                      }`}>
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="border-b border-slate-100 px-4 py-3 font-bold leading-6 text-slate-600">{item.note}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="mb-5 grid gap-4 lg:grid-cols-[1fr_360px]">
+          <article className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-black tracking-[.18em] text-amber-700">HWP TO PDF</p>
+            <h2 className="mt-1 text-xl font-black text-amber-950">PDF 변환 대기 목록</h2>
+            <p className="mt-2 text-sm font-bold leading-6 text-amber-900">
+              HWP 원본은 보존하고, 같은 폴더에 PDF 또는 HWPX 변환본을 추가하면 이후 AI 분석 정확도가 올라갑니다.
+            </p>
+            <div className="mt-4 grid gap-2">
+              {hwpConversionQueue.map(item => (
+                <div key={item} className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold leading-6 text-amber-950">
+                  {item}
+                </div>
+              ))}
+            </div>
+          </article>
+          <aside className="rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white shadow-sm">
+            <p className="text-xs font-black tracking-[.18em] text-teal-300">SAFE WORK RULE</p>
+            <h2 className="mt-1 text-xl font-black">밤사이 자동작업 기준</h2>
+            <p className="mt-3 text-sm font-bold leading-6 text-slate-300">
+              삭제, 공유권한 변경, 개인정보 원문 분석은 보류합니다. 폴더 구조 확인, PDF 공개범위 내 분석, 대시보드 보강, 안전한 점검폴더 생성만 진행합니다.
+            </p>
+            <a href="https://drive.google.com/drive/folders/1Nj6-bYB-P5D4b6hdELYhpGc87VSPiZKa" target="_blank" rel="noreferrer" className="mt-4 inline-flex rounded-lg bg-teal-400 px-4 py-3 text-sm font-black text-slate-950">
+              00_AI_점검결과 열기
+            </a>
+          </aside>
         </section>
 
         <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
