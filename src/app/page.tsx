@@ -24,6 +24,13 @@ const primaryCards = [
     tone: 'border-sky-200 bg-sky-50 text-sky-950',
   },
   {
+    href: '/programs',
+    label: '사업관리',
+    title: '개별사업 컨트롤타워',
+    desc: '생활쿠폰지원사업부터 기안, 실시, 활동일지, 결과보고, 증빙 흐름을 단계별 관리',
+    tone: 'border-teal-200 bg-teal-50 text-teal-950',
+  },
+  {
     href: '/hr-labor',
     label: '관리자 학습',
     title: '인사노무 학습실',
