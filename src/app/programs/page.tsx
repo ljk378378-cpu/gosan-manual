@@ -214,6 +214,34 @@ const hwpConversionQueue = [
   '청년안심쿠폰 사진 .hwp',
 ]
 
+const programCandidateFolders = [
+  {
+    title: '생활쿠폰지원사업(실제사용)',
+    fit: '즉시 적용',
+    reason: '단위사업계획서, 모집·선정, 쿠폰지원, 세부프로그램, 활동일지 구조가 이미 나뉘어 있습니다.',
+  },
+  {
+    title: '2026년 2차 추경사업계획서',
+    fit: '검토 후보',
+    reason: '사업계획 변경과 예산 흐름을 점검하는 데 유용합니다. 평가·지도점검과 연결 가능성이 큽니다.',
+  },
+  {
+    title: '국민연금증 카드기금지원사업',
+    fit: '결과보고 후보',
+    reason: '중간·최종결과보고 폴더가 보여 사업 종료형 관리 템플릿으로 적합합니다.',
+  },
+  {
+    title: '조직팀 고산해피데이 주도적 프로그램',
+    fit: '팀원사업 후보',
+    reason: '팀원별 사업 흐름 관리와 결재·결과보고 누락 점검에 활용할 수 있습니다.',
+  },
+  {
+    title: '프로그램 일지 / 각종 양식 폴더',
+    fit: '공통 템플릿 후보',
+    reason: '개별사업마다 반복되는 실시기안, 활동일지, 결과보고, 사진증빙 기준을 표준화할 수 있습니다.',
+  },
+]
+
 const baseProgram: ProgramRecord = {
   id: 'life-coupon-2026',
   title: '생활쿠폰지원사업',
@@ -830,6 +858,32 @@ export default function ProgramsPage() {
               00_AI_점검결과 열기
             </a>
           </aside>
+        </section>
+
+        <section className="mb-5 rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-black tracking-[.18em] text-indigo-700">EXPANDABLE FOLDERS</p>
+              <h2 className="mt-1 text-xl font-black text-indigo-950">다음 적용 후보</h2>
+              <p className="mt-1 text-sm font-bold leading-6 text-indigo-800">
+                생활쿠폰 방식이 안정되면, 같은 구조로 팀원 사업과 기관 사업을 하나씩 붙이면 됩니다.
+              </p>
+            </div>
+            <span className="rounded-full bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-800">
+              삭제 없이 읽기 전용 점검
+            </span>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {programCandidateFolders.map(folder => (
+              <div key={folder.title} className="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="font-black text-slate-950">{folder.title}</h3>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-indigo-800">{folder.fit}</span>
+                </div>
+                <p className="mt-2 text-sm font-bold leading-6 text-slate-700">{folder.reason}</p>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
