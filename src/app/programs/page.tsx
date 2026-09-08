@@ -89,6 +89,29 @@ const logsKey = 'cheonggok-work-program-logs-v1'
 const statusOptions: DocumentStatus[] = ['확인필요', '초안', '검토중', '보완필요', '확인완료']
 const logTypes: LogType[] = ['진행', '결정', '이슈', '회의', '증빙확인']
 
+const lifeCouponFindings = [
+  {
+    title: '사업 구조',
+    desc: '은둔·고립청년 10명을 대상으로 생활쿠폰, 관계형성, 일상회복, 사전·사후척도검사를 연결한 구조가 확인됩니다.',
+    tone: 'border-teal-200 bg-teal-50 text-teal-950',
+  },
+  {
+    title: '성과측정',
+    desc: '계획서에는 HQ-25 사전·사후검사가 2026년 5월과 11월로 적혀 있으나, 해당 폴더는 현재 비어 있어 우선 보완 확인이 필요합니다.',
+    tone: 'border-amber-200 bg-amber-50 text-amber-950',
+  },
+  {
+    title: '쿠폰 핵심증빙',
+    desc: '계획서상 청년안심쿠폰은 총 13회 발행, 40,000원 단가, 발행대장·실시기안·결과보고서가 모니터링 자료로 제시됩니다.',
+    tone: 'border-indigo-200 bg-indigo-50 text-indigo-950',
+  },
+  {
+    title: '개인정보 주의',
+    desc: '기안문에 개인정보 포함 주의 문구가 있고 신청서·선정명단·발행대장에는 민감정보가 포함될 수 있어 원문 공유와 AI 입력을 제한해야 합니다.',
+    tone: 'border-rose-200 bg-rose-50 text-rose-950',
+  },
+]
+
 const baseProgram: ProgramRecord = {
   id: 'life-coupon-2026',
   title: '생활쿠폰지원사업',
@@ -98,9 +121,9 @@ const baseProgram: ProgramRecord = {
   period: '2026년',
   status: '진행중',
   priority: '높음',
-  risk: 'HWP 원본 중심 자료는 본문 분석이 제한될 수 있음. PDF 또는 HWPX 변환본을 함께 확보해야 함.',
-  nextAction: '사전사후척도검사 폴더가 비어 있어 필요 여부와 대체 증빙을 확인한다.',
-  memo: '구글드라이브 생활쿠폰지원사업(실제사용) 폴더 기준으로 시작.',
+  risk: '사전·사후척도검사 폴더가 비어 있고, 쿠폰 발행대장·신청서·명단은 HWP 중심이라 PDF/HWPX 변환본 확보가 필요함.',
+  nextAction: 'HQ-25 사전검사 자료, 회기별 발행대장 PDF, 실시기안·결과보고서 연결 여부를 우선 확인한다.',
+  memo: 'PDF 확인 결과 사업목적, 대상, 모집, 선정, 쿠폰지원, 작은만남, 하루한걸음 구조는 확인됨.',
 }
 
 const baseDocuments: ProgramDocument[] = [
@@ -119,30 +142,30 @@ const baseDocuments: ProgramDocument[] = [
     programId: 'life-coupon-2026',
     stage: '0. 단위사업계획서',
     title: '1. (기안)청년안심쿠폰 단위사업실시건_이진규.pdf',
-    status: '확인필요',
+    status: '확인완료',
     driveUrl: 'https://drive.google.com/file/d/1RtE7AbI9RaIQgc-POzNgNi8cXd3FS6Lo/view?usp=drivesdk',
     fileType: 'PDF',
-    note: 'HWP 원본도 같은 폴더에 있음. PDF 기준으로 검토 가능.',
+    note: '2026.3.31. 내부결재. 생활쿠폰 지원과 관계형성·정서지원, 일상회복 프로그램 실시 근거 확인. 개인정보 포함 주의 문구 있음.',
   },
   {
     id: 'doc-plan-main',
     programId: 'life-coupon-2026',
     stage: '0. 단위사업계획서',
     title: '2.(계획안)청년생활안심쿠폰 단위사업계획서.pdf',
-    status: '확인필요',
+    status: '검토중',
     driveUrl: 'https://drive.google.com/file/d/1tTkvIsASZsdDBdgyARt9TuI1P7bXcDqD/view?usp=drivesdk',
     fileType: 'PDF',
-    note: '사업 목적, 대상, 예산, 추진일정 확인 대상.',
+    note: '대상 10명, 생활쿠폰 5,200,000원, 사전·사후 HQ-25, 작은만남 7회, 하루한걸음 6회 구조 확인. 실제 결과보고·출석부·운영일지 연결 확인 필요.',
   },
   {
     id: 'doc-recruit-folder',
     programId: 'life-coupon-2026',
     stage: '1. 참여자모집 및 선정건',
     title: '모집건 내부기안 및 결과보고 / 선정건',
-    status: '확인필요',
+    status: '검토중',
     driveUrl: 'https://drive.google.com/drive/folders/1Pu75ySfou7Ap4j8b12-Vc7l3Y6ZSZLty',
     fileType: '폴더',
-    note: '모집 공고, 신청서, 선정기준, 선정 결과보고 흐름 확인.',
+    note: '모집기간 2026.4.6.~4.24., 모집인원 10명, 전화·방문신청, 유관기관 의뢰 구조 확인. 모집 결과보고와 실제 신청서 보관 위치 추가 확인.',
   },
   {
     id: 'doc-scale-folder',
@@ -152,7 +175,7 @@ const baseDocuments: ProgramDocument[] = [
     status: '보완필요',
     driveUrl: 'https://drive.google.com/drive/folders/1-YPDHdQUkFueZsWl_wdAtpGB3Kgbg9Aq',
     fileType: '빈 폴더',
-    note: '현재 폴더가 비어 있음. 평가·성과 측정에 필요한지 확인 필요.',
+    note: '계획서상 HQ-25 사전·사후 각 1회, 10명, 결과분석보고서가 모니터링 자료임. 현재 폴더가 비어 있어 최우선 보완 필요.',
   },
   {
     id: 'doc-coupon-issue',
@@ -162,7 +185,7 @@ const baseDocuments: ProgramDocument[] = [
     status: '확인필요',
     driveUrl: 'https://drive.google.com/drive/folders/1K6D6RKvSoOor-5GeNuv8qVPeEH9voRYV',
     fileType: '폴더',
-    note: '쿠폰 발행대장, 배부·수령, 사용증빙, 정산흐름 확인.',
+    note: '계획서상 총 13회 발행과 발행대장이 핵심 증빙. 발행대장은 HWP 중심이므로 PDF 변환 후 회기별 금액·대상·수령 확인 필요.',
   },
   {
     id: 'doc-small-meeting',
@@ -542,6 +565,44 @@ export default function ProgramsPage() {
           <div className="rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-indigo-700">누적 기록</p>
             <p className="mt-2 text-3xl font-black text-indigo-900">{programLogs.length}</p>
+          </div>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-100 bg-slate-50 p-5">
+            <p className="text-xs font-black tracking-[.18em] text-slate-500">FIRST REVIEW</p>
+            <h2 className="mt-1 text-xl font-black">생활쿠폰지원사업 1차 분석</h2>
+            <p className="mt-1 text-sm font-bold leading-6 text-slate-600">
+              드라이브에 이미 PDF로 있는 기안, 계획서, 모집, 선정 자료를 기준으로 확인했습니다.
+            </p>
+          </div>
+          <div className="grid gap-3 p-5 md:grid-cols-2">
+            {lifeCouponFindings.map(item => (
+              <div key={item.title} className={`rounded-xl border p-4 ${item.tone}`}>
+                <p className="text-sm font-black">{item.title}</p>
+                <p className="mt-2 text-sm font-bold leading-6 opacity-80">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div className="grid gap-3 border-t border-slate-100 p-5 lg:grid-cols-3">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+              <p className="text-xs font-black text-emerald-800">확인된 강점</p>
+              <p className="mt-2 text-sm font-bold leading-6 text-emerald-950">
+                실시근거, 모집기간, 선정기준, 사업내용, 예산, 산출목표가 계획서 안에 연결되어 있습니다.
+              </p>
+            </div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <p className="text-xs font-black text-amber-800">우선 확인</p>
+              <p className="mt-2 text-sm font-bold leading-6 text-amber-950">
+                HQ-25 사전검사, 회기별 결과보고, 출석부, 운영일지, 쿠폰 발행대장 PDF 변환본을 확인해야 합니다.
+              </p>
+            </div>
+            <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
+              <p className="text-xs font-black text-rose-800">AI 입력 제한</p>
+              <p className="mt-2 text-sm font-bold leading-6 text-rose-950">
+                신청서, 선정명단, 발행대장은 이름·연락처·건강·경제상황 등이 포함될 수 있어 익명화 후 분석합니다.
+              </p>
+            </div>
           </div>
         </section>
 
