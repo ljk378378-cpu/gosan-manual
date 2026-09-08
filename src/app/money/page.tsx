@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import Nav from '@/components/Nav'
 
 type LeakType = '커피충전' | '배달음식' | '가족·관계' | '업무도구' | '생활구매' | '기타'
@@ -42,6 +42,15 @@ type SubscriptionRecord = {
   payDay: string
   need: SubscriptionNeed
   memo: string
+}
+
+type MoneyBackup = {
+  format?: string
+  version?: number
+  exportedAt?: string
+  months?: MonthRecord[]
+  leaks?: LeakRecord[]
+  subscriptions?: SubscriptionRecord[]
 }
 
 const monthKey = 'cheonggok-money-month-simple-v1'
@@ -105,12 +114,18 @@ function calendarDays(month: string) {
   return [...blanks, ...days]
 }
 
+function mergeById<T extends { id: string }>(incoming: T[], current: T[]) {
+  const importedIds = new Set(incoming.map(item => item.id))
+  return [...incoming, ...current.filter(item => !importedIds.has(item.id))]
+}
+
 export default function MoneyPage() {
   const [months, setMonths] = useState<MonthRecord[]>([])
   const [leaks, setLeaks] = useState<LeakRecord[]>([])
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([])
   const [selectedDate, setSelectedDate] = useState(today())
   const [editingSubscriptionId, setEditingSubscriptionId] = useState('')
+  const [transferNotice, setTransferNotice] = useState('')
   const [monthDraft, setMonthDraft] = useState({
     month: currentMonth(),
     income: '',
@@ -219,6 +234,47 @@ export default function MoneyPage() {
     localStorage.setItem(subscriptionKey, JSON.stringify(next))
   }
 
+  const exportMoneyData = () => {
+    const backup: MoneyBackup = {
+      format: 'cheonggok-money-backup',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      months,
+      leaks,
+      subscriptions,
+    }
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `소비점검_백업_${today()}.json`
+    anchor.click()
+    URL.revokeObjectURL(url)
+    setTransferNotice(`내보내기 완료 · 월자료 ${months.length}건 · 지출 ${leaks.length}건 · 구독 ${subscriptions.length}건`)
+  }
+
+  const importMoneyData = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    try {
+      const parsed = JSON.parse(await file.text()) as MoneyBackup
+      if (parsed.format !== 'cheonggok-money-backup') throw new Error('지원하지 않는 백업파일입니다.')
+      if (!Array.isArray(parsed.months) || !Array.isArray(parsed.leaks) || !Array.isArray(parsed.subscriptions)) {
+        throw new Error('백업파일의 자료 구성이 올바르지 않습니다.')
+      }
+      const nextMonths = mergeById(parsed.months, months).slice(0, 36)
+      const nextLeaks = mergeById(parsed.leaks, leaks).slice(0, 500)
+      const nextSubscriptions = mergeById(parsed.subscriptions, subscriptions).slice(0, 100)
+      saveMonths(nextMonths)
+      saveLeaks(nextLeaks)
+      saveSubscriptions(nextSubscriptions)
+      setTransferNotice(`불러오기 완료 · 월자료 ${parsed.months.length}건 · 지출 ${parsed.leaks.length}건 · 구독 ${parsed.subscriptions.length}건`)
+    } catch (error) {
+      setTransferNotice(error instanceof Error ? error.message : '백업파일을 읽지 못했습니다.')
+    }
+  }
+
   const addMonth = () => {
     const existing = months.find(item => item.month === (monthDraft.month || currentMonth()))
     const record: MonthRecord = {
@@ -325,12 +381,31 @@ export default function MoneyPage() {
       <Nav />
       <main className="mx-auto max-w-6xl px-5 py-7">
         <section className="mb-5 rounded-2xl bg-slate-950 p-7 text-white shadow-xl">
-          <p className="text-xs font-bold tracking-[.22em] text-emerald-300">MONEY CONTROL</p>
-          <h1 className="mt-3 text-3xl font-black tracking-tight">소비패턴 점검실</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
-            모든 결제를 복잡하게 적는 가계부가 아니라, 이번 달 돈을 흔드는 핵심만 봅니다.
-            개인용 카드(현대 M·신한), 공동사용 카드(롯데·국민), 현금 지출과 커피 충전을 함께 점검합니다.
-          </p>
+          <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+            <div>
+              <p className="text-xs font-bold tracking-[.22em] text-emerald-300">MONEY CONTROL</p>
+              <h1 className="mt-3 text-3xl font-black tracking-tight">소비패턴 점검실</h1>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+                모든 결제를 복잡하게 적는 가계부가 아니라, 이번 달 돈을 흔드는 핵심만 봅니다.
+                개인용 카드(현대 M·신한), 공동사용 카드(롯데·국민), 현금 지출과 커피 충전을 함께 점검합니다.
+              </p>
+            </div>
+            <div className="shrink-0">
+              <div className="flex flex-wrap gap-2">
+                <button onClick={exportMoneyData} className="rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/20">
+                  자료 내보내기
+                </button>
+                <label className="cursor-pointer rounded-lg bg-emerald-400 px-4 py-2 text-sm font-black text-slate-950 hover:bg-emerald-300">
+                  자료 불러오기
+                  <input type="file" accept="application/json,.json" onChange={importMoneyData} className="hidden" />
+                </label>
+              </div>
+              <p className="mt-2 max-w-sm text-xs leading-5 text-slate-400">
+                맥에서 내보낸 JSON 파일을 윈도우에서 불러옵니다. 현재 자료는 삭제하지 않고 합칩니다.
+              </p>
+              {transferNotice ? <p className="mt-2 max-w-sm text-xs font-bold text-emerald-300">{transferNotice}</p> : null}
+            </div>
+          </div>
         </section>
 
         <section className="mb-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
