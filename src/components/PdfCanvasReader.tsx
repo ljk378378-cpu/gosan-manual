@@ -8,9 +8,12 @@ type PdfCanvasReaderProps = {
   scale: number
   title: string
   bookmarks?: { label: string; page: number }[]
+  spreadView?: boolean
 }
 
-export default function PdfCanvasReader({ fileUrl, initialPage, scale, title, bookmarks = [] }: PdfCanvasReaderProps) {
+type SpreadSide = 'full' | 'left' | 'right'
+
+export default function PdfCanvasReader({ fileUrl, initialPage, scale, title, bookmarks = [], spreadView = false }: PdfCanvasReaderProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const viewerRef = useRef<HTMLDivElement | null>(null)
   const [currentPage, setCurrentPage] = useState(initialPage)
@@ -21,13 +24,15 @@ export default function PdfCanvasReader({ fileUrl, initialPage, scale, title, bo
   const [zoom, setZoom] = useState(scale)
   const [fitToWidth, setFitToWidth] = useState(true)
   const [viewerWidth, setViewerWidth] = useState(0)
+  const [spreadSide, setSpreadSide] = useState<SpreadSide>(spreadView ? 'right' : 'full')
 
   useEffect(() => {
     setCurrentPage(initialPage)
     setPageDraft(`${initialPage}`)
     setZoom(scale)
     setFitToWidth(true)
-  }, [fileUrl, initialPage, scale])
+    setSpreadSide(spreadView ? 'right' : 'full')
+  }, [fileUrl, initialPage, scale, spreadView])
 
   useEffect(() => {
     const viewer = viewerRef.current
@@ -87,20 +92,25 @@ export default function PdfCanvasReader({ fileUrl, initialPage, scale, title, bo
         if (cancelled) return
 
         const baseViewport = page.getViewport({ scale: 1 })
+        const cropSpread = spreadView && spreadSide !== 'full' && baseViewport.width > baseViewport.height
+        const visibleBaseWidth = cropSpread ? baseViewport.width / 2 : baseViewport.width
         const usableWidth = Math.max(320, (viewerRef.current?.clientWidth || viewerWidth || 900) - 42)
-        const scaleToUse = fitToWidth ? Math.min(Math.max(usableWidth / baseViewport.width, 0.6), 2.4) : effectiveZoom
+        const scaleToUse = fitToWidth ? Math.min(Math.max(usableWidth / visibleBaseWidth, 0.6), 2.4) : effectiveZoom
         const viewport = page.getViewport({ scale: scaleToUse })
-        const context = canvas.getContext('2d')
+        const renderCanvas = cropSpread ? document.createElement('canvas') : canvas
+        const context = renderCanvas.getContext('2d')
         if (!context) throw new Error('PDF 화면을 준비하지 못했습니다.')
 
         const outputScale = window.devicePixelRatio || 1
-        canvas.width = Math.floor(viewport.width * outputScale)
-        canvas.height = Math.floor(viewport.height * outputScale)
-        canvas.style.width = `${Math.floor(viewport.width)}px`
+        renderCanvas.width = Math.floor(viewport.width * outputScale)
+        renderCanvas.height = Math.floor(viewport.height * outputScale)
+        canvas.width = cropSpread ? Math.floor(renderCanvas.width / 2) : renderCanvas.width
+        canvas.height = renderCanvas.height
+        canvas.style.width = `${Math.floor(cropSpread ? viewport.width / 2 : viewport.width)}px`
         canvas.style.height = `${Math.floor(viewport.height)}px`
 
         context.setTransform(1, 0, 0, 1, 0, 0)
-        context.clearRect(0, 0, canvas.width, canvas.height)
+        context.clearRect(0, 0, renderCanvas.width, renderCanvas.height)
 
         const task = page.render({
           canvasContext: context,
@@ -110,6 +120,24 @@ export default function PdfCanvasReader({ fileUrl, initialPage, scale, title, bo
         renderTask = task
 
         await task.promise
+        if (cropSpread) {
+          const visibleContext = canvas.getContext('2d')
+          if (!visibleContext) throw new Error('PDF 한쪽 화면을 준비하지 못했습니다.')
+          const sourceX = spreadSide === 'right' ? renderCanvas.width / 2 : 0
+          visibleContext.setTransform(1, 0, 0, 1, 0, 0)
+          visibleContext.clearRect(0, 0, canvas.width, canvas.height)
+          visibleContext.drawImage(
+            renderCanvas,
+            sourceX,
+            0,
+            renderCanvas.width / 2,
+            renderCanvas.height,
+            0,
+            0,
+            canvas.width,
+            canvas.height,
+          )
+        }
         if (!cancelled) setStatus('원문 표시 완료')
       } catch (caught) {
         if (cancelled) return
@@ -129,7 +157,7 @@ export default function PdfCanvasReader({ fileUrl, initialPage, scale, title, bo
       loadingTask?.destroy?.()
       pdfDocument?.destroy?.()
     }
-  }, [fileUrl, currentPage, effectiveZoom, fitToWidth, viewerWidth])
+  }, [fileUrl, currentPage, effectiveZoom, fitToWidth, viewerWidth, spreadSide, spreadView])
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-300 bg-slate-100">
@@ -141,6 +169,26 @@ export default function PdfCanvasReader({ fileUrl, initialPage, scale, title, bo
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {spreadView ? (
+            <div className="flex overflow-hidden rounded-lg border border-amber-300 bg-white">
+              {([
+                { value: 'left', label: '왼쪽 면' },
+                { value: 'right', label: '오른쪽 면' },
+                { value: 'full', label: '전체 펼침' },
+              ] as { value: SpreadSide; label: string }[]).map(item => (
+                <button
+                  key={item.value}
+                  onClick={() => {
+                    setSpreadSide(item.value)
+                    setFitToWidth(true)
+                  }}
+                  className={`px-3 py-2 text-xs font-black ${spreadSide === item.value ? 'bg-amber-700 text-white' : 'text-amber-900 hover:bg-amber-50'}`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
           <button
             onClick={() => setFitToWidth(true)}
             className={`rounded-lg px-3 py-2 text-xs font-black ${fitToWidth ? 'bg-emerald-700 text-white' : 'border border-slate-300 bg-white text-slate-700'}`}

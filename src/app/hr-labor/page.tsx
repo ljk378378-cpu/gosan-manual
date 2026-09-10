@@ -89,11 +89,13 @@ const topics: Topic[] = [
 
 const localGuidePdf = '/reference/2026-social-welfare-facility-guide.pdf'
 const localLaborGuidePdf = '/reference/social-welfare-center-hr-labor-guide-web.pdf'
+const localInspectionCasebookPdf = '/reference/2025-social-welfare-inspection-casebook.pdf'
 const officialGuideDownload = 'https://www.mohw.go.kr/boardDownload.es?bid=0021&list_no=1488923&seq=1'
 
 const sourceCards = [
   { title: '보건복지부 사회복지시설 관리안내', detail: '사회복지시설 종사자 관리, 시설운영, 지도점검의 기본 기준자료', href: 'https://www.mohw.go.kr/board.es?act=view&bid=0021&list_no=1488923&mid=a10413000000' },
   { title: '사회복지관 인사노무 길라잡이', detail: '한국사회복지관협회 노무자문 사례집을 현장 사례 해설 교재로 활용', href: localLaborGuidePdf },
+  { title: '2025 사회복지법인·시설 지도점검 사례집', detail: '법인·종사자·재무회계·후원금·기능보강 지적사례와 Q&A를 실무 점검용으로 활용', href: localInspectionCasebookPdf },
   { title: '국가법령정보센터', detail: '근로기준법, 남녀고용평등법, 기간제법, 개인정보보호법 등 최신 법령 확인', href: 'https://www.law.go.kr/' },
   { title: '고용노동부 자료', detail: '개정 노동관계법, 행정해석, 정책자료, 사례 중심 교육자료 확인', href: 'https://www.moel.go.kr/' },
   { title: '직장 내 괴롭힘 예방·대응', detail: '관리자 조사 공정성, 판단기준, 예방교육 자료 확인', href: 'https://moel.go.kr/news/enews/report/enewsView.do?news_seq=19610' },
@@ -224,6 +226,16 @@ const laborGuideBookmarks = [
   { label: '근로시간', page: 36 },
   { label: '시간외근무', page: 44 },
   { label: '가족수당', page: 49 },
+]
+
+const inspectionCasebookBookmarks = [
+  { label: '처음/목차', page: 1 },
+  { label: '법인·시설운영', page: 4 },
+  { label: '종사자관리', page: 72 },
+  { label: '재무·회계관리', page: 83 },
+  { label: '후원금관리', page: 100 },
+  { label: '기능보강사업', page: 107 },
+  { label: '사회복지법인 및 시설 Q&A', page: 114 },
 ]
 
 const defaultMaterial: Material = {
@@ -542,7 +554,7 @@ function buildChapterSections(topic: Topic, material: Material): ChapterSection[
 
 export default function HrLaborPage() {
   const [topicIndex, setTopicIndex] = useState(todayTopicIndex())
-  const [activeGuide, setActiveGuide] = useState<'facility' | 'labor'>('facility')
+  const [activeGuide, setActiveGuide] = useState<'facility' | 'labor' | 'inspection'>('facility')
   const [records, setRecords] = useState<LearningRecord[]>([])
   const [latestRecords, setLatestRecords] = useState<LatestRecord[]>([])
   const [latestDraft, setLatestDraft] = useState({
@@ -572,12 +584,12 @@ export default function HrLaborPage() {
   const chapterSections = buildChapterSections(topic, material)
   const guidePage = guidePageByDay[topic.day] || 1
   const laborGuidePage = laborGuidePageByDay[topic.day] || 1
-  const activePdf = activeGuide === 'facility' ? localGuidePdf : localLaborGuidePdf
-  const activePage = activeGuide === 'facility' ? guidePage : laborGuidePage
-  const activeTitle = activeGuide === 'facility' ? '2026 사회복지시설 관리안내' : '사회복지관 인사노무 길라잡이'
-  const activeSubtitle = activeGuide === 'facility' ? '공식 행정 기준' : '한국사회복지관협회 노무자문 사례집'
+  const activePdf = activeGuide === 'facility' ? localGuidePdf : activeGuide === 'labor' ? localLaborGuidePdf : localInspectionCasebookPdf
+  const activePage = activeGuide === 'facility' ? guidePage : activeGuide === 'labor' ? laborGuidePage : 1
+  const activeTitle = activeGuide === 'facility' ? '2026 사회복지시설 관리안내' : activeGuide === 'labor' ? '사회복지관 인사노무 길라잡이' : '2025 사회복지법인·시설 지도점검 사례집'
+  const activeSubtitle = activeGuide === 'facility' ? '공식 행정 기준' : activeGuide === 'labor' ? '한국사회복지관협회 노무자문 사례집' : '법인·시설 운영개선 지도점검 지적사례'
   const activePdfSrc = `${activePdf}#page=${activePage}`
-  const activeBookmarks = activeGuide === 'facility' ? facilityGuideBookmarks : laborGuideBookmarks
+  const activeBookmarks = activeGuide === 'facility' ? facilityGuideBookmarks : activeGuide === 'labor' ? laborGuideBookmarks : inspectionCasebookBookmarks
   const todayRecords = useMemo(() => records.filter(record => record.date === todayDateString()), [records])
   const todayLatestRecords = useMemo(() => latestRecords.filter(record => record.date === todayDateString()), [latestRecords])
   const doneTopics = new Set(records.map(record => record.topic)).size
@@ -878,6 +890,12 @@ export default function HrLaborPage() {
                 >
                   길라잡이
                 </button>
+                <button
+                  onClick={() => setActiveGuide('inspection')}
+                  className={`rounded-lg px-4 py-3 text-sm font-black ${activeGuide === 'inspection' ? 'bg-amber-700 text-white' : 'border border-slate-300 bg-white text-slate-800'}`}
+                >
+                  지도점검 사례집
+                </button>
                 <a href={activePdfSrc} target="_blank" rel="noreferrer" className="rounded-lg bg-emerald-700 px-4 py-3 text-sm font-black text-white">
                   큰 새창으로 읽기
                 </a>
@@ -892,7 +910,7 @@ export default function HrLaborPage() {
               </div>
             </div>
 
-            <PdfCanvasReader fileUrl={activePdf} initialPage={activePage} scale={1.55} title={activeTitle} bookmarks={activeBookmarks} />
+            <PdfCanvasReader fileUrl={activePdf} initialPage={activePage} scale={1.55} title={activeTitle} bookmarks={activeBookmarks} spreadView={activeGuide === 'inspection'} />
           </div>
         </section>
 
