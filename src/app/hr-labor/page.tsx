@@ -6,12 +6,17 @@ import PdfCanvasReader from '@/components/PdfCanvasReader'
 
 type Topic = {
   day: number
+  stage: 1 | 2 | 3
+  guide: 'facility' | 'labor' | 'inspection'
+  page: number
   area: string
   title: string
   keyPoint: string
   managerQuestion: string
   evidence: string
 }
+
+type TopicSeed = Omit<Topic, 'stage' | 'guide' | 'page'>
 
 type LearningRecord = {
   id: string
@@ -45,47 +50,142 @@ type ChapterSection = {
 
 const STORAGE_KEY = 'cheonggok-hr-labor-learning-v1'
 const LATEST_KEY = 'cheonggok-hr-labor-latest-v1'
+const PROGRESS_KEY = 'cheonggok-hr-labor-progress-v2'
 
 const guideRoadmap = [
-  { phase: '1단계', title: '전체 목차 읽기', detail: '사회복지시설 관리안내가 어떤 장으로 구성되는지 먼저 파악하고, 시설운영·종사자관리·회계·후원금·안전·지도점검의 위치를 표시한다.' },
-  { phase: '2단계', title: '종사자 관리 정독', detail: '채용, 임면, 결격사유, 경력인정, 호봉, 복무, 교육, 퇴직 등 과장 업무와 직접 연결되는 내용을 소단원 단위로 읽는다.' },
-  { phase: '3단계', title: '근로기준법 연결', detail: '관리안내만으로 판단이 부족한 근로시간, 휴게, 연차, 임금, 퇴직, 괴롭힘 사안은 고용노동부와 국가법령정보센터 자료로 연결한다.' },
-  { phase: '4단계', title: '기관 규정 대조', detail: '사회복지시설 관리안내의 기준과 청곡복지관 운영규정, 인사규정, 복무규정, 보수규정, 서비스규정이 충돌하지 않는지 확인한다.' },
-  { phase: '5단계', title: '현장 사례 적용', detail: '결재, 직원상담, 반복실수, 지도점검, 평가자료 준비 상황에 적용하여 관리자로서 설명 가능한 문장과 증빙 위치를 남긴다.' },
+  { stage: 1, phase: '1단계 · 1~30일', title: '2026 사회복지시설 관리안내', detail: '시설 현황부터 운영·종사자·전자화·안전·회계·후원금·인건비까지 전체 목차를 읽습니다.' },
+  { stage: 2, phase: '2단계 · 31~60일', title: '사회복지관 인사노무 길라잡이', detail: '근로계약, 임금, 근로시간, 휴가, 징계와 괴롭힘을 실제 노무사례 중심으로 익힙니다.' },
+  { stage: 3, phase: '3단계 · 61~90일', title: '2025 지도점검 사례집', detail: '실제 지적사례를 통해 시설운영, 종사자, 회계, 후원금과 기능보강 위험을 점검합니다.' },
 ]
 
-const topics: Topic[] = [
-  { day: 1, area: '채용', title: '공개채용과 채용공정성', keyPoint: '채용공고, 심사기준, 면접위원, 결과공지, 개인정보 관리가 하나의 흐름으로 남아야 함', managerQuestion: '최근 채용 건에서 외부위원과 심사표가 모두 남아 있는가?', evidence: '채용공고, 지원서, 심사표, 면접위원 명단, 채용결과 공지' },
-  { day: 2, area: '채용', title: '근로계약과 수습기간', keyPoint: '근로계약서에는 업무, 임금, 근로시간, 휴게, 휴일, 계약기간이 명확해야 함', managerQuestion: '계약직과 정규직의 계약서 양식이 실제 근무조건을 정확히 반영하는가?', evidence: '근로계약서, 임용기안, 인사발령, 업무분장표' },
-  { day: 3, area: '인사', title: '인사기록과 개인정보', keyPoint: '인사기록은 필요 최소한으로 수집하고 열람권한과 보관위치를 통제해야 함', managerQuestion: '인사서류가 잠금보관되고 전자파일 접근권한이 제한되어 있는가?', evidence: '인사기록카드, 개인정보 동의서, 보관대장, 접근권한 목록' },
-  { day: 4, area: '호봉', title: '경력인정과 호봉획정', keyPoint: '경력인정 기준, 증빙, 호봉획정표, 승인절차가 연결되어야 함', managerQuestion: '호봉 산정 근거가 나중에 설명 가능한 수준으로 남아 있는가?', evidence: '경력증명서, 호봉획정표, 인정기준, 승인기안' },
-  { day: 5, area: '복무', title: '근로시간과 휴게시간', keyPoint: '실제 근무시간, 휴게시간, 연장근로가 규정과 출퇴근 기록에 맞아야 함', managerQuestion: '직원들의 실제 근무패턴이 복무규정과 다르게 운영되고 있지 않은가?', evidence: '복무규정, 출퇴근기록, 근무명령, 근무표' },
-  { day: 6, area: '복무', title: '시간외근무 명령과 인정', keyPoint: '시간외근무는 사전명령, 실제근무, 결과확인, 지급근거가 모두 필요함', managerQuestion: '시간외근무가 관행적으로 승인되거나 결과확인 없이 지급되고 있지 않은가?', evidence: '시간외명령서, 근무실적, 결과보고, 급여대장' },
-  { day: 7, area: '휴가', title: '연차휴가 부여와 사용촉진', keyPoint: '연차 산정, 사용내역, 잔여일수, 사용촉진 절차를 연도별로 관리해야 함', managerQuestion: '직원별 연차 잔여일수와 사용촉진 기록이 설명 가능한가?', evidence: '연차대장, 휴가신청서, 사용촉진 공문, 복무자료' },
-  { day: 8, area: '휴가', title: '병가·공가·특별휴가', keyPoint: '기관 규정에 근거한 휴가인지, 증빙이 필요한 휴가인지 구분해야 함', managerQuestion: '관행적으로 승인된 휴가가 규정상 근거를 가지고 있는가?', evidence: '운영규정, 복무규정, 휴가신청서, 증빙서류' },
-  { day: 9, area: '임금', title: '임금항목과 지급기준', keyPoint: '기본급, 수당, 시간외, 가족수당 등은 지급기준과 실제 지급자료가 맞아야 함', managerQuestion: '수당 지급 기준과 실제 지급내역이 직원별로 일치하는가?', evidence: '보수규정, 급여대장, 수당 지급근거, 예산서' },
-  { day: 10, area: '임금', title: '가족수당 이중수령 확인', keyPoint: '배우자 수령 여부와 가족관계 증빙을 확인해 부당수령 위험을 막아야 함', managerQuestion: '가족수당 지급자별 확인서와 증빙이 최신 상태인가?', evidence: '가족수당 신청서, 가족관계증명, 배우자 수령확인서, 급여대장' },
-  { day: 11, area: '퇴직', title: '퇴직금과 퇴직연금', keyPoint: '가입, 적립, 퇴직정산, 1년 미만 처리 기준을 명확히 해야 함', managerQuestion: '퇴직연금 적립과 퇴직자 정산자료가 누락 없이 남아 있는가?', evidence: '퇴직연금 가입자료, 적립내역, 퇴직정산서, 반납자료' },
-  { day: 12, area: '사회보험', title: '4대보험 가입과 상실', keyPoint: '입퇴사일, 보수월액, 취득·상실신고, 납부자료가 인사자료와 맞아야 함', managerQuestion: '입퇴사자 신고일과 실제 근무기간이 어긋나지 않는가?', evidence: '4대보험 취득상실신고, 납부확인서, 급여대장, 직원명부' },
-  { day: 13, area: '교육', title: '법정교육과 보수교육', keyPoint: '필수교육은 대상자, 이수시기, 이수증, 미이수 사유를 관리해야 함', managerQuestion: '누가 어떤 교육을 아직 이수하지 않았는지 바로 말할 수 있는가?', evidence: '교육계획, 교육명령, 이수증, 미이수자 관리표' },
-  { day: 14, area: '고충', title: '직원 고충처리', keyPoint: '상담, 접수, 처리, 회신, 개선조치가 절차대로 남아야 함', managerQuestion: '직원 고충이 비공식 대화로만 사라지고 있지 않은가?', evidence: '고충처리 규정, 접수대장, 회의록, 회신자료' },
-  { day: 15, area: '인권', title: '직장 내 괴롭힘 예방', keyPoint: '예방교육, 신고절차, 조사, 보호조치, 재발방지 체계가 필요함', managerQuestion: '관리자로서 부적절한 언행이 발생했을 때 즉시 적용할 절차를 알고 있는가?', evidence: '취업규칙, 예방교육, 신고체계, 조사기록, 보호조치' },
-  { day: 16, area: '징계', title: '징계 절차와 소명권', keyPoint: '징계는 사유, 조사, 소명기회, 위원회, 결과통보가 절차적으로 정당해야 함', managerQuestion: '감정적 지적과 공식 징계 절차를 구분하고 있는가?', evidence: '인사규정, 조사자료, 소명안내, 인사위원회 회의록' },
-  { day: 17, area: '계약직', title: '기간제 근로자 관리', keyPoint: '계약기간, 갱신기준, 업무범위, 차별처우 위험을 관리해야 함', managerQuestion: '계약직 직원의 업무와 처우가 계약서와 실제 운영에서 일치하는가?', evidence: '근로계약서, 갱신기안, 업무분장, 급여자료' },
-  { day: 18, area: '겸직·출장', title: '출장과 외부활동', keyPoint: '출장명령, 목적, 결과보고, 여비정산이 연결되어야 함', managerQuestion: '외부회의 참석이 기관 업무성과와 교육·네트워크 증빙으로 남아 있는가?', evidence: '출장명령서, 결과보고, 여비정산, 참석확인자료' },
-  { day: 19, area: '규정', title: '운영규정과 실제 운영 일치', keyPoint: '규정에 적힌 내용과 실제 결재·복무·인사처리가 다르면 점검 리스크가 됨', managerQuestion: '규정은 있으나 실제로 지키지 않는 조항은 무엇인가?', evidence: '운영규정, 신구대조표, 실제 처리문서, 개정기안' },
-  { day: 20, area: '평가', title: '27년 평가와 인사노무 연결', keyPoint: '직원교육, 채용공정성, 직원복지, 인권안전, 급여수준은 평가와 직접 연결됨', managerQuestion: '평가 B영역에서 인사노무 자료가 어느 정도 준비되어 있는가?', evidence: '평가지표표, 직원교육자료, 채용자료, 복지제도 실행자료' },
-  { day: 21, area: '지도점검', title: '구청 지도점검 인사자료', keyPoint: '종사자 명부, 임면직, 호봉, 가족수당, 급여자료는 점검 핵심자료임', managerQuestion: '9.18 지도점검에서 인사자료를 30초 안에 제시할 수 있는가?', evidence: '지도점검 준비자료, 직원명부, 임면직표, 호봉자료' },
-  { day: 22, area: '관리자', title: '관리자의 피드백 기록', keyPoint: '반복실수와 업무지도는 감정이 아니라 사실, 기준, 후속조치로 기록해야 함', managerQuestion: '직원 피드백이 나중에 설명 가능한 업무지도 기록으로 남아 있는가?', evidence: '상담기록, 업무피드백 메모, 재제출 기준, 후속확인표' },
-  { day: 23, area: '보안', title: '인사노무 자료의 접근권한', keyPoint: '급여, 인사, 징계, 고충 자료는 접근권한과 공유범위를 엄격히 관리해야 함', managerQuestion: '공유폴더에 민감자료가 과도하게 열려 있지 않은가?', evidence: '권한목록, 보안점검표, 파일 위치표, 개인정보 처리방침' },
-  { day: 24, area: '인계', title: '퇴사자 인수인계와 자료회수', keyPoint: '퇴사 전 업무인계, 계정회수, 자료반납, 미완료 업무 확인이 필요함', managerQuestion: '퇴사자 업무와 계정이 남아 조직 리스크가 되지 않는가?', evidence: '인수인계서, 계정회수표, 자료반납확인서, 미완료 업무표' },
-  { day: 25, area: '예산', title: '인건비 예산과 집행', keyPoint: '인건비, 수당, 사회보험, 퇴직적립금은 예산과 집행이 연결되어야 함', managerQuestion: '인건비 집행 변동 사유를 설명할 수 있는가?', evidence: '예산서, 급여대장, 4대보험, 퇴직연금, 결산자료' },
-  { day: 26, area: '서비스규정', title: '서비스 제공과 직원 역할', keyPoint: '서비스 제공 기준과 직원 업무분장이 맞아야 책임소재가 분명해짐', managerQuestion: '서비스규정에서 직원 역할과 실제 수행기록이 연결되는가?', evidence: '서비스규정, 업무분장, 서비스 기록, 사례회의자료' },
-  { day: 27, area: '운영규정', title: '위원회와 의사결정', keyPoint: '운영위원회, 인사위원회 등 위원회 의사결정 절차가 규정과 맞아야 함', managerQuestion: '위원회가 필요한 사안을 내부결재만으로 처리한 적은 없는가?', evidence: '운영규정, 위원회 명단, 회의록, 결과보고' },
-  { day: 28, area: '리스크', title: '노무 리스크 우선순위', keyPoint: '모든 것을 한 번에 고치기보다 임금, 시간, 괴롭힘, 개인정보부터 봐야 함', managerQuestion: '우리 기관에서 가장 먼저 점검해야 할 노무 리스크 3개는 무엇인가?', evidence: '위험목록, 점검표, 보완계획, 담당자 확인' },
-  { day: 29, area: '사례연습', title: '직원상담 상황연습', keyPoint: '상담은 감정 해소가 아니라 사실확인, 기준제시, 다음 행동합의로 마무리해야 함', managerQuestion: '상담 후 직원이 무엇을 언제까지 해야 하는지 명확히 남는가?', evidence: '상담메모, 과업합의, 제출기한, 후속확인' },
-  { day: 30, area: '월간정리', title: '한 달 학습 점검', keyPoint: '학습한 내용을 기관 규정, 평가, 지도점검, 팀 운영과 연결해 보완과제를 정리함', managerQuestion: '이번 달 학습을 통해 실제로 바꿀 업무기준은 무엇인가?', evidence: '학습기록, 보완과제, 규정개정 후보, 교육공유자료' },
+const stageOneSeeds: TopicSeed[] = [
+  { day: 1, area: '개정사항', title: '관리안내의 성격과 2026년 주요 변경', keyPoint: '관리안내의 적용범위와 2026년 변경사항을 먼저 구분한다.', managerQuestion: '올해 변경사항 중 우리 기관 규정이나 운영에 반영할 항목은 무엇인가?', evidence: '2026 관리안내, 전년도 대비표, 기관 규정' },
+  { day: 2, area: '시설현황', title: '사회복지시설의 정의와 적용대상', keyPoint: '명칭보다 실제 수행사업과 법적 설치근거로 시설 여부를 판단한다.', managerQuestion: '우리 기관의 법적 설치근거와 시설유형을 설명할 수 있는가?', evidence: '설치신고증, 위탁협약, 사업자등록증' },
+  { day: 3, area: '시설현황', title: '사회복지시설의 종류와 개별법 우선', keyPoint: '시설유형별 소관 법률과 개별 사업지침이 공통안내보다 우선할 수 있다.', managerQuestion: '복지관에 우선 적용되는 개별 법령과 지침은 정리되어 있는가?', evidence: '사회복지사업법, 복지관 운영지침, 시설현황표' },
+  { day: 4, area: '설치', title: '시설 설치·신고와 인정기준', keyPoint: '인적·물적 기준과 신고 절차, 고유번호증 발급을 연결해 확인한다.', managerQuestion: '시설 설치와 변경 신고자료가 최신 상태인가?', evidence: '설치신고증, 변경신고, 고유번호증' },
+  { day: 5, area: '운영', title: '시설 운영의 기본원칙과 투명성', keyPoint: '운영주체의 책임, 보조금 집행, 공개와 보고 의무를 실제 운영에 반영한다.', managerQuestion: '운영의 투명성을 보여주는 핵심 문서를 즉시 제시할 수 있는가?', evidence: '운영규정, 예산결산, 공시자료' },
+  { day: 6, area: '운영위원회', title: '운영위원회 구성과 심의·보고', keyPoint: '위원 구성, 회의 주기, 심의·보고사항과 결과 반영을 구분한다.', managerQuestion: '최근 운영위원회가 필수 안건을 빠짐없이 다뤘는가?', evidence: '위원명단, 소집통지, 회의록, 결과보고' },
+  { day: 7, area: '인건비', title: '인건비 보조금 지급연령과 예외', keyPoint: '시설장·종사자 지급상한과 2026년 특례를 정확히 구분한다.', managerQuestion: '지급연령 상한과 예외 적용 대상자가 있는가?', evidence: '직원명부, 생년월일, 인건비 지급자료' },
+  { day: 8, area: '채용', title: '공개채용과 공정한 절차', keyPoint: '공고, 심사, 면접, 결과와 채용서류가 하나의 흐름으로 남아야 한다.', managerQuestion: '최근 채용 건의 전 과정을 증빙할 수 있는가?', evidence: '채용공고, 심사표, 위원명단, 결과공고' },
+  { day: 9, area: '종사자', title: '임면보고·결격사유와 자격 확인', keyPoint: '채용 전 자격과 결격사유를 확인하고 임면사항을 기한 내 보고한다.', managerQuestion: '모든 직원의 임면보고와 조회자료가 갖춰져 있는가?', evidence: '임면보고, 자격증, 범죄·결격 조회자료' },
+  { day: 10, area: '권익', title: '사회복지시설 종사자 권익보호', keyPoint: '공익신고자 보호, 직장 내 괴롭힘과 폭력 피해 지원체계를 알아둔다.', managerQuestion: '직원이 권익침해를 신고할 수 있는 내부·외부 경로를 알고 있는가?', evidence: '신고절차, 권익지원 안내, 예방교육 자료' },
+  { day: 11, area: '종사자', title: '종사자 관리자료와 개인정보', keyPoint: '인사기록의 필수성, 접근권한과 보관·폐기 기준을 함께 관리한다.', managerQuestion: '인사자료 접근권한과 보관위치를 설명할 수 있는가?', evidence: '인사기록카드, 권한목록, 보관대장' },
+  { day: 12, area: '인건비', title: '인건비 보조금 지급기준', keyPoint: '보조금 지급대상과 제외항목, 지자체 기준을 구분해 적용한다.', managerQuestion: '인건비 지급대상과 재원별 기준이 급여자료와 일치하는가?', evidence: '인건비 교부조건, 급여대장, 직원명부' },
+  { day: 13, area: '시설운영', title: '시설 휴지·재개·자진폐지', keyPoint: '이용자 보호와 종사자 조치, 신고 절차를 사전에 이해한다.', managerQuestion: '운영중단 상황에서 이용자와 종사자를 보호할 절차가 있는가?', evidence: '비상운영계획, 신고서식, 인계자료' },
+  { day: 14, area: '행정처분', title: '사회복지시설 행정처분 기준', keyPoint: '위반행위별 처분기준과 가중·감경 가능성을 구분한다.', managerQuestion: '우리 기관에서 행정처분으로 이어질 수 있는 위험은 무엇인가?', evidence: '자체점검표, 시정조치 기록, 관련 규정' },
+  { day: 15, area: '지도감독', title: '시설 지도·감독과 자료제출', keyPoint: '감독기관의 권한과 시설의 보고·자료제출 의무를 이해한다.', managerQuestion: '점검 요청자료를 정확한 수치로 즉시 제출할 수 있는가?', evidence: '지도점검표, 제출공문, 시정결과' },
+  { day: 16, area: '평가', title: '사회복지시설 평가와 사후관리', keyPoint: '평가대상, 결과공개와 미흡시설 사후관리 흐름을 이해한다.', managerQuestion: '2027년 평가 준비가 실제 운영개선으로 연결되고 있는가?', evidence: '평가지표, 자체평가, 개선계획' },
+  { day: 17, area: '사회복무', title: '사회복무요원 배치와 복무관리', keyPoint: '배치 목적과 업무범위, 출퇴근·교육·사고 관리를 구분한다.', managerQuestion: '사회복무요원의 업무가 허용범위 안에서 관리되는가?', evidence: '복무기록, 업무분장, 교육자료' },
+  { day: 18, area: '신고의무', title: '실종아동 발견 신고와 신상카드', keyPoint: '대상자 발견 시 신고와 신상카드 제출의무를 숙지한다.', managerQuestion: '해당 상황 발생 시 담당자와 즉시 행동절차가 정해져 있는가?', evidence: '신고절차, 신상카드 서식, 직원교육' },
+  { day: 19, area: '전자화', title: '사회복지시설 업무 전자화', keyPoint: '전자 시스템의 보고자료와 기관 원자료가 일치해야 한다.', managerQuestion: '전자보고 수치와 내부 장부가 서로 맞는가?', evidence: '전자보고 내역, 내부대장, 권한목록' },
+  { day: 20, area: '희망이음', title: '희망이음 활용과 사용자 권한', keyPoint: '업무별 권한을 최소화하고 인사이동 시 즉시 변경·회수한다.', managerQuestion: '퇴사자와 겸직자의 시스템 권한이 적절한가?', evidence: '사용자명부, 권한현황, 회수기록' },
+  { day: 21, area: '전자보고', title: '온라인 보고와 보고기한', keyPoint: '입퇴사, 보조금, 예결산 등 보고항목과 기한을 일정으로 관리한다.', managerQuestion: '정기·수시 온라인 보고의 담당자와 마감일이 정리되어 있는가?', evidence: '보고일정표, 제출내역, 승인기안' },
+  { day: 22, area: '안전', title: '보험가입과 배상책임', keyPoint: '시설과 이용자·종사자 위험에 필요한 보험의 보장범위를 확인한다.', managerQuestion: '현재 보험이 시설의 실제 위험과 인원을 모두 보장하는가?', evidence: '보험증권, 가입자명부, 보장내역' },
+  { day: 23, area: '안전', title: '정기·수시 시설안전점검', keyPoint: '계절과 재난유형별 점검, 시정조치와 재확인을 기록한다.', managerQuestion: '최근 안전점검의 미비사항이 실제로 조치되었는가?', evidence: '안전점검표, 사진, 보수내역' },
+  { day: 24, area: '안전', title: '안전인력·교육·재난훈련', keyPoint: '안전관리 책임과 교육·훈련 결과를 실제 대응체계로 연결한다.', managerQuestion: '직원이 재난 발생 시 자신의 역할을 알고 있는가?', evidence: '안전계획, 교육일지, 훈련결과' },
+  { day: 25, area: '회계', title: '재무회계규칙의 기본원칙', keyPoint: '회계연도, 출납기한, 회계 구분과 책임자를 정확히 적용한다.', managerQuestion: '기관 회계 처리의 권한과 책임이 분리되어 있는가?', evidence: '회계규정, 회계관계 직원 지정, 장부' },
+  { day: 26, area: '예산', title: '예산·추경·결산 절차', keyPoint: '편성, 심의, 승인, 보고·공고의 순서와 기한을 지킨다.', managerQuestion: '최근 예산변경이 필요한 절차를 모두 거쳤는가?', evidence: '예산서, 추경, 결산서, 회의록' },
+  { day: 27, area: '회계', title: '수입·지출·물품 관리', keyPoint: '결의, 증빙, 검수, 자산등록과 재물조사를 연결한다.', managerQuestion: '표본 거래 한 건이 장부부터 자산대장까지 이어지는가?', evidence: '결의서, 증빙철, 물품·자산대장' },
+  { day: 28, area: '후원금', title: '후원금 관리와 감사', keyPoint: '영수증, 지정용도, 사용결과 보고·공개와 감사를 지킨다.', managerQuestion: '후원금 수입과 사용내역을 후원자와 점검기관에 설명할 수 있는가?', evidence: '후원금대장, 영수증, 결과보고, 감사자료' },
+  { day: 29, area: '운영규정', title: '운영위원회·위탁운영 부록 적용', keyPoint: '예시 규정을 그대로 복사하지 않고 기관 규정과 위탁협약에 맞게 적용한다.', managerQuestion: '기관 운영규정과 위탁협약이 최신 관리안내와 일치하는가?', evidence: '운영규정, 위탁협약, 신구대조표' },
+  { day: 30, area: '호봉', title: '인건비 가이드라인과 경력인정', keyPoint: '직종별 인건비 기준과 경력인정 범위, 호봉획정 근거를 연결한다.', managerQuestion: '직원별 호봉을 최신 경력인정 기준으로 설명할 수 있는가?', evidence: '인건비 가이드라인, 경력증명서, 호봉획정표' },
 ]
+
+type CourseSeed = [area: string, title: string, keyPoint: string, evidence: string, page: number]
+
+function makeStageTopics(stage: 2 | 3, guide: 'labor' | 'inspection', startDay: number, seeds: CourseSeed[]): Topic[] {
+  return seeds.map(([area, title, keyPoint, evidence, page], index) => ({
+    day: startDay + index,
+    stage,
+    guide,
+    page,
+    area,
+    title,
+    keyPoint,
+    managerQuestion: `우리 기관에서 ${title} 기준을 실제 문서와 절차로 설명할 수 있는가?`,
+    evidence,
+  }))
+}
+
+const stageTwoTopics = makeStageTopics(2, 'labor', 31, [
+  ['기초', '노동관계법의 적용 순서', '법률, 취업규칙, 근로계약, 기관 관행이 충돌할 때 적용 순서를 구분한다.', '근로계약서, 취업규칙, 운영규정', 10],
+  ['근로계약', '근로계약서 필수 기재사항', '임금, 근로시간, 휴일, 휴가와 업무내용을 서면으로 명확히 남긴다.', '근로계약서, 업무분장표', 14],
+  ['근로계약', '수습기간과 본채용 판단', '수습 적용 근거와 평가기준, 본채용 거부 절차를 사전에 명확히 한다.', '근로계약서, 수습평가표, 인사기안', 18],
+  ['근로계약', '기간제 계약과 갱신기대권', '반복 갱신과 기관의 언행이 갱신 기대를 만들 수 있음을 이해한다.', '기간제 계약서, 갱신기안, 평가기록', 21],
+  ['채용', '채용내정과 취소', '합격 통보 이후 취소는 해고와 유사한 분쟁으로 이어질 수 있어 근거와 절차가 필요하다.', '채용공고, 합격통보, 취소 검토자료', 24],
+  ['인사', '전보·전직과 업무변경', '업무상 필요성과 직원 불이익을 함께 검토하고 변경 사유를 기록한다.', '인사발령, 업무분장, 협의기록', 27],
+  ['인사', '휴직과 복직 관리', '휴직 사유, 기간, 급여·보험 처리와 복직 절차를 하나의 일정으로 관리한다.', '휴직원, 승인기안, 복직원, 보험자료', 30],
+  ['임금', '임금의 범위와 지급 원칙', '정기적·일률적으로 지급되는 금품의 성격과 지급 원칙을 구분한다.', '보수규정, 급여대장, 수당기준', 36],
+  ['임금', '통상임금과 평균임금', '시간외수당과 퇴직금 산정에서 사용하는 임금 기준의 차이를 이해한다.', '급여명세서, 수당내역, 산정표', 39],
+  ['임금', '연장·야간·휴일근로수당', '실제 근로시간과 사전명령, 가산수당 산정이 일치해야 한다.', '시간외명령서, 근무기록, 급여대장', 44],
+  ['임금', '가족수당과 기관 수당', '지급요건, 중복수령 확인, 변동신고와 환수 절차를 명확히 한다.', '가족수당 신청서, 확인서, 급여대장', 49],
+  ['임금', '임금명세서와 공제', '지급항목과 공제항목의 근거를 직원이 이해할 수 있게 명세한다.', '임금명세서, 공제동의서, 급여대장', 52],
+  ['근로시간', '법정근로시간과 소정근로시간', '계약상 근로시간과 실제 근무시간을 구분하고 일·주 단위로 관리한다.', '근로계약서, 출퇴근기록, 근무표', 56],
+  ['근로시간', '휴게시간의 실질 보장', '휴게시간에는 업무 지시나 대기가 없어야 하며 자유로운 이용이 가능해야 한다.', '근무표, 휴게운영 기준, 직원 안내', 59],
+  ['근로시간', '출장·교육·행사 시간 판단', '이동과 대기, 교육 및 행사 참여가 근로시간인지 구체적 지휘 여부로 판단한다.', '출장명령, 교육계획, 행사근무표', 62],
+  ['휴일', '주휴일과 공휴일 운영', '근무형태별 주휴일과 공휴일 근무 처리기준을 사전에 정한다.', '복무규정, 근무표, 휴일근무명령', 65],
+  ['연차', '연차휴가 발생과 산정', '입사일과 회계연도 기준의 차이, 중도입사·퇴사자의 일수를 정확히 계산한다.', '연차대장, 입사일 자료, 산정표', 68],
+  ['연차', '연차 사용촉진과 미사용수당', '법정 절차와 시기를 지킨 사용촉진 기록이 있어야 한다.', '사용촉진 통보, 연차대장, 수당정산', 72],
+  ['휴가', '병가·공가·특별휴가 적용', '법정휴가와 기관 약정휴가를 구분하고 증빙요건을 통일한다.', '복무규정, 휴가신청서, 증빙자료', 76],
+  ['퇴직', '사직서와 퇴직일 확정', '사직 의사, 수리 여부, 인수인계와 마지막 근무일을 명확히 남긴다.', '사직서, 퇴직기안, 인수인계서', 82],
+  ['퇴직', '퇴직금과 퇴직연금 정산', '계속근로기간과 평균임금, 적립액과 지급기한을 확인한다.', '퇴직연금 내역, 산정서, 지급자료', 86],
+  ['징계', '업무지도와 징계의 구분', '일상적 피드백과 공식 제재를 구분하고 사실과 개선기회를 기록한다.', '업무지도 기록, 인사규정, 경위서', 90],
+  ['징계', '징계사유와 소명 절차', '사유의 구체성, 비례성, 소명기회와 위원회 절차를 지켜야 한다.', '소명안내, 인사위원회 회의록, 통보서', 94],
+  ['해고', '해고의 정당한 이유와 서면통지', '해고 사유와 시기를 서면으로 통지하고 절차적 정당성을 확보한다.', '해고통지서, 조사자료, 회의록', 98],
+  ['인권', '직장 내 괴롭힘 판단', '우위성, 업무상 적정범위, 고통 또는 근무환경 악화를 종합해 판단한다.', '신고서, 사실확인서, 조사계획', 108],
+  ['인권', '괴롭힘 조사와 보호조치', '비밀유지, 분리조치, 공정한 조사와 신고자 불이익 금지를 지킨다.', '조사기록, 보호조치, 결과통보', 118],
+  ['모성보호', '출산·육아와 근로자 보호', '휴가·휴직·단축근무의 신청과 복귀, 불리한 처우 금지를 관리한다.', '신청서, 승인기안, 복귀계획', 128],
+  ['노사관계', '취업규칙 작성과 불이익 변경', '적용 인원과 신고의무, 직원 의견청취·동의 요건을 구분한다.', '취업규칙, 의견서, 신고자료', 140],
+  ['개인정보', '직원 개인정보와 CCTV', '수집 목적과 보유기간, 접근권한, 영상정보 처리기준을 명확히 한다.', '동의서, 처리방침, 권한목록', 154],
+  ['종합', '인사노무 사례 종합점검', '계약·임금·시간·휴가·징계의 연결관계를 실제 사례로 설명한다.', '30일 학습기록, 개선과제, 규정대조표', 170],
+])
+
+const stageThreeTopics = makeStageTopics(3, 'inspection', 61, [
+  ['시설운영', '법인·시설의 목적과 사업범위', '정관과 시설의 실제 사업이 허가받은 목적 범위 안에 있어야 한다.', '정관, 설치신고증, 사업계획서', 5],
+  ['시설운영', '기본재산과 보통재산 관리', '재산 구분과 처분·용도변경 승인 절차를 확인한다.', '재산대장, 이사회 회의록, 허가자료', 11],
+  ['시설운영', '정관 변경과 등기', '변경 승인, 등기, 보고가 정해진 기한과 절차에 맞아야 한다.', '정관, 변경허가, 등기부등본', 16],
+  ['시설운영', '임원 구성과 결격사유', '임원 선임요건과 특수관계, 결격사유 확인자료를 갖춘다.', '임원명부, 결격조회, 취임승낙서', 21],
+  ['시설운영', '이사회 소집과 의결', '소집통지, 의사정족수, 이해관계자 제외와 회의록을 확인한다.', '소집통지, 출석부, 이사회 회의록', 27],
+  ['시설운영', '운영위원회 구성과 보고', '위원 구성, 정기회의, 보고·심의사항과 결과 반영을 관리한다.', '위원명단, 회의록, 결과보고', 34],
+  ['시설운영', '시설장과 종사자 자격', '법정 자격과 결격사유, 겸직 여부를 임용 전에 확인한다.', '자격증, 경력증명, 결격조회', 41],
+  ['시설운영', '시설 설치·변경 신고', '명칭, 소재지, 정원과 주요 운영사항 변경을 적기에 신고한다.', '설치신고증, 변경신고, 수리통보', 48],
+  ['시설운영', '지도감독 자료 제출', '요청자료의 수치와 근거가 일치하고 제출본을 보관해야 한다.', '제출공문, 점검표, 제출자료 사본', 56],
+  ['시설운영', '위탁운영과 협약 준수', '위탁협약의 인력·예산·성과·보고 의무를 실제 운영과 대조한다.', '위탁협약서, 사업계획, 실적보고', 64],
+  ['종사자', '공개채용 점검사례', '공고기간, 게시처, 심사절차와 채점근거가 모두 남아야 한다.', '채용공고, 심사표, 결과공고', 72],
+  ['종사자', '근로계약과 인사기록 점검', '계약내용과 실제 근무조건, 인사기록이 일치해야 한다.', '근로계약서, 인사기록카드, 발령문', 74],
+  ['종사자', '경력인정과 호봉 점검', '인정 가능한 경력과 증빙, 승인된 호봉획정표를 대조한다.', '경력증명서, 호봉획정표, 승인기안', 76],
+  ['종사자', '인건비·수당 부적정 사례', '지급대상과 산정기준, 중복 또는 과다 지급 위험을 확인한다.', '급여대장, 수당신청서, 지급기준', 78],
+  ['종사자', '복무·출장·시간외 점검', '사전명령과 실제 수행, 결과보고, 지급내역이 연결되어야 한다.', '복무대장, 출장복명, 시간외 자료', 80],
+  ['종사자', '퇴직·보험·적립 점검', '입퇴사일과 보험 신고, 퇴직연금 적립·정산 자료를 맞춘다.', '보험신고, 퇴직정산, 적립내역', 82],
+  ['회계', '예산 편성과 승인', '세입·세출 예산, 추경, 이사회·운영위원회 절차를 지킨다.', '예산서, 회의록, 승인공문', 83],
+  ['회계', '수입·지출 결의와 증빙', '모든 거래는 결의서, 계약·견적, 영수증과 회계처리가 연결되어야 한다.', '수입지출결의서, 증빙철, 장부', 86],
+  ['회계', '보조금 목적 외 사용 방지', '재원별 목적과 집행기준을 구분하고 전용·변경승인을 확인한다.', '교부조건, 사업계획, 변경승인', 89],
+  ['회계', '카드·현금·계좌 관리', '법인카드와 통장, 현금 사용은 사적 사용 없이 대장과 일치해야 한다.', '카드대장, 통장, 현금출납부', 92],
+  ['회계', '계약과 비교견적', '계약방법과 견적, 검수, 대금지급 절차를 금액 기준에 맞게 적용한다.', '계약서, 견적서, 검수조서', 95],
+  ['회계', '결산과 잔액 반납', '결산 수치와 통장·장부 잔액을 맞추고 반납기한을 지킨다.', '결산서, 통장사본, 반납공문', 98],
+  ['후원금', '후원금 수입과 영수증', '후원자 정보와 입금액, 영수증 발급내역이 일치해야 한다.', '후원금대장, 영수증, 통장', 100],
+  ['후원금', '지정·비지정 후원금 사용', '후원 목적과 사용 제한, 비지정 후원금 기준을 구분한다.', '후원신청서, 사용내역, 결의서', 102],
+  ['후원금', '후원금 결과보고와 공개', '수입·사용결과 보고와 공개기한, 개인정보 비공개를 확인한다.', '결과보고, 공개화면, 발송자료', 105],
+  ['기능보강', '기능보강사업 집행 절차', '교부조건과 계약·공사·납품·검수 절차를 순서대로 관리한다.', '교부결정, 계약서, 검수조서', 107],
+  ['기능보강', '자산 취득과 물품관리', '취득 물품을 자산대장에 등록하고 표찰·재물조사를 실시한다.', '자산대장, 물품검수, 재물조사표', 110],
+  ['Q&A', '법인·시설운영 질의 적용', '사례 답변을 기관에 그대로 적용하지 않고 최신 법령과 사실관계를 대조한다.', '사례집, 기관 규정, 검토메모', 114],
+  ['Q&A', '종사자·회계 질의 적용', '반복 문의를 기관 공통 처리기준과 점검표로 바꾼다.', '질의회신, 업무기준, 자체점검표', 116],
+  ['종합', '90일 학습과 기관 개선계획', '세 교재의 기준과 사례를 규정 개정, 양식 보완, 담당자 과제로 전환한다.', '90일 학습기록, 개선계획, 담당·기한표', 118],
+])
+
+const stageOneTopics: Topic[] = stageOneSeeds.map(item => ({
+  ...item,
+  stage: 1,
+  guide: 'facility',
+  page: guidePageByDayPlaceholder(item.day),
+}))
+
+function guidePageByDayPlaceholder(day: number) {
+  const pages = [5, 14, 16, 22, 31, 36, 40, 51, 55, 58, 59, 60, 61, 65, 72, 77, 81, 89, 100, 103, 107, 130, 132, 136, 142, 145, 154, 158, 246, 256]
+  return pages[day - 1] || 1
+}
+
+const topics: Topic[] = [...stageOneTopics, ...stageTwoTopics, ...stageThreeTopics]
 
 const localGuidePdf = '/reference/2026-social-welfare-facility-guide.pdf'
 const localLaborGuidePdf = '/reference/social-welfare-center-hr-labor-guide-web.pdf'
@@ -516,26 +616,20 @@ function todayDateString() {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(new Date())
 }
 
-function todayTopicIndex() {
-  const start = new Date('2026-09-07T00:00:00+09:00')
-  const today = new Date(`${todayDateString()}T00:00:00+09:00`)
-  const diff = Math.max(0, Math.floor((today.getTime() - start.getTime()) / 86400000))
-  return diff % topics.length
-}
-
 function buildChapterSections(topic: Topic, material: Material): ChapterSection[] {
+  const primaryGuide = topic.stage === 1 ? '2026 사회복지시설 관리안내' : topic.stage === 2 ? '사회복지관 인사노무 길라잡이' : '2025 사회복지법인·시설 지도점검 사례집'
   return [
     {
       heading: '1. 오늘 원문 정독 범위',
-      body: `오늘은 사회복지시설 관리안내 전문에서 ${topic.area} 영역과 연결되는 부분을 먼저 읽는다. 원문을 읽을 때는 제목만 훑지 않고, “적용대상”, “기관이 해야 할 일”, “남겨야 할 증빙”, “지방자치단체 또는 지도점검에서 확인할 수 있는 내용”을 표시한다. 오늘 주제는 ${topic.title}이며, 원문을 읽으면서 ${topic.keyPoint}`,
+      body: `오늘은 ${primaryGuide} ${topic.page}쪽부터 ${topic.area} 영역과 연결되는 부분을 읽는다. 원문을 읽을 때는 제목만 훑지 않고, “적용대상”, “기관이 해야 할 일”, “남겨야 할 증빙”, “점검에서 확인할 내용”을 표시한다. 오늘 주제는 ${topic.title}이며, 원문을 읽으면서 ${topic.keyPoint}`,
     },
     {
       heading: '2. 원문을 읽은 뒤 이해할 핵심',
-      body: `${material.read.join(' ')} 사회복지시설 관리안내는 일반적인 노무 교재가 아니라 사회복지시설을 운영하는 기관이 따라야 할 행정적 기준에 가깝다. 따라서 원문을 읽을 때는 “좋은 지식”을 얻는 것보다 “우리 기관이 이 기준을 이미 지키고 있는가, 지키고 있다면 어떤 문서로 설명할 수 있는가, 부족하다면 누가 언제까지 보완해야 하는가”로 읽어야 학습효과가 생긴다.`,
+      body: `${material.read.join(' ')} ${primaryGuide}를 읽을 때는 “좋은 지식”을 얻는 것보다 “우리 기관이 이 기준을 이미 지키고 있는가, 어떤 문서로 설명할 수 있는가, 부족하다면 누가 언제까지 보완해야 하는가”로 읽어야 학습효과가 생긴다.`,
     },
     {
       heading: '3. 함께 확인할 보조자료',
-      body: `오늘 보조자료는 ${material.source}이다. 사회복지시설 관리안내를 기본 교재로 읽고, 법적 판단이 필요한 부분은 국가법령정보센터와 고용노동부 자료로 확인한다. 예를 들어 근로시간, 휴게, 연차, 임금, 퇴직, 직장 내 괴롭힘은 관리안내만으로 끝내기보다 근로기준법과 고용노동부 해석을 함께 확인해야 한다. 최신자료에서 변경사항이 보이면 기관 규정과 실제 결재양식이 여전히 맞는지도 같이 본다.`,
+      body: `오늘 자료는 ${material.source}이다. ${primaryGuide}를 주교재로 읽고, 법적 판단이 필요한 부분은 국가법령정보센터와 고용노동부 자료로 확인한다. 근로시간, 휴게, 연차, 임금, 퇴직, 직장 내 괴롭힘은 한 권의 설명만으로 확정하지 않는다. 최신자료에서 변경사항이 보이면 기관 규정과 실제 결재양식이 여전히 맞는지도 같이 본다.`,
     },
     {
       heading: '4. 사회복지관 업무에 적용하기',
@@ -553,10 +647,11 @@ function buildChapterSections(topic: Topic, material: Material): ChapterSection[
 }
 
 export default function HrLaborPage() {
-  const [topicIndex, setTopicIndex] = useState(todayTopicIndex())
+  const [topicIndex, setTopicIndex] = useState(0)
   const [activeGuide, setActiveGuide] = useState<'facility' | 'labor' | 'inspection'>('facility')
   const [records, setRecords] = useState<LearningRecord[]>([])
   const [latestRecords, setLatestRecords] = useState<LatestRecord[]>([])
+  const [completedDays, setCompletedDays] = useState<number[]>([])
   const [latestDraft, setLatestDraft] = useState({
     title: '',
     source: '',
@@ -574,26 +669,53 @@ export default function HrLaborPage() {
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) setRecords(JSON.parse(raw))
+    const savedRecords: LearningRecord[] = raw ? JSON.parse(raw) : []
+    setRecords(savedRecords)
     const latestRaw = localStorage.getItem(LATEST_KEY)
     if (latestRaw) setLatestRecords(JSON.parse(latestRaw))
+    const progressRaw = localStorage.getItem(PROGRESS_KEY)
+    if (progressRaw) {
+      const saved = JSON.parse(progressRaw) as { currentDay?: number; completedDays?: number[] }
+      const nextIndex = Math.min(Math.max((saved.currentDay || 1) - 1, 0), topics.length - 1)
+      setTopicIndex(nextIndex)
+      setCompletedDays(Array.isArray(saved.completedDays) ? saved.completedDays : [])
+      setActiveGuide(topics[nextIndex].guide)
+    } else {
+      const legacyCompleted = topics.filter(item => savedRecords.some(record => record.topic === item.title)).map(item => item.day)
+      setCompletedDays(legacyCompleted)
+    }
   }, [])
 
   const topic = topics[topicIndex]
-  const material = materialByArea[topic.area] ?? defaultMaterial
+  const baseMaterial = materialByArea[topic.area] ?? defaultMaterial
+  const material: Material = topic.stage === 1 ? baseMaterial : topic.stage === 2 ? {
+    ...baseMaterial,
+    source: `사회복지관 인사노무 길라잡이 p.${topic.page} / 최신 노동관계법령`,
+    href: localLaborGuidePdf,
+  } : {
+    source: `2025 사회복지법인·시설 지도점검 사례집 p.${topic.page} / 최신 법령·지침`,
+    href: localInspectionCasebookPdf,
+    read: [
+      topic.keyPoint,
+      '사례의 지적사항, 관련 규정, 처분 또는 개선내용을 구분하여 읽고 같은 위험이 우리 기관에 있는지 확인한다.',
+      '사례집은 참고자료이므로 실제 판단 전에는 2026년 관리안내와 현재 시행 중인 법령·지자체 기준을 다시 대조한다.',
+    ],
+    practice: `우리 기관의 ${topic.evidence} 중 하나를 열어 같은 누락이 있는지 확인하고, 발견하면 담당자와 보완기한을 기록한다.`,
+  }
   const chapterSections = buildChapterSections(topic, material)
-  const guidePage = guidePageByDay[topic.day] || 1
-  const laborGuidePage = laborGuidePageByDay[topic.day] || 1
+  const stageDay = ((topic.day - 1) % 30) + 1
+  const guidePage = topic.guide === 'facility' ? topic.page : guidePageByDay[stageDay] || 1
+  const laborGuidePage = topic.guide === 'labor' ? topic.page : laborGuidePageByDay[stageDay] || 1
   const activePdf = activeGuide === 'facility' ? localGuidePdf : activeGuide === 'labor' ? localLaborGuidePdf : localInspectionCasebookPdf
-  const activePage = activeGuide === 'facility' ? guidePage : activeGuide === 'labor' ? laborGuidePage : 1
+  const activePage = activeGuide === 'facility' ? guidePage : activeGuide === 'labor' ? laborGuidePage : topic.guide === 'inspection' ? topic.page : 1
   const activeTitle = activeGuide === 'facility' ? '2026 사회복지시설 관리안내' : activeGuide === 'labor' ? '사회복지관 인사노무 길라잡이' : '2025 사회복지법인·시설 지도점검 사례집'
   const activeSubtitle = activeGuide === 'facility' ? '공식 행정 기준' : activeGuide === 'labor' ? '한국사회복지관협회 노무자문 사례집' : '법인·시설 운영개선 지도점검 지적사례'
   const activePdfSrc = `${activePdf}#page=${activePage}`
   const activeBookmarks = activeGuide === 'facility' ? facilityGuideBookmarks : activeGuide === 'labor' ? laborGuideBookmarks : inspectionCasebookBookmarks
   const todayRecords = useMemo(() => records.filter(record => record.date === todayDateString()), [records])
   const todayLatestRecords = useMemo(() => latestRecords.filter(record => record.date === todayDateString()), [latestRecords])
-  const doneTopics = new Set(records.map(record => record.topic)).size
-  const progress = Math.round(doneTopics / topics.length * 100)
+  const progress = Math.round(completedDays.length / topics.length * 100)
+  const isTopicCompleted = completedDays.includes(topic.day)
   const areaCounts = useMemo(() => {
     const counts = new Map<string, number>()
     records.forEach(record => {
@@ -618,6 +740,26 @@ export default function HrLaborPage() {
     setRecords(next)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
     setDraft({ learned: '', institutionRule: '', workApply: '', question: '' })
+  }
+
+  const saveProgress = (nextCompletedDays: number[], currentDay: number) => {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify({ completedDays: nextCompletedDays, currentDay }))
+  }
+
+  const selectTopic = (index: number) => {
+    const safeIndex = Math.min(Math.max(index, 0), topics.length - 1)
+    setTopicIndex(safeIndex)
+    setActiveGuide(topics[safeIndex].guide)
+    saveProgress(completedDays, topics[safeIndex].day)
+  }
+
+  const completeAndContinue = () => {
+    const nextCompletedDays = isTopicCompleted ? completedDays : [...completedDays, topic.day].sort((a, b) => a - b)
+    const nextIndex = Math.min(topicIndex + 1, topics.length - 1)
+    setCompletedDays(nextCompletedDays)
+    setTopicIndex(nextIndex)
+    setActiveGuide(topics[nextIndex].guide)
+    saveProgress(nextCompletedDays, topics[nextIndex].day)
   }
 
   const removeRecord = (id: string) => {
@@ -688,26 +830,35 @@ export default function HrLaborPage() {
 
       <div className="mx-auto max-w-7xl px-5 py-7">
         <section className="mb-5 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-violet-950 p-7 text-white shadow-xl">
-          <p className="text-sm font-bold text-violet-200">사회복지시설 관리안내 전문 학습</p>
-          <h2 className="mt-2 text-3xl font-black tracking-tight">매일 한 소단원씩 정독하고<br />관리자의 판단 언어로 바꾸기</h2>
+          <p className="text-sm font-bold text-violet-200">90일 · 3단계 관리자 학습</p>
+          <h2 className="mt-2 text-3xl font-black tracking-tight">세 권의 기준자료를 끝까지 읽고<br />관리자의 판단 언어로 바꾸기</h2>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
-            사회복지시설 관리안내를 기본 교재로 삼고, 필요한 경우 근로기준법·고용노동부 자료·우리 기관 규정을 연결합니다. 목표는 전문을 외우는 것이 아니라 원문을 읽고, 찾고, 설명하고, 실제 결재와 직원관리에 적용하는 힘을 기르는 것입니다.
+            날짜가 지나도 진도는 저절로 넘어가지 않습니다. 원문을 읽고 기관 자료를 확인한 뒤 학습 완료를 눌러야 다음 일차로 이동합니다.
           </p>
         </section>
 
         <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 bg-slate-50 p-5">
             <p className="text-xs font-black tracking-[.18em] text-slate-500">TEXTBOOK ROADMAP</p>
-            <h2 className="mt-1 text-xl font-black">사회복지시설 관리안내 전문 학습 로드맵</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-600">링크는 원문 확인용이고, 학습의 기준은 관리안내 전문입니다. 매일 원문 한 범위를 읽고 아래 챕터로 해석합니다.</p>
+            <h2 className="mt-1 text-xl font-black">90일 교재 학습 로드맵</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">각 단계를 누르면 해당 교재의 첫 미완료 학습으로 이동합니다. 학습기록은 세 단계 전체에 누적됩니다.</p>
           </div>
-          <div className="grid gap-3 p-5 md:grid-cols-5">
+          <div className="grid gap-3 p-5 md:grid-cols-3">
             {guideRoadmap.map(item => (
-              <article key={item.phase} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <button
+                key={item.phase}
+                onClick={() => {
+                  const stageTopics = topics.filter(topicItem => topicItem.stage === item.stage)
+                  const target = stageTopics.find(topicItem => !completedDays.includes(topicItem.day)) || stageTopics[0]
+                  selectTopic(target.day - 1)
+                }}
+                className={`rounded-xl border p-4 text-left transition ${topic.stage === item.stage ? 'border-violet-400 bg-violet-50' : 'border-slate-200 bg-slate-50 hover:border-violet-300'}`}
+              >
                 <p className="text-xs font-black text-violet-700">{item.phase}</p>
                 <h3 className="mt-1 text-sm font-black text-slate-950">{item.title}</h3>
                 <p className="mt-2 text-xs font-semibold leading-5 text-slate-600">{item.detail}</p>
-              </article>
+                <p className="mt-3 text-xs font-black text-emerald-700">완료 {completedDays.filter(day => day > (item.stage - 1) * 30 && day <= item.stage * 30).length}/30</p>
+              </button>
             ))}
           </div>
         </section>
@@ -739,21 +890,40 @@ export default function HrLaborPage() {
 
         <section className="mb-5 grid gap-3 md:grid-cols-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black text-slate-500">30일 과정</p>
-            <p className="mt-2 text-3xl font-black">{topic.day}<span className="text-base text-slate-400">/30</span></p>
+            <p className="text-xs font-black text-slate-500">현재 교재</p>
+            <p className="mt-2 text-xl font-black">{topic.stage}단계</p>
           </div>
           <div className="rounded-2xl border border-violet-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black text-violet-700">학습 진행률</p>
-            <p className="mt-2 text-3xl font-black">{progress}%</p>
+            <p className="text-xs font-black text-violet-700">현재 학습</p>
+            <p className="mt-2 text-3xl font-black">{topic.day}<span className="text-base text-slate-400">/90</span></p>
           </div>
           <div className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black text-emerald-700">누적 기록</p>
-            <p className="mt-2 text-3xl font-black">{records.length}</p>
+            <p className="text-xs font-black text-emerald-700">학습 진행률</p>
+            <p className="mt-2 text-3xl font-black">{progress}%</p>
           </div>
           <div className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black text-amber-700">오늘 기록</p>
-            <p className="mt-2 text-3xl font-black">{todayRecords.length}</p>
+            <p className="text-xs font-black text-amber-700">완료한 학습</p>
+            <p className="mt-2 text-3xl font-black">{completedDays.length}<span className="text-base text-slate-400">개</span></p>
           </div>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-violet-200 bg-white shadow-sm">
+          <div className="grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <p className="text-xs font-black tracking-[.18em] text-violet-700">MY LEARNING STEP</p>
+              <h2 className="mt-1 text-xl font-black">{topic.day}일차 · {topic.title}</h2>
+              <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">
+                {isTopicCompleted ? '완료한 학습입니다. 다시 읽거나 다음 일차로 이동할 수 있습니다.' : '원문과 오늘 챕터를 읽고 기록을 남긴 뒤 완료 버튼을 누르세요.'}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => selectTopic(topicIndex - 1)} disabled={topicIndex === 0} className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-700 disabled:cursor-not-allowed disabled:opacity-40">이전 학습</button>
+              <button onClick={completeAndContinue} className="rounded-lg bg-violet-800 px-5 py-3 text-sm font-black text-white">
+                {topic.day === 90 ? '90일 과정 완료' : isTopicCompleted ? '다음 학습으로' : '학습 완료하고 다음으로'}
+              </button>
+            </div>
+          </div>
+          <div className="h-2 bg-slate-100"><div className="h-full bg-violet-600 transition-all" style={{ width: `${progress}%` }} /></div>
         </section>
 
         <section className="mb-5 grid gap-4 lg:grid-cols-[1fr_420px]">
@@ -932,11 +1102,12 @@ export default function HrLaborPage() {
 
         <section className="mb-5 grid gap-4 lg:grid-cols-[1fr_360px]">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-black">30일 학습 커리큘럼</h2>
+            <h2 className="text-lg font-black">{topic.stage}단계 학습목록</h2>
+            <p className="mt-1 text-sm font-semibold text-slate-600">현재 교재의 30개 주제입니다. 완료 표시는 직접 완료한 학습에만 붙습니다.</p>
             <div className="mt-4 grid gap-2 md:grid-cols-2">
-              {topics.map((item, index) => (
-                <button key={item.day} onClick={() => setTopicIndex(index)} className={`rounded-xl border p-3 text-left text-sm transition ${index === topicIndex ? 'border-violet-400 bg-violet-50' : 'border-slate-200 bg-slate-50 hover:border-violet-200'}`}>
-                  <p className="text-xs font-black text-slate-500">{item.day}일차 · {item.area}</p>
+              {topics.filter(item => item.stage === topic.stage).map(item => (
+                <button key={item.day} onClick={() => selectTopic(item.day - 1)} className={`rounded-xl border p-3 text-left text-sm transition ${item.day === topic.day ? 'border-violet-400 bg-violet-50' : 'border-slate-200 bg-slate-50 hover:border-violet-200'}`}>
+                  <p className="flex items-center justify-between gap-2 text-xs font-black text-slate-500"><span>{item.day}일차 · {item.area}</span><span className={completedDays.includes(item.day) ? 'text-emerald-700' : 'text-slate-400'}>{completedDays.includes(item.day) ? '완료' : '미완료'}</span></p>
                   <p className="mt-1 font-black text-slate-900">{item.title}</p>
                 </button>
               ))}
