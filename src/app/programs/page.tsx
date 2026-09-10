@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import Nav from '@/components/Nav'
+import ProgramOperations from '@/components/ProgramOperations'
 import { supabase } from '@/lib/supabase'
 
 type ProgramStatus = '진행중' | '점검필요' | '완료' | '보류'
@@ -707,6 +708,8 @@ export default function ProgramsPage() {
             <p className="mt-2 text-3xl font-black text-indigo-900">{programLogs.length}</p>
           </div>
         </section>
+
+        <ProgramOperations user={user} programId={selectedProgram.id} />
 
         <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 bg-slate-50 p-5">
