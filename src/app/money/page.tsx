@@ -7,6 +7,7 @@ import type { User } from '@supabase/supabase-js'
 
 type LeakType = '커피충전' | '배달음식' | '가족·관계' | '업무도구' | '생활구매' | '기타'
 type PayMethod = '현대 M카드' | '신한카드' | '롯데카드' | '국민카드' | '현금' | '체크카드' | '계좌이체'
+type SpendGroup = '현금' | '계좌이체' | '신용카드'
 type SubscriptionNeed = '필수' | '유지검토' | '해지예정' | '해지후보'
 
 type MonthRecord = {
@@ -132,6 +133,12 @@ function won(value: number) {
 
 function parseAmount(value: string) {
   return Number(value.replaceAll(',', '').trim()) || 0
+}
+
+function spendGroup(method: PayMethod): SpendGroup {
+  if (cardMethods.includes(method)) return '신용카드'
+  if (method === '현금') return '현금'
+  return '계좌이체'
 }
 
 function monthOffset(month: string, offset: number) {
@@ -399,14 +406,21 @@ export default function MoneyPage() {
   const selectedLeaks = useMemo(() => leaks.filter(item => item.date === selectedDate), [leaks, selectedDate])
   const calendarDates = useMemo(() => calendarDays(visibleMonth), [visibleMonth])
   const dailyTotals = useMemo(() => {
-    return currentLeaks.reduce<Record<string, number>>((totals, item) => {
-      totals[item.date] = (totals[item.date] || 0) + item.amount
+    return currentLeaks.reduce<Record<string, Record<'total' | SpendGroup, number>>>((totals, item) => {
+      totals[item.date] ??= { total: 0, 현금: 0, 계좌이체: 0, 신용카드: 0 }
+      totals[item.date].total += item.amount
+      totals[item.date][spendGroup(item.method)] += item.amount
       return totals
     }, {})
   }, [currentLeaks])
   const leakTotal = currentLeaks.reduce((sum, item) => sum + item.amount, 0)
   const todayTotal = todayLeaks.reduce((sum, item) => sum + item.amount, 0)
   const selectedTotal = selectedLeaks.reduce((sum, item) => sum + item.amount, 0)
+  const selectedGroupTotals = useMemo(() => ({
+    현금: selectedLeaks.filter(item => spendGroup(item.method) === '현금').reduce((sum, item) => sum + item.amount, 0),
+    계좌이체: selectedLeaks.filter(item => spendGroup(item.method) === '계좌이체').reduce((sum, item) => sum + item.amount, 0),
+    신용카드: selectedLeaks.filter(item => spendGroup(item.method) === '신용카드').reduce((sum, item) => sum + item.amount, 0),
+  }), [selectedLeaks])
   const spentDays = Object.keys(dailyTotals).length
   const averageDailySpend = spentDays ? leakTotal / spentDays : 0
   const typeTotals = leakTypes.map(type => ({
@@ -975,53 +989,84 @@ export default function MoneyPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-100 text-center text-xs font-black text-slate-500">
-            {['일', '월', '화', '수', '목', '금', '토'].map(day => <div key={day} className="py-2">{day}</div>)}
-          </div>
-          <div className="grid grid-cols-7">
-            {calendarDates.map((date, index) => {
-              const total = date ? dailyTotals[date] || 0 : 0
-              const isSelected = date === selectedDate
-              const isToday = date === today()
-              return (
-                <button
-                  key={date || `blank-${index}`}
-                  disabled={!date}
-                  onClick={() => date && setSelectedDate(date)}
-                  className={`min-h-24 border-b border-r border-slate-100 p-2 text-left transition ${isSelected ? 'bg-emerald-50 ring-2 ring-inset ring-emerald-500' : 'bg-white hover:bg-slate-50'} ${!date ? 'cursor-default bg-slate-50' : ''}`}
-                >
-                  {date ? (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <span className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-black ${isToday ? 'bg-slate-950 text-white' : 'text-slate-700'}`}>{Number(date.slice(-2))}</span>
-                        {total > 0 ? <span className="rounded-full bg-amber-100 px-2 py-1 text-[11px] font-black text-amber-800">{currentLeaks.filter(item => item.date === date).length}건</span> : null}
-                      </div>
-                      <p className={`mt-3 text-sm font-black ${total > 0 ? 'text-slate-950' : 'text-slate-300'}`}>{total > 0 ? won(total) : '-'}</p>
-                    </>
-                  ) : null}
-                </button>
-              )
-            })}
+          <div className="overflow-x-auto">
+            <div className="min-w-[760px]">
+              <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-100 text-center text-xs font-black text-slate-500">
+                {['일', '월', '화', '수', '목', '금', '토'].map(day => <div key={day} className="py-2">{day}</div>)}
+              </div>
+              <div className="grid grid-cols-7">
+                {calendarDates.map((date, index) => {
+                  const totals = date ? dailyTotals[date] : undefined
+                  const total = totals?.total || 0
+                  const isSelected = date === selectedDate
+                  const isToday = date === today()
+                  return (
+                    <button
+                      key={date || `blank-${index}`}
+                      disabled={!date}
+                      onClick={() => date && setSelectedDate(date)}
+                      className={`min-h-36 border-b border-r border-slate-100 p-2 text-left transition ${isSelected ? 'bg-emerald-50 ring-2 ring-inset ring-emerald-500' : 'bg-white hover:bg-slate-50'} ${!date ? 'cursor-default bg-slate-50' : ''}`}
+                    >
+                      {date ? (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-black ${isToday ? 'bg-slate-950 text-white' : 'text-slate-700'}`}>{Number(date.slice(-2))}</span>
+                            {total > 0 ? <span className="rounded-full bg-amber-100 px-2 py-1 text-[11px] font-black text-amber-800">{currentLeaks.filter(item => item.date === date).length}건</span> : null}
+                          </div>
+                          <p className={`mt-2 text-sm font-black ${total > 0 ? 'text-slate-950' : 'text-slate-300'}`}>전체 {total > 0 ? won(total) : '-'}</p>
+                          {total > 0 ? (
+                            <div className="mt-1 grid gap-0.5 text-[11px] font-bold leading-4 text-slate-600">
+                              <p className="flex justify-between gap-1"><span>현금</span><span className="text-right">{won(totals?.현금 || 0)}</span></p>
+                              <p className="flex justify-between gap-1"><span>이체</span><span className="text-right">{won(totals?.계좌이체 || 0)}</span></p>
+                              <p className="flex justify-between gap-1"><span>카드</span><span className="text-right">{won(totals?.신용카드 || 0)}</span></p>
+                            </div>
+                          ) : null}
+                        </>
+                      ) : null}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </div>
 
           <div className="grid gap-4 p-5 lg:grid-cols-[220px_1fr]">
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
               <p className="text-xs font-black text-emerald-700">선택한 날짜</p>
               <p className="mt-2 text-xl font-black text-emerald-950">{selectedDate}</p>
-              <p className="mt-1 text-sm font-black text-emerald-800">{won(selectedTotal)}</p>
+              <p className="mt-1 text-sm font-black text-emerald-800">전체 {won(selectedTotal)}</p>
+              <div className="mt-3 grid gap-1 border-t border-emerald-200 pt-3 text-xs font-bold text-emerald-900">
+                <p className="flex justify-between"><span>현금</span><span>{won(selectedGroupTotals.현금)}</span></p>
+                <p className="flex justify-between"><span>계좌이체</span><span>{won(selectedGroupTotals.계좌이체)}</span></p>
+                <p className="flex justify-between"><span>신용카드</span><span>{won(selectedGroupTotals.신용카드)}</span></p>
+              </div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               {selectedLeaks.length ? (
-                <div className="grid gap-2">
-                  {selectedLeaks.map(item => (
-                    <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2">
-                      <div>
-                        <p className="text-sm font-black text-slate-900">{item.title}</p>
-                        <p className="text-xs font-bold text-slate-500">{item.method || '결제수단 미기록'} · {item.type} · {item.keep ? '유지 가능' : '조정 후보'}</p>
-                      </div>
-                      <p className="text-sm font-black text-slate-900">{won(item.amount)}</p>
-                    </div>
-                  ))}
+                <div className="grid gap-4">
+                  {(['현금', '계좌이체', '신용카드'] as SpendGroup[]).map(group => {
+                    const groupItems = selectedLeaks.filter(item => spendGroup(item.method) === group)
+                    if (!groupItems.length) return null
+                    return (
+                      <section key={group}>
+                        <div className="mb-2 flex items-center justify-between border-b border-slate-200 pb-2">
+                          <h3 className="text-sm font-black text-slate-800">{group}{group === '계좌이체' ? ' · 체크카드' : ''}</h3>
+                          <p className="text-sm font-black text-slate-950">{won(selectedGroupTotals[group])}</p>
+                        </div>
+                        <div className="grid gap-2">
+                          {groupItems.map(item => (
+                            <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2">
+                              <div>
+                                <p className="text-sm font-black text-slate-900">{item.title}</p>
+                                <p className="text-xs font-bold text-slate-500">{item.method || '결제수단 미기록'} · {item.type} · {item.keep ? '유지 가능' : '조정 후보'}</p>
+                              </div>
+                              <p className="text-sm font-black text-slate-900">{won(item.amount)}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    )
+                  })}
                 </div>
               ) : (
                 <p className="py-8 text-center text-sm font-bold text-slate-500">선택한 날짜에 기록된 지출이 없습니다.</p>
