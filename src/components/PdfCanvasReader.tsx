@@ -25,6 +25,7 @@ export default function PdfCanvasReader({ fileUrl, initialPage, scale, title, bo
   const [fitToWidth, setFitToWidth] = useState(true)
   const [viewerWidth, setViewerWidth] = useState(0)
   const [spreadSide, setSpreadSide] = useState<SpreadSide>(spreadView ? 'right' : 'full')
+  const [isCurrentSpread, setIsCurrentSpread] = useState(false)
 
   useEffect(() => {
     setCurrentPage(initialPage)
@@ -57,6 +58,40 @@ export default function PdfCanvasReader({ fileUrl, initialPage, scale, title, bo
     const nextPage = Math.min(Math.max(1, Math.round(page)), maxPage)
     setCurrentPage(nextPage)
     setPageDraft(`${nextPage}`)
+  }
+
+  const goToPreviousPage = () => {
+    if (spreadView && isCurrentSpread && spreadSide === 'right') {
+      setSpreadSide('left')
+      setFitToWidth(true)
+      return
+    }
+    setCurrentPage(page => {
+      const previousPage = Math.max(1, page - 1)
+      setPageDraft(`${previousPage}`)
+      return previousPage
+    })
+    if (spreadView && spreadSide !== 'full') {
+      setSpreadSide('right')
+      setFitToWidth(true)
+    }
+  }
+
+  const goToNextPage = () => {
+    if (spreadView && isCurrentSpread && spreadSide === 'left') {
+      setSpreadSide('right')
+      setFitToWidth(true)
+      return
+    }
+    setCurrentPage(page => {
+      const nextPage = pageCount ? Math.min(pageCount, page + 1) : page + 1
+      setPageDraft(`${nextPage}`)
+      return nextPage
+    })
+    if (spreadView && spreadSide !== 'full') {
+      setSpreadSide('left')
+      setFitToWidth(true)
+    }
   }
 
   useEffect(() => {
@@ -92,7 +127,9 @@ export default function PdfCanvasReader({ fileUrl, initialPage, scale, title, bo
         if (cancelled) return
 
         const baseViewport = page.getViewport({ scale: 1 })
-        const cropSpread = spreadView && spreadSide !== 'full' && baseViewport.width > baseViewport.height
+        const pageIsSpread = baseViewport.width > baseViewport.height
+        setIsCurrentSpread(pageIsSpread)
+        const cropSpread = spreadView && spreadSide !== 'full' && pageIsSpread
         const visibleBaseWidth = cropSpread ? baseViewport.width / 2 : baseViewport.width
         const usableWidth = Math.max(320, (viewerRef.current?.clientWidth || viewerWidth || 900) - 42)
         const scaleToUse = fitToWidth ? Math.min(Math.max(usableWidth / visibleBaseWidth, 0.6), 2.4) : effectiveZoom
@@ -165,7 +202,7 @@ export default function PdfCanvasReader({ fileUrl, initialPage, scale, title, bo
         <div>
           <p className="text-sm font-black text-slate-900">{title}</p>
           <p className="mt-1 text-xs font-bold text-slate-500">
-            {status}{pageCount ? ` · ${currentPage}/${pageCount}쪽` : ''}
+            {status}{pageCount ? ` · ${currentPage}/${pageCount}쪽` : ''}{spreadView && isCurrentSpread && spreadSide !== 'full' ? ` · ${spreadSide === 'left' ? '왼쪽 면' : '오른쪽 면'}` : ''}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -226,21 +263,13 @@ export default function PdfCanvasReader({ fileUrl, initialPage, scale, title, bo
             확대
           </button>
           <button
-            onClick={() => setCurrentPage(page => {
-              const nextPage = Math.max(1, page - 1)
-              setPageDraft(`${nextPage}`)
-              return nextPage
-            })}
+            onClick={goToPreviousPage}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700"
           >
             이전쪽
           </button>
           <button
-            onClick={() => setCurrentPage(page => {
-              const nextPage = pageCount ? Math.min(pageCount, page + 1) : page + 1
-              setPageDraft(`${nextPage}`)
-              return nextPage
-            })}
+            onClick={goToNextPage}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700"
           >
             다음쪽
