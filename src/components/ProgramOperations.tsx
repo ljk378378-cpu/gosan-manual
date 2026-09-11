@@ -265,8 +265,9 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
   }
 
   function addParticipantChange() {
-    if (!changeDraft.dueDate) {
-      setMessage('변경 반영 마감일을 입력해주세요.')
+    const count = Number.parseInt(changeDraft.count, 10)
+    if (!Number.isFinite(count) || count < 1) {
+      setMessage('변경 인원은 1명 이상으로 입력해주세요.')
       return
     }
     const task: ProgramTask = {
@@ -274,7 +275,7 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
       programId,
       category: '참여자변경',
       sessionLabel: '참여자 관리',
-      title: `참여자 변경 ${changeDraft.count || '1'}명 반영·보고`,
+      title: `참여자 변경 ${count}명 반영·보고`,
       dueDate: changeDraft.dueDate,
       status: '미완료',
       owner: '',
@@ -285,7 +286,7 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
     }
     saveTask(task)
     setChangeDraft({ count: '1', dueDate: '', reason: '참여중단·교체' })
-    setMessage('참여자 변경업무를 등록했습니다.')
+    setMessage(`참여자 변경업무 ${count}명을 ${changeDraft.dueDate ? `${changeDraft.dueDate} 마감` : '날짜 미정'}으로 등록했습니다.`)
   }
 
   async function uploadAllToCloud() {
@@ -367,8 +368,9 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
           <div className="mt-4 grid gap-3">
             <input type="number" min="1" value={changeDraft.count} onChange={event => setChangeDraft(previous => ({ ...previous, count: event.target.value }))} placeholder="변경 인원" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold" />
             <select value={changeDraft.reason} onChange={event => setChangeDraft(previous => ({ ...previous, reason: event.target.value }))} className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold"><option>참여중단·교체</option><option>신규선정</option><option>인원변경 보고</option><option>기타 변경</option></select>
-            <label className="text-xs font-black text-slate-600">변경 반영·보고 마감<input type="date" value={changeDraft.dueDate} onChange={event => setChangeDraft(previous => ({ ...previous, dueDate: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold" /></label>
+            <label className="text-xs font-black text-slate-600">변경 반영·보고 마감 <span className="font-bold text-slate-400">(선택)</span><input type="date" value={changeDraft.dueDate} onChange={event => setChangeDraft(previous => ({ ...previous, dueDate: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold" /></label>
             <button onClick={addParticipantChange} className="rounded-lg bg-indigo-700 px-4 py-3 text-sm font-black text-white">변경업무 등록</button>
+            {message ? <p className="rounded-lg bg-indigo-50 px-3 py-2 text-xs font-black leading-5 text-indigo-900">{message}</p> : null}
           </div>
         </article>
       </section>
