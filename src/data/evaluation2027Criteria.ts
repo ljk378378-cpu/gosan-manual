@@ -1,7 +1,7 @@
 export const CRITERIA_SOURCE = {
-  title: '2027년 사회복지관 평가지표 설명회 자료집(게시용)',
-  url: 'https://drive.google.com/file/d/1L-nud1ce1vWEzK7N4aYtdk7AS7O24fps/view',
-  status: '정오표 반영본 대조 전',
+  title: '2027년 사회복지관 평가지표(인쇄본·정오 반영본)',
+  url: '/reference/2027-social-welfare-center-evaluation-corrected.pdf',
+  status: '정오 반영 원문 탑재 완료',
 } as const
 
 export const evaluationCriteriaDetails: Record<string, string> = {

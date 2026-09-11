@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import PdfCanvasReader from '@/components/PdfCanvasReader'
 import { CRITERIA_SOURCE, evaluationCriteriaDetails } from '@/data/evaluation2027Criteria'
 import { supabase, type Evaluation2027AiTask, type Evaluation2027Item } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
@@ -22,6 +23,25 @@ type Indicator = {
 const YEARS: Year[] = [2024, 2025, 2026]
 const STATUSES: Status[] = ['미착수', '확인 중', '충족', '부분 충족', '미충족', '보완 완료']
 const STORAGE_KEY = 'cheonggok-evaluation-2027-status-v1'
+const EVALUATION_SOURCE_PDF = '/reference/2027-social-welfare-center-evaluation-corrected.pdf'
+const evaluationPdfPageByCode: Record<string, number> = {
+  A1:17, A2:21, A3:27,
+  B1:31, B2:34, B3:35, B4:37, B5:38, B6:41, B7:43, B8:45, B9:47, B10:50, B11:52,
+  'C1-1':57, 'C1-2':59, 'C1-3':61, 'C1-4':63,
+  'C2-1':66, 'C2-2':68, 'C2-3':69,
+  'C3-1':70, 'C3-2':72, 'C3-3':74, C4:77, C5:79, C6:80,
+  D1:83, D2:85, D3:88, D4:89, D5:90,
+  E1:95, E2:97, E3:98, E4:98,
+}
+const evaluationPdfBookmarks = [
+  { label:'처음·평가 개요', page:1 },
+  { label:'주요 지침', page:5 },
+  { label:'A. 시설 및 환경', page:17 },
+  { label:'B. 재정 및 조직운영', page:31 },
+  { label:'C. 프로그램 및 서비스', page:57 },
+  { label:'D. 이용자의 권리', page:83 },
+  { label:'E. 시설운영전반', page:95 },
+]
 
 const indicators: Indicator[] = [
   { code:'A1', title:'시설 안전관리 노력', area:'A. 시설 및 환경', priority:false, applies:YEARS, requirement:'시설 특성에 맞는 안전관리계획, 자체 모의훈련, 예방교육, 안전점검 후 조치, 소방시설 의무 준수를 확인한다.', evidence:['안전관리계획서','연 2회 모의훈련','예방교육','안전점검·조치','소방시설 자료'], nextAction:'연도별 안전계획과 훈련 결과보고를 우선 수집한다.' },
@@ -640,6 +660,8 @@ export default function Evaluation2027Page() {
       (viewFilter === '메모있음' && (!!notes[item.code]?.trim() || !!details[item.code]?.missing?.trim()))
     return matchesView && (area === '전체' || item.area === area) && text.includes(query.toLowerCase())
   })
+  const evaluationPdfPage = evaluationPdfPageByCode[learningCode] ?? 1
+  const selectedSourceIndicator = indicatorByCode(learningCode)
 
   return (
     <main className="min-h-screen bg-[#f3f6f4] text-slate-900">
@@ -665,7 +687,33 @@ export default function Evaluation2027Page() {
         </div>
 
         <section className={`mb-5 rounded-xl border p-4 ${sourceReady ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
-          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center"><div><p className="font-black">기준자료 상태: {sourceReady ? '정오표 반영본 확인 표시' : CRITERIA_SOURCE.status}</p><p className="mt-1 text-sm text-slate-600">현재 상세기준: {CRITERIA_SOURCE.title} · 원문 읽기 전용</p><p className="mt-1 text-xs text-slate-500">최종 기준 예정: evaluation_2027/source/2027년_사회복지관_평가지표_260608_정오표반영.pdf</p></div><button onClick={()=>setSourceReady(v=>!v)} className="rounded-lg border border-current px-3 py-2 text-xs font-bold">{sourceReady ? '확인 표시 취소' : '정오표 파일 동기화 후 확인'}</button></div>
+          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center"><div><p className="font-black">기준자료 상태: {sourceReady ? '정오 반영 원문 확인 완료' : CRITERIA_SOURCE.status}</p><p className="mt-1 text-sm text-slate-600">현재 기준자료: {CRITERIA_SOURCE.title} · 읽기 전용</p><p className="mt-1 text-xs text-slate-500">대시보드 기록과 원문이 다를 경우 정오 반영 원문을 우선하여 확인합니다.</p></div><button onClick={()=>setSourceReady(v=>!v)} className="rounded-lg border border-current px-3 py-2 text-xs font-bold">{sourceReady ? '확인 표시 취소' : '원문 확인 완료 표시'}</button></div>
+        </section>
+
+        <section className="no-print relative left-1/2 mb-5 w-screen -translate-x-1/2 overflow-hidden border-y border-slate-200 bg-white shadow-sm">
+          <div className="mx-auto max-w-[1640px] px-6 py-6">
+            <div className="mb-4 flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 lg:flex-row lg:items-center">
+              <div>
+                <p className="text-xs font-black tracking-[.18em] text-slate-500">ORIGINAL EVALUATION GUIDE</p>
+                <h2 className="mt-1 text-xl font-black">2027년 사회복지관 평가지표 원문 정독</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-600">지표를 선택하면 정오 반영 원문의 해당 시작 쪽으로 바로 이동합니다. 원문은 읽기 전용이며 수정하지 않습니다.</p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <select value={learningCode} onChange={event => setLearningCode(event.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-emerald-700">
+                  {learningOrder.map(code => {
+                    const item = indicatorByCode(code)
+                    return <option key={code} value={code}>{item.code} {item.title}</option>
+                  })}
+                </select>
+                <a href={`${EVALUATION_SOURCE_PDF}#page=${evaluationPdfPage}`} target="_blank" rel="noreferrer" className="rounded-lg bg-emerald-700 px-4 py-2 text-center text-sm font-black text-white">큰 새창으로 읽기</a>
+              </div>
+            </div>
+            <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <p className="text-sm font-black text-emerald-950">{selectedSourceIndicator.code} {selectedSourceIndicator.title}</p>
+              <p className="mt-1 text-xs font-bold text-emerald-700">원문 시작 p.{evaluationPdfPage} · {selectedSourceIndicator.area} · 화면맞춤·확대·쪽이동 가능</p>
+            </div>
+            <PdfCanvasReader fileUrl={EVALUATION_SOURCE_PDF} initialPage={evaluationPdfPage} scale={1.55} title={CRITERIA_SOURCE.title} bookmarks={evaluationPdfBookmarks} />
+          </div>
         </section>
 
         <section className="no-print mb-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">

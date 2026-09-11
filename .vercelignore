@@ -17,6 +17,7 @@ public/reference/*.pdf
 !public/reference/2026-social-welfare-facility-guide.pdf
 !public/reference/social-welfare-center-hr-labor-guide-web.pdf
 !public/reference/2025-social-welfare-inspection-casebook.pdf
+!public/reference/2027-social-welfare-center-evaluation-corrected.pdf
 
 # Keep build and package configuration.
 !package.json
