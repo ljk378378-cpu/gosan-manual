@@ -98,12 +98,12 @@ const lifeCouponFindings = [
   },
   {
     title: '성과측정',
-    desc: '계획서에는 HQ-25 사전·사후검사가 2026년 5월과 11월로 적혀 있으나, 해당 폴더는 현재 비어 있어 우선 보완 확인이 필요합니다.',
+    desc: '계획서에는 HQ-25 사전·사후검사가 2026년 5월과 11월로 적혀 있으나, 사전검사 실시 근거와 결과자료가 확인되지 않아 우선 보완이 필요합니다.',
     tone: 'border-amber-200 bg-amber-50 text-amber-950',
   },
   {
     title: '쿠폰 핵심증빙',
-    desc: '계획서상 청년안심쿠폰은 총 13회 발행, 40,000원 단가, 발행대장·실시기안·결과보고서가 모니터링 자료로 제시됩니다.',
+    desc: '청년안심쿠폰 발행대장 PDF는 1~6회기까지 확인되었습니다. 계획 13회 대비 7회가 남아 있으며, 회기별 정산·결제증빙 연결 여부를 추가 확인해야 합니다.',
     tone: 'border-indigo-200 bg-indigo-50 text-indigo-950',
   },
   {
@@ -118,57 +118,57 @@ const lifeCouponSessionChecks = [
     program: '청년안심쿠폰',
     round: '1회기',
     folder: '발행대장',
-    evidence: '발행대장 HWP 확인',
-    status: 'PDF 변환필요',
-    note: '1인 40,000원 지급 기준과 수령 확인을 개인정보 가림 처리 후 점검해야 합니다.',
+    evidence: '발행대장 PDF 확인',
+    status: '내용확인',
+    note: '10명, 총 400,000원 발행 내역 확인. 정산·결제증빙 연결 여부를 추가 확인합니다.',
   },
   {
     program: '청년안심쿠폰',
     round: '2회기',
     folder: '발행대장',
-    evidence: '발행대장 HWP 확인',
-    status: 'PDF 변환필요',
-    note: '작은만남 2회기 일지에는 10명 전원 쿠폰 지급 내용이 확인됩니다.',
+    evidence: '발행대장 PDF 확인',
+    status: '내용확인',
+    note: '10명, 총 400,000원 발행 내역 확인. 작은만남 2회기 일지의 활동일자와 발행일자 차이를 확인합니다.',
   },
   {
     program: '청년안심쿠폰',
     round: '3회기',
     folder: '발행대장',
-    evidence: '발행대장 HWP 확인',
-    status: 'PDF 변환필요',
-    note: '작은만남 3회기 기록지와 사진 폴더가 있어 활동 증빙 연결 가능성이 높습니다.',
+    evidence: '발행대장 PDF 확인',
+    status: '내용확인',
+    note: '10명, 총 400,000원 발행 내역 확인. 작은만남 3회기 활동일지와 연결됩니다.',
   },
   {
     program: '청년안심쿠폰',
     round: '4회기',
     folder: '발행대장/활동일지',
-    evidence: '발행대장 HWP 중복 위치 확인',
-    status: '정리필요',
-    note: '발행대장 4회기가 발행대장 폴더와 활동일지 폴더 양쪽에 보여 중복 여부 확인이 필요합니다.',
+    evidence: '발행대장 PDF 확인',
+    status: '내용확인',
+    note: '10명, 총 400,000원 발행 내역 확인. 참여자 변경 1명에 대한 종료·신규 선정 서류를 연결합니다.',
   },
   {
     program: '청년안심쿠폰',
     round: '5회기',
     folder: '발행대장',
-    evidence: '발행대장 HWP 확인',
-    status: 'PDF 변환필요',
-    note: '회기별 결과보고서와 지급대장 연결 여부를 확인해야 합니다.',
+    evidence: '발행대장 PDF 확인',
+    status: '내용확인',
+    note: '10명, 총 400,000원 발행 내역 확인. 회기별 정산·결제증빙 연결 여부를 확인합니다.',
   },
   {
     program: '청년안심쿠폰',
     round: '6회기',
     folder: '발행대장',
-    evidence: '발행대장 HWP 확인',
-    status: 'PDF 변환필요',
-    note: '회기별 결과보고서와 지급대장 연결 여부를 확인해야 합니다.',
+    evidence: '발행대장 PDF 확인',
+    status: '내용확인',
+    note: '10명, 총 400,000원 발행 내역 확인. 하루 한 걸음 3회기 실시 근거와 연결됩니다.',
   },
   {
     program: '작은만남',
     round: '1회기',
     folder: '활동일지',
-    evidence: '일지 HWP 확인',
-    status: 'PDF 변환필요',
-    note: '활동일지 원문이 HWP라 분석 전 PDF/HWPX 변환이 필요합니다.',
+    evidence: '활동일지 PDF 확인',
+    status: '내용확인',
+    note: '1회기 활동내용과 참여기록이 확인됩니다. 사진·참여 확인자료의 보관 여부를 함께 점검합니다.',
   },
   {
     program: '작은만남',
@@ -176,43 +176,48 @@ const lifeCouponSessionChecks = [
     folder: '활동일지',
     evidence: '일지 PDF 확인',
     status: '내용확인',
-    note: '2026.6.18.~6.19. 영화감상, 기록지 작성, 10명 전원 미션 완료, 2회차 쿠폰 지급 확인.',
+    note: '활동일지에는 2026.6.18.~6.19.로 기록되어 있으나 발행대장에는 6.17.로 적혀 있어 일자를 확인합니다.',
   },
   {
     program: '작은만남',
     round: '3회기',
     folder: '활동일지',
-    evidence: '일지 HWP, 사진 5장, 참여기록지 PDF 확인',
-    status: '부분확인',
-    note: '참여기록지는 확인됨. 회기 일지 본문은 HWP라 PDF 변환 후 최종 확인 필요.',
+    evidence: '활동일지 PDF 확인',
+    status: '내용확인',
+    note: '실제 활동일은 2026.7.15.~7.16.로 확인됩니다. 계획 일정과 달라 결과보고에는 실제 일자를 사용합니다.',
   },
   {
     program: '하루 한 걸음',
     round: '1회기',
     folder: '활동일지',
-    evidence: '일지 HWP 확인',
-    status: 'PDF 변환필요',
-    note: '파일 용량이 커서 사진 포함 가능성이 높습니다. 개인정보와 사진 초상권 확인 필요.',
+    evidence: '활동일지 PDF 확인',
+    status: '내용확인',
+    note: '1회기 활동내용이 확인됩니다. 참여 확인자료와 사진은 비공개 원본에서만 관리합니다.',
   },
   {
     program: '하루 한 걸음',
     round: '2회기',
     folder: '활동일지',
-    evidence: '일지 HWP 확인',
-    status: 'PDF 변환필요',
-    note: '파일 용량이 커서 사진 포함 가능성이 높습니다. 개인정보와 사진 초상권 확인 필요.',
+    evidence: '활동일지 PDF 확인',
+    status: '내용확인',
+    note: '2회기 활동내용이 확인됩니다. 참여 확인자료와 사진은 비공개 원본에서만 관리합니다.',
+  },
+  {
+    program: '하루 한 걸음',
+    round: '3회기',
+    folder: '활동일지/발행대장',
+    evidence: '실시 사실 확인·정확한 일지 미확인',
+    status: '보완필요',
+    note: '2026.8.21.~8.28. 실제 실시와 쿠폰 발행은 확인되나, 폴더의 PDF가 다른 활동 일지로 확인되어 올바른 3회기 일지가 필요합니다.',
   },
 ]
 
-const hwpConversionQueue = [
-  '청년생활쿠폰지원사업 지방보조금 교부신청서.hwp',
-  '생활쿠폰 신청서(최종).hwp',
-  '■리제너레이션 참여자 명단1.hwp',
-  '청년안심쿠폰 지원 실시건.hwp',
-  '청년안심쿠폰 발행대장(1~6회기).hwp',
-  '청년안심쿠폰 작은만남 일지(1·3회기).hwp',
-  '청년안심쿠폰 하루한걸음 일지(1·2회기).hwp',
-  '청년안심쿠폰 사진 .hwp',
+const evidenceCompletionQueue = [
+  'HQ-25 사전검사 실시기안·검사지·결과분석 자료 확인',
+  '참여자 변경 1명: 기존 참여자 종료 근거와 신규 참여자 선정·동의·사전검사 서류 연결',
+  '하루 한 걸음 3회기: 실제 활동과 일치하는 활동일지 PDF 추가',
+  '청년안심쿠폰 1~6회기: 회기별 정산·결제증빙 연결 확인',
+  '현재까지의 사업 진행 결과와 향후 일정에 대한 중간보고 작성',
 ]
 
 const baseProgram: ProgramRecord = {
@@ -224,9 +229,9 @@ const baseProgram: ProgramRecord = {
   period: '2026년',
   status: '진행중',
   priority: '높음',
-  risk: '사전·사후척도검사 폴더가 비어 있고, 쿠폰 발행대장·신청서·명단은 HWP 중심이라 PDF/HWPX 변환본 확보가 필요함.',
-  nextAction: 'HQ-25 사전검사 자료, 회기별 발행대장 PDF, 실시기안·결과보고서 연결 여부를 우선 확인한다.',
-  memo: 'PDF 확인 결과 사업목적, 대상, 모집, 선정, 쿠폰지원, 작은만남, 하루한걸음 구조는 확인됨.',
+  risk: 'HQ-25 사전검사 자료, 참여자 변경 1명에 대한 행정서류, 하루 한 걸음 3회기 활동일지가 확인되지 않음.',
+  nextAction: '사전검사·참여자 변경·하루 한 걸음 3회기 서류를 우선 보완하고, 쿠폰 1~6회기 정산증빙을 연결한다.',
+  memo: 'PDF 확인 결과 청년안심쿠폰 6/13회, 작은만남 3/7회, 하루 한 걸음 3/6회가 실제 진행됨.',
 }
 
 const baseDocuments: ProgramDocument[] = [
@@ -295,30 +300,30 @@ const baseDocuments: ProgramDocument[] = [
     programId: 'life-coupon-2026',
     stage: '3. 청년안심쿠폰지원',
     title: '실시건 / 발행대장 / 현수막',
-    status: '확인필요',
+    status: '검토중',
     driveUrl: 'https://drive.google.com/drive/folders/1K6D6RKvSoOor-5GeNuv8qVPeEH9voRYV',
     fileType: '폴더',
-    note: '계획서상 총 13회 발행과 발행대장이 핵심 증빙. 발행대장은 HWP 중심이므로 PDF 변환 후 회기별 금액·대상·수령 확인 필요.',
+    note: '총 13회 중 1~6회기 발행대장 PDF 확인. 각 회기 10명, 총 400,000원 발행. 정산·결제증빙 연결 확인 필요.',
   },
   {
     id: 'doc-small-meeting',
     programId: 'life-coupon-2026',
     stage: "4. 관계형성·정서지원 '작은만남'",
     title: '실시건 / 활동일지',
-    status: '확인필요',
+    status: '검토중',
     driveUrl: 'https://drive.google.com/drive/folders/1YHAmBANvLU--vvYuUS4gF9E2qBvQx5n9',
     fileType: '폴더',
-    note: '회기별 실시기안, 활동일지, 사진, 참여자 확인.',
+    note: '계획 7회 중 1~3회기 활동일지 PDF 확인. 2·3회기는 계획·발행대장과 실제 활동일자 차이 확인 필요.',
   },
   {
     id: 'doc-one-step',
     programId: 'life-coupon-2026',
     stage: "5. 일상회복 '하루 한 걸음'",
     title: '실시건 / 활동일지 / 하루한걸음_미션수행일지.docx',
-    status: '확인필요',
+    status: '보완필요',
     driveUrl: 'https://drive.google.com/drive/folders/153e6XlYSOTfIUuesluDL5KjCMkkn-RYf',
     fileType: '폴더+DOCX',
-    note: '미션수행일지 양식 있음. 수행 여부와 회수자료 확인.',
+    note: '계획 6회 중 실제 3회 진행. 1~2회기 활동일지 PDF 확인, 3회기는 실제 활동과 일치하는 활동일지 PDF 보완 필요.',
   },
   {
     id: 'doc-presentation',
@@ -353,13 +358,28 @@ function getDocumentActionUrl(document: ProgramDocument) {
 
 function mergeProgramsWithBase(records: ProgramRecord[]) {
   const merged = new Map<string, ProgramRecord>([[baseProgram.id, baseProgram]])
-  records.forEach(program => merged.set(program.id, program))
+  records.forEach(program => {
+    merged.set(program.id, program.id === baseProgram.id
+      ? {
+          ...program,
+          risk: baseProgram.risk,
+          nextAction: baseProgram.nextAction,
+          memo: baseProgram.memo,
+        }
+      : program)
+  })
   return Array.from(merged.values())
 }
 
 function mergeDocumentsWithBase(records: ProgramDocument[]) {
   const merged = new Map(baseDocuments.map(document => [document.id, document]))
-  records.forEach(document => merged.set(document.id, document))
+  records.forEach(document => {
+    const baseDocument = baseDocuments.find(item => item.id === document.id)
+    const useVerifiedBase = ['doc-coupon-issue', 'doc-small-meeting', 'doc-one-step'].includes(document.id)
+    merged.set(document.id, baseDocument && useVerifiedBase
+      ? { ...document, status: baseDocument.status, note: baseDocument.note }
+      : document)
+  })
   return Array.from(merged.values())
 }
 
@@ -838,13 +858,13 @@ export default function ProgramsPage() {
 
         <section className="mb-5">
           <article className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black tracking-[.18em] text-amber-700">HWP TO PDF</p>
-            <h2 className="mt-1 text-xl font-black text-amber-950">PDF 변환 대기 목록</h2>
+            <p className="text-xs font-black tracking-[.18em] text-amber-700">EVIDENCE CHECK</p>
+            <h2 className="mt-1 text-xl font-black text-amber-950">서류·증빙 보완 목록</h2>
             <p className="mt-2 text-sm font-bold leading-6 text-amber-900">
-              HWP 원본은 보존하고, 같은 폴더에 PDF 또는 HWPX 변환본을 추가하면 이후 AI 분석 정확도가 올라갑니다.
+              발행대장 1~6회기, 작은만남 1~3회기, 하루 한 걸음 1~2회기의 PDF 변환본은 확인되었습니다. 아래는 추가로 갖춰야 할 항목입니다.
             </p>
             <div className="mt-4 grid gap-2">
-              {hwpConversionQueue.map(item => (
+              {evidenceCompletionQueue.map(item => (
                 <div key={item} className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold leading-6 text-amber-950">
                   {item}
                 </div>
