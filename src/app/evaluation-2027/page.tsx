@@ -712,7 +712,7 @@ export default function Evaluation2027Page() {
               <p className="text-sm font-black text-emerald-950">{selectedSourceIndicator.code} {selectedSourceIndicator.title}</p>
               <p className="mt-1 text-xs font-bold text-emerald-700">원문 시작 p.{evaluationPdfPage} · {selectedSourceIndicator.area} · 화면맞춤·확대·쪽이동 가능</p>
             </div>
-            <PdfCanvasReader fileUrl={EVALUATION_SOURCE_PDF} initialPage={evaluationPdfPage} scale={1.55} title={CRITERIA_SOURCE.title} bookmarks={evaluationPdfBookmarks} />
+            <PdfCanvasReader fileUrl={EVALUATION_SOURCE_PDF} initialPage={evaluationPdfPage} scale={1.55} title={CRITERIA_SOURCE.title} bookmarks={evaluationPdfBookmarks} keyboardNavigation />
           </div>
         </section>
 

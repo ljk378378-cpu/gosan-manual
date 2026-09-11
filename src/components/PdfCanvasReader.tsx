@@ -9,11 +9,12 @@ type PdfCanvasReaderProps = {
   title: string
   bookmarks?: { label: string; page: number }[]
   spreadView?: boolean
+  keyboardNavigation?: boolean
 }
 
 type SpreadSide = 'full' | 'left' | 'right'
 
-export default function PdfCanvasReader({ fileUrl, initialPage, scale, title, bookmarks = [], spreadView = false }: PdfCanvasReaderProps) {
+export default function PdfCanvasReader({ fileUrl, initialPage, scale, title, bookmarks = [], spreadView = false, keyboardNavigation = false }: PdfCanvasReaderProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const viewerRef = useRef<HTMLDivElement | null>(null)
   const [currentPage, setCurrentPage] = useState(initialPage)
@@ -93,6 +94,25 @@ export default function PdfCanvasReader({ fileUrl, initialPage, scale, title, bo
       setFitToWidth(true)
     }
   }
+
+  useEffect(() => {
+    if (!keyboardNavigation) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+
+      const target = event.target
+      if (target instanceof HTMLElement && target.closest('input, textarea, select, button, a, [contenteditable="true"]')) return
+
+      event.preventDefault()
+      if (event.key === 'ArrowLeft') goToPreviousPage()
+      else goToNextPage()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -202,7 +222,7 @@ export default function PdfCanvasReader({ fileUrl, initialPage, scale, title, bo
         <div>
           <p className="text-sm font-black text-slate-900">{title}</p>
           <p className="mt-1 text-xs font-bold text-slate-500">
-            {status}{pageCount ? ` · ${currentPage}/${pageCount}쪽` : ''}{spreadView && isCurrentSpread && spreadSide !== 'full' ? ` · ${spreadSide === 'left' ? '왼쪽 면' : '오른쪽 면'}` : ''}
+            {status}{pageCount ? ` · ${currentPage}/${pageCount}쪽` : ''}{spreadView && isCurrentSpread && spreadSide !== 'full' ? ` · ${spreadSide === 'left' ? '왼쪽 면' : '오른쪽 면'}` : ''}{keyboardNavigation ? ' · 키보드 ← 이전 / → 다음' : ''}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
