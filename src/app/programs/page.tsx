@@ -90,6 +90,9 @@ const logsKey = 'cheonggok-work-program-logs-v1'
 const statusOptions: DocumentStatus[] = ['확인필요', '초안', '검토중', '보완필요', '확인완료']
 const logTypes: LogType[] = ['진행', '결정', '이슈', '회의', '증빙확인']
 
+const getDocumentStatusLabel = (status: DocumentStatus) =>
+  status === '보완필요' ? '자료추가필요' : status
+
 const lifeCouponFindings = [
   {
     title: '사업 구조',
@@ -98,7 +101,7 @@ const lifeCouponFindings = [
   },
   {
     title: '성과측정',
-    desc: '계획서에는 HQ-25 사전·사후검사가 2026년 5월과 11월로 적혀 있으나, 사전검사 실시 근거와 결과자료가 확인되지 않아 우선 보완이 필요합니다.',
+    desc: '계획서에는 HQ-25 사전·사후검사가 2026년 5월과 11월로 적혀 있으나, 사전검사 실시 근거와 결과자료가 확인되지 않아 우선 자료 확인이 필요합니다.',
     tone: 'border-amber-200 bg-amber-50 text-amber-950',
   },
   {
@@ -207,7 +210,7 @@ const lifeCouponSessionChecks = [
     round: '3회기',
     folder: '활동일지/발행대장',
     evidence: '실시 사실 확인·정확한 일지 미확인',
-    status: '보완필요',
+    status: '자료추가필요',
     note: '미션지는 우리 동네 명소 방문·둘러보기·사진기록으로 확인됩니다. 실제 실시와 쿠폰 발행은 확인되나 완성된 3회기 활동일지 PDF는 추가해야 합니다.',
   },
 ]
@@ -230,7 +233,7 @@ const baseProgram: ProgramRecord = {
   status: '진행중',
   priority: '높음',
   risk: 'HQ-25 사전검사 자료, 참여자 변경 1명에 대한 행정서류, 하루 한 걸음 3회기 활동일지가 확인되지 않음.',
-  nextAction: '사전검사·참여자 변경·하루 한 걸음 3회기 서류를 우선 보완하고, 쿠폰 1~6회기 정산증빙을 연결한다.',
+  nextAction: '사전검사·참여자 변경·하루 한 걸음 3회기 서류를 우선 확보하고, 쿠폰 1~6회기 정산증빙을 연결한다.',
   memo: 'PDF 확인 결과 청년안심쿠폰 6/13회, 작은만남 3/7회, 하루 한 걸음 3/6회가 실제 진행됨.',
 }
 
@@ -293,7 +296,7 @@ const baseDocuments: ProgramDocument[] = [
     status: '보완필요',
     driveUrl: 'https://drive.google.com/drive/folders/1-YPDHdQUkFueZsWl_wdAtpGB3Kgbg9Aq',
     fileType: '빈 폴더',
-    note: '계획서상 HQ-25 사전·사후 각 1회, 10명, 결과분석보고서가 모니터링 자료임. 현재 폴더가 비어 있어 최우선 보완 필요.',
+    note: '계획서상 HQ-25 사전·사후 각 1회, 10명, 결과분석보고서가 모니터링 자료임. 현재 폴더가 비어 있어 최우선 자료 확인 필요.',
   },
   {
     id: 'doc-coupon-issue',
@@ -323,7 +326,7 @@ const baseDocuments: ProgramDocument[] = [
     status: '보완필요',
     driveUrl: 'https://drive.google.com/drive/folders/153e6XlYSOTfIUuesluDL5KjCMkkn-RYf',
     fileType: '폴더+DOCX',
-    note: '계획 6회 중 실제 3회 진행. 1~2회기 활동일지 PDF 확인, 3회기는 실제 활동과 일치하는 활동일지 PDF 보완 필요.',
+    note: '계획 6회 중 실제 3회 진행. 1~2회기 활동일지 PDF 확인, 3회기는 실제 활동과 일치하는 활동일지 PDF 추가 필요.',
   },
   {
     id: 'doc-presentation',
@@ -720,7 +723,7 @@ export default function ProgramsPage() {
             <p className="mt-2 text-3xl font-black text-slate-950">{completeCount}</p>
           </div>
           <div className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black text-amber-700">확인·보완 필요</p>
+            <p className="text-xs font-black text-amber-700">확인·자료 추가 필요</p>
             <p className="mt-2 text-3xl font-black text-amber-900">{riskCount}</p>
           </div>
           <div className="rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm">
@@ -859,7 +862,7 @@ export default function ProgramsPage() {
         <section className="mb-5">
           <article className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black tracking-[.18em] text-amber-700">EVIDENCE CHECK</p>
-            <h2 className="mt-1 text-xl font-black text-amber-950">서류·증빙 보완 목록</h2>
+            <h2 className="mt-1 text-xl font-black text-amber-950">서류·증빙 추가 확인 목록</h2>
             <p className="mt-2 text-sm font-bold leading-6 text-amber-900">
               발행대장 1~6회기, 작은만남 1~3회기, 하루 한 걸음 1~2회기의 PDF 변환본은 확인되었습니다. 아래는 추가로 갖춰야 할 항목입니다.
             </p>
@@ -903,7 +906,9 @@ export default function ProgramsPage() {
                   onChange={event => updateDocument(document.id, { status: event.target.value as DocumentStatus })}
                   className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-black outline-none focus:border-teal-700"
                 >
-                  {statusOptions.map(status => <option key={status}>{status}</option>)}
+                  {statusOptions.map(status => (
+                    <option key={status} value={status}>{getDocumentStatusLabel(status)}</option>
+                  ))}
                 </select>
                 <a href={getDocumentActionUrl(document)} target="_blank" rel="noreferrer" className="rounded-lg border border-teal-300 bg-white px-4 py-3 text-center text-sm font-black text-teal-800">
                   {isHwpDocument(document) ? 'HWP 내려받기' : '자료 열기'}
@@ -933,7 +938,7 @@ export default function ProgramsPage() {
           <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-100 bg-slate-50 p-5">
               <h2 className="text-xl font-black">최근 진행 기록</h2>
-              <p className="mt-1 text-sm font-bold text-slate-600">회의, 결정, 보완요청, 증빙 확인을 시간순으로 남깁니다.</p>
+              <p className="mt-1 text-sm font-bold text-slate-600">회의, 결정, 자료확인요청, 증빙 확인을 시간순으로 남깁니다.</p>
             </div>
             <div className="divide-y divide-slate-100">
               {programLogs.length ? programLogs.map(log => (
