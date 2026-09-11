@@ -132,7 +132,8 @@ function won(value: number) {
 }
 
 function parseAmount(value: string) {
-  return Number(value.replaceAll(',', '').trim()) || 0
+  const normalized = value.normalize('NFKC').replaceAll(',', '').replace(/[^0-9.-]/g, '').trim()
+  return Number(normalized) || 0
 }
 
 function spendGroup(method: PayMethod): SpendGroup {
@@ -176,6 +177,7 @@ export default function MoneyPage() {
   const [selectedDate, setSelectedDate] = useState(today())
   const [editingSubscriptionId, setEditingSubscriptionId] = useState('')
   const [transferNotice, setTransferNotice] = useState('')
+  const [leakError, setLeakError] = useState('')
   const [monthDraft, setMonthDraft] = useState({
     month: currentMonth(),
     income: '',
@@ -539,7 +541,14 @@ export default function MoneyPage() {
 
   const addLeak = () => {
     const amount = parseAmount(leakDraft.amount)
-    if (!amount || !leakDraft.title.trim()) return
+    if (!amount) {
+      setLeakError('금액을 숫자로 입력해 주세요.')
+      return
+    }
+    if (!leakDraft.title.trim()) {
+      setLeakError('어디에 썼는지 입력해 주세요.')
+      return
+    }
     const record: LeakRecord = {
       id: `${Date.now()}`,
       date: leakDraft.date || today(),
@@ -552,6 +561,7 @@ export default function MoneyPage() {
     }
     saveLeaks([record, ...leaks].slice(0, 500))
     saveCloudSpend(record)
+    setLeakError('')
     setSelectedDate(record.date)
     setMonthDraft(previous => ({ ...previous, month: record.date.slice(0, 7) }))
     setLeakDraft({ date: today(), type: '커피충전', method: '현대 M카드', amount: '', title: '', reason: '', keep: false })
@@ -1126,6 +1136,7 @@ export default function MoneyPage() {
                 <input type="checkbox" checked={leakDraft.keep} onChange={event => setLeakDraft(previous => ({ ...previous, keep: event.target.checked }))} />
                 이 지출은 유지해도 되는 지출임
               </label>
+              {leakError && <p className="text-sm font-bold text-red-700 md:col-span-2">{leakError}</p>}
               <button onClick={addLeak} className="rounded-lg bg-emerald-700 px-4 py-3 text-sm font-black text-white md:col-span-2">오늘 지출 저장</button>
             </div>
 
