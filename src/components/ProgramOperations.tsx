@@ -96,7 +96,7 @@ const remainingSessionPlan = [
     activity: '취미공유 1: 그림 또는 보드게임',
     method: '그림그리기 또는 보드게임 중 부담이 적은 활동을 선택해 수행하고 사진과 짧은 소감을 남김. 집단 참여가 어려우면 개별 수행을 허용함.',
     preparation: '선택형 미션안내, 미션수행일지, 사진기록, 쿠폰 발행대장',
-    scheduleStatus: '실제 운영 반영안',
+    scheduleStatus: '계획 내 순서 조정',
   },
   {
     id: 'small-4',
@@ -108,7 +108,7 @@ const remainingSessionPlan = [
     activity: '마음나눔 2: 감정카드로 요즘 마음 표현하기',
     method: '감정카드 한 장을 고르고 선택한 이유와 최근의 마음을 짧게 나눔. 말하기가 부담되면 글 또는 1:1 방식으로 참여함.',
     preparation: '감정카드, 짧은 기록지, 참여확인, 운영일지, 쿠폰 발행대장',
-    scheduleStatus: '보완 일정안',
+    scheduleStatus: '계획 내 순서 조정',
   },
   {
     id: 'small-5',
@@ -120,7 +120,7 @@ const remainingSessionPlan = [
     activity: '마음나눔 3: 가치카드로 나에게 중요한 것 찾기',
     method: '가치카드에서 현재 중요하게 생각하는 것을 선택하고, 지키고 싶은 작은 일상 한 가지를 정함. 집단·개별 방식을 병행함.',
     preparation: '가치카드, 작은 실천 기록지, 참여확인, 운영일지, 쿠폰 발행대장',
-    scheduleStatus: '보완 일정안',
+    scheduleStatus: '계획 내 순서 조정',
   },
   {
     id: 'small-6',
@@ -132,7 +132,7 @@ const remainingSessionPlan = [
     activity: '기관 자원봉사 체험 1회',
     method: '승인된 실시기안에 따라 복지관 프로그램에서 가능한 역할을 정해 자원봉사 체험을 진행함.',
     preparation: '봉사활동 협의자료, 참여확인, 운영일지, 쿠폰 발행대장',
-    scheduleStatus: '실제 운영 반영안',
+    scheduleStatus: '계획 내 순서 조정',
   },
   {
     id: 'step-5',
@@ -144,7 +144,7 @@ const remainingSessionPlan = [
     activity: '취미공유: 자유 주제 단문 쓰기',
     method: '승인된 실시기안에 따라 자유 주제로 짧은 글을 작성하고 수행 소감을 기록함.',
     preparation: '미션수행일지, 글쓰기 기록, 쿠폰 발행대장',
-    scheduleStatus: '실제 운영 반영안',
+    scheduleStatus: '계획 내 순서 조정',
   },
   {
     id: 'small-7',
@@ -156,7 +156,7 @@ const remainingSessionPlan = [
     activity: '기관 자원봉사 체험 2회',
     method: '승인된 실시기안에 따라 복지관 프로그램 자원봉사 체험을 진행하고 활동 경험을 나눔.',
     preparation: '봉사활동 협의자료, 참여확인, 운영일지, 사후 HQ-25, 쿠폰 발행대장',
-    scheduleStatus: '실제 운영 반영안',
+    scheduleStatus: '계획 내 순서 조정',
   },
   {
     id: 'step-6',
@@ -168,7 +168,7 @@ const remainingSessionPlan = [
     activity: '1:1 산책동행',
     method: '승인된 실시기안에 따라 가족·지인과 동네 한 바퀴를 걷고 사진기록과 연간 소감을 남김.',
     preparation: '미션수행일지, 사진기록, 연간소감, 만족도조사, 쿠폰 발행대장',
-    scheduleStatus: '실제 운영 반영안',
+    scheduleStatus: '계획 내 순서 조정',
   },
 ]
 
@@ -177,8 +177,8 @@ const participantNotice = `[생활쿠폰지원사업 9~11월 일정 안내]
 안녕하세요. 남은 작은만남과 하루 한 걸음 일정을 안내드립니다.
 
 9월 16일~17일  하루 한 걸음 4회기(취미공유)
-9월 21일~22일  작은만남 4회기(보완 일정안)
-10월 8일~9일  작은만남 5회기(보완 일정안)
+9월 21일~22일  작은만남 4회기
+10월 8일~9일  작은만남 5회기
 10월 22일~23일  작은만남 6회기(자원봉사 체험)
 10월 28일~30일  하루 한 걸음 5회기(글쓰기)
 11월 19일~20일  작은만남 7회기(자원봉사 체험)
@@ -187,7 +187,7 @@ const participantNotice = `[생활쿠폰지원사업 9~11월 일정 안내]
 회기별 자세한 활동방법과 제출기한은 시작 전에 다시 안내드리겠습니다. 참여가 어려운 일정이 있으면 담당자에게 미리 알려주시기 바랍니다.
 
 ※ 9월 24일~26일 추석 연휴에는 프로그램을 진행하지 않습니다.
-※ 작은만남 4·5회기 보완 일정은 내부 확정 후 최종 안내드리겠습니다.`
+※ 위 일정은 연간 계획에 포함된 활동의 실행 순서를 조정한 것으로, 내부 확정 후 최종 안내드리겠습니다.`
 
 function normalizePlannedTask(task: ProgramTask) {
   if (!task.id.startsWith('life-coupon-plan-')) return task
@@ -200,7 +200,7 @@ function normalizePlannedTask(task: ProgramTask) {
     sessionLabel: item.program,
     title: item.activity,
     dueDate: item.dueDate,
-    note: `원기안 ${item.approvedDateLabel} · 운영 ${item.dateLabel}(${item.scheduleStatus}) · ${item.method} 준비: ${item.preparation}`,
+    note: `최초 계획 ${item.approvedDateLabel} · 조정 일정 ${item.dateLabel}(${item.scheduleStatus}) · ${item.method} 준비: ${item.preparation}`,
   }
 }
 
@@ -414,14 +414,14 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
       programId,
       category: '일정변경',
       sessionLabel: '작은만남 4·5회기',
-      title: '실제 운영변경 반영 및 보완 일정 내부보고·확정',
+      title: '연간 활동 순서 변경 반영·확정',
       dueDate: '2026-09-14',
       status: '미완료',
       owner: '',
       evidenceRequired: true,
       evidenceConfirmed: false,
       completedAt: '',
-      note: '일지상 영화모임은 작은만남 2회기, 독서모임은 3회기에 이미 실시했습니다. 원기안과 달라진 순서를 반영하고, 미실시 회기는 추석 연휴 9.24.~26.을 제외한 보완 일정으로 내부 확정합니다.',
+      note: '영화모임과 독서모임을 계획보다 먼저 실시했으므로 연간 활동의 총량과 내용은 유지하고 이후 회기 순서만 조정합니다. 추석 연휴 9.24.~26.에는 프로그램을 배치하지 않습니다.',
     }
     const plannedTasks: ProgramTask[] = remainingSessionPlan.map(item => ({
       id: `life-coupon-plan-${item.id}`,
@@ -435,14 +435,14 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
       evidenceRequired: true,
       evidenceConfirmed: false,
       completedAt: '',
-      note: `원기안 ${item.approvedDateLabel} · 운영 ${item.dateLabel}(${item.scheduleStatus}) · ${item.method} 준비: ${item.preparation}`,
+      note: `최초 계획 ${item.approvedDateLabel} · 조정 일정 ${item.dateLabel}(${item.scheduleStatus}) · ${item.method} 준비: ${item.preparation}`,
     }))
     const tasksToSave = [scheduleReviewTask, ...plannedTasks]
     const planIds = new Set(tasksToSave.map(task => task.id))
     const next = [...tasks.filter(task => !planIds.has(task.id)), ...tasksToSave]
     saveLocal(next)
     if (user) Promise.all(tasksToSave.map(saveCloud))
-    setMessage('일정 변경 확인 1건과 원기안 기반 남은 회기 7건을 사업 알림에 반영했습니다.')
+    setMessage('활동 순서 변경 확인 1건과 조정된 남은 회기 7건을 사업 알림에 반영했습니다.')
   }
 
   async function copyParticipantNotice() {
@@ -544,10 +544,10 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
         <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 p-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-black tracking-[.18em] text-slate-500">REMAINING SCHEDULE</p>
-            <h2 className="mt-1 text-xl font-black">실제 일지 기준 남은 회기와 보완 일정안</h2>
+            <h2 className="mt-1 text-xl font-black">실제 진행을 반영한 남은 회기 순서</h2>
             <p className="mt-2 text-sm font-bold leading-6 text-slate-600">최초 계획안의 총 활동구성은 유지하되, 실제로 앞당겨 실시한 영화·독서·마을탐방을 제외하고 남은 활동을 다시 배치했습니다.</p>
           </div>
-          <button onClick={addRemainingSchedule} className="shrink-0 rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">수정 일정안 업무에 반영</button>
+          <button onClick={addRemainingSchedule} className="shrink-0 rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">조정된 순서 업무에 반영</button>
         </div>
         <div className="mx-5 mt-5 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm font-bold leading-6 text-amber-950">
           <p className="font-black">일정 검토 결과</p>
@@ -575,7 +575,7 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
                     <p className="text-xs font-black text-teal-800">{item.dateLabel}</p>
                     <p className="mt-1 text-sm font-black text-slate-950">{item.program}</p>
                     <p className="mt-1 text-xs font-bold leading-5 text-slate-600">{item.activity}</p>
-                    <p className="mt-2 text-xs font-black text-slate-500">{item.scheduleStatus} · 원기안 {item.approvedDateLabel}</p>
+                    <p className="mt-2 text-xs font-black text-slate-500">{item.scheduleStatus} · 최초 계획 {item.approvedDateLabel}</p>
                   </div>
                 ))}
                 {month === '11월' ? <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-3"><p className="text-xs font-black text-indigo-800">11.27.(금)</p><p className="mt-1 text-sm font-black">HQ-25 사후검사·만족도조사</p><p className="mt-1 text-xs font-bold leading-5 text-slate-600">성과자료 회수 및 누락 확인</p></div> : null}
@@ -594,7 +594,7 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
         <div className="overflow-x-auto">
           <table className="min-w-[1050px] w-full text-sm">
             <thead className="bg-slate-50 text-xs font-black text-slate-600">
-              <tr><th className="px-4 py-3 text-left">운영 일정</th><th className="px-4 py-3 text-left">원기안 일정</th><th className="px-4 py-3 text-left">회기</th><th className="px-4 py-3 text-left">활동</th><th className="px-4 py-3 text-left">진행방법</th><th className="px-4 py-3 text-left">준비·증빙</th></tr>
+              <tr><th className="px-4 py-3 text-left">조정 일정</th><th className="px-4 py-3 text-left">최초 계획 일정</th><th className="px-4 py-3 text-left">회기</th><th className="px-4 py-3 text-left">활동</th><th className="px-4 py-3 text-left">진행방법</th><th className="px-4 py-3 text-left">준비·증빙</th></tr>
             </thead>
             <tbody>
               {remainingSessionPlan.map((item, index) => (
