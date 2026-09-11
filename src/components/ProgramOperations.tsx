@@ -90,13 +90,13 @@ const remainingSessionPlan = [
     id: 'step-4',
     month: '9월',
     approvedDateLabel: '9.16.(수)~9.18.(금)',
-    dateLabel: '9.16.(수)~9.18.(금)',
+    dateLabel: '9.16.(수)~9.17.(목)',
     dueDate: '2026-09-16',
     program: '하루 한 걸음 4회기 · 생활쿠폰 7회기',
-    activity: '마을탐방: 지역명소 방문',
-    method: '승인된 실시기안에 따라 지역명소(공원 등)를 방문하고 사진기록을 남김.',
-    preparation: '미션수행일지, 사진기록 확인, 쿠폰 발행대장',
-    scheduleStatus: '원기안 일정',
+    activity: '취미공유 1: 그림 또는 보드게임',
+    method: '그림그리기 또는 보드게임 중 부담이 적은 활동을 선택해 수행하고 사진과 짧은 소감을 남김. 집단 참여가 어려우면 개별 수행을 허용함.',
+    preparation: '선택형 미션안내, 미션수행일지, 사진기록, 쿠폰 발행대장',
+    scheduleStatus: '실제 운영 반영안',
   },
   {
     id: 'small-4',
@@ -105,9 +105,9 @@ const remainingSessionPlan = [
     dateLabel: '9.21.(월)~9.22.(화)',
     dueDate: '2026-09-21',
     program: '작은만남 4회기 · 생활쿠폰 8회기',
-    activity: '독서모임',
-    method: '승인된 실시기안에 따라 아름인도서관을 활용해 독서 후 생각을 나눔.',
-    preparation: '독서자료, 참여확인, 운영일지, 쿠폰 발행대장',
+    activity: '마음나눔 2: 감정카드로 요즘 마음 표현하기',
+    method: '감정카드 한 장을 고르고 선택한 이유와 최근의 마음을 짧게 나눔. 말하기가 부담되면 글 또는 1:1 방식으로 참여함.',
+    preparation: '감정카드, 짧은 기록지, 참여확인, 운영일지, 쿠폰 발행대장',
     scheduleStatus: '보완 일정안',
   },
   {
@@ -117,9 +117,9 @@ const remainingSessionPlan = [
     dateLabel: '10.8.(목)~10.9.(금)',
     dueDate: '2026-10-08',
     program: '작은만남 5회기 · 생활쿠폰 9회기',
-    activity: '영화모임',
-    method: '승인된 실시기안에 따라 영화를 감상한 뒤 느낀 감정을 부담 없는 방식으로 나눔.',
-    preparation: '영화자료, 참여확인, 운영일지, 쿠폰 발행대장',
+    activity: '마음나눔 3: 가치카드로 나에게 중요한 것 찾기',
+    method: '가치카드에서 현재 중요하게 생각하는 것을 선택하고, 지키고 싶은 작은 일상 한 가지를 정함. 집단·개별 방식을 병행함.',
+    preparation: '가치카드, 작은 실천 기록지, 참여확인, 운영일지, 쿠폰 발행대장',
     scheduleStatus: '보완 일정안',
   },
   {
@@ -132,7 +132,7 @@ const remainingSessionPlan = [
     activity: '기관 자원봉사 체험 1회',
     method: '승인된 실시기안에 따라 복지관 프로그램에서 가능한 역할을 정해 자원봉사 체험을 진행함.',
     preparation: '봉사활동 협의자료, 참여확인, 운영일지, 쿠폰 발행대장',
-    scheduleStatus: '원기안 일정',
+    scheduleStatus: '실제 운영 반영안',
   },
   {
     id: 'step-5',
@@ -144,7 +144,7 @@ const remainingSessionPlan = [
     activity: '취미공유: 자유 주제 단문 쓰기',
     method: '승인된 실시기안에 따라 자유 주제로 짧은 글을 작성하고 수행 소감을 기록함.',
     preparation: '미션수행일지, 글쓰기 기록, 쿠폰 발행대장',
-    scheduleStatus: '원기안 일정',
+    scheduleStatus: '실제 운영 반영안',
   },
   {
     id: 'small-7',
@@ -156,7 +156,7 @@ const remainingSessionPlan = [
     activity: '기관 자원봉사 체험 2회',
     method: '승인된 실시기안에 따라 복지관 프로그램 자원봉사 체험을 진행하고 활동 경험을 나눔.',
     preparation: '봉사활동 협의자료, 참여확인, 운영일지, 사후 HQ-25, 쿠폰 발행대장',
-    scheduleStatus: '원기안 일정',
+    scheduleStatus: '실제 운영 반영안',
   },
   {
     id: 'step-6',
@@ -168,7 +168,7 @@ const remainingSessionPlan = [
     activity: '1:1 산책동행',
     method: '승인된 실시기안에 따라 가족·지인과 동네 한 바퀴를 걷고 사진기록과 연간 소감을 남김.',
     preparation: '미션수행일지, 사진기록, 연간소감, 만족도조사, 쿠폰 발행대장',
-    scheduleStatus: '원기안 일정',
+    scheduleStatus: '실제 운영 반영안',
   },
 ]
 
@@ -176,13 +176,13 @@ const participantNotice = `[생활쿠폰지원사업 9~11월 일정 안내]
 
 안녕하세요. 남은 작은만남과 하루 한 걸음 일정을 안내드립니다.
 
-9월 16일~18일  하루 한 걸음 4회기
+9월 16일~17일  하루 한 걸음 4회기(취미공유)
 9월 21일~22일  작은만남 4회기(보완 일정안)
 10월 8일~9일  작은만남 5회기(보완 일정안)
-10월 22일~23일  작은만남 6회기
-10월 28일~30일  하루 한 걸음 5회기
-11월 19일~20일  작은만남 7회기
-11월 25일~27일  하루 한 걸음 6회기 및 마무리 조사
+10월 22일~23일  작은만남 6회기(자원봉사 체험)
+10월 28일~30일  하루 한 걸음 5회기(글쓰기)
+11월 19일~20일  작은만남 7회기(자원봉사 체험)
+11월 25일~27일  하루 한 걸음 6회기(산책동행) 및 마무리 조사
 
 회기별 자세한 활동방법과 제출기한은 시작 전에 다시 안내드리겠습니다. 참여가 어려운 일정이 있으면 담당자에게 미리 알려주시기 바랍니다.
 
@@ -414,14 +414,14 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
       programId,
       category: '일정변경',
       sessionLabel: '작은만남 4·5회기',
-      title: '미실시 여부 확인 후 보완 일정 내부보고·확정',
+      title: '실제 운영변경 반영 및 보완 일정 내부보고·확정',
       dueDate: '2026-09-14',
       status: '미완료',
       owner: '',
       evidenceRequired: true,
       evidenceConfirmed: false,
       completedAt: '',
-      note: '원기안 일정은 4회기 8.20.~21., 5회기 9.10.~11.입니다. 실제 실시했다면 실제일자로 정정하고, 미실시했다면 추석 연휴 9.24.~26.을 제외한 보완 일정안을 내부 확정합니다.',
+      note: '일지상 영화모임은 작은만남 2회기, 독서모임은 3회기에 이미 실시했습니다. 원기안과 달라진 순서를 반영하고, 미실시 회기는 추석 연휴 9.24.~26.을 제외한 보완 일정으로 내부 확정합니다.',
     }
     const plannedTasks: ProgramTask[] = remainingSessionPlan.map(item => ({
       id: `life-coupon-plan-${item.id}`,
@@ -544,14 +544,26 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
         <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 p-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-black tracking-[.18em] text-slate-500">REMAINING SCHEDULE</p>
-            <h2 className="mt-1 text-xl font-black">원기안 기준 남은 회기와 보완 일정안</h2>
-            <p className="mt-2 text-sm font-bold leading-6 text-slate-600">승인된 실시기안의 활동내용을 기준으로 정리했습니다. 작은만남 4·5회기는 실제 실시 여부를 먼저 확인하고, 미실시한 경우에만 보완 일정안을 내부 확정합니다.</p>
+            <h2 className="mt-1 text-xl font-black">실제 일지 기준 남은 회기와 보완 일정안</h2>
+            <p className="mt-2 text-sm font-bold leading-6 text-slate-600">최초 계획안의 총 활동구성은 유지하되, 실제로 앞당겨 실시한 영화·독서·마을탐방을 제외하고 남은 활동을 다시 배치했습니다.</p>
           </div>
           <button onClick={addRemainingSchedule} className="shrink-0 rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">수정 일정안 업무에 반영</button>
         </div>
         <div className="mx-5 mt-5 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm font-bold leading-6 text-amber-950">
           <p className="font-black">일정 검토 결과</p>
           <p className="mt-1">기존 화면의 9.24.~25. 작은만남 일정은 추석 연휴와 겹쳐 삭제했습니다. 2026년 추석 연휴 9.24.~26.에는 회기·미션지 회수·대금결제를 배치하지 않습니다.</p>
+        </div>
+        <div className="mx-5 mt-3 grid gap-3 border-b border-slate-100 pb-5 md:grid-cols-2">
+          <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm font-bold leading-6 text-indigo-950">
+            <p className="font-black">작은만남 실제 진행</p>
+            <p className="mt-1">1회기 티타임 → 2회기 영화감상 → 3회기 독서모임</p>
+            <p className="mt-1 text-xs">남은 구성: 감정카드·가치카드 마음나눔 2회 + 기관 자원봉사 체험 2회</p>
+          </div>
+          <div className="rounded-xl border border-teal-200 bg-teal-50 p-4 text-sm font-bold leading-6 text-teal-950">
+            <p className="font-black">하루 한 걸음 실제 진행</p>
+            <p className="mt-1">1회기 도서관 → 2회기 카페 주문 → 3회기 우리 동네 명소</p>
+            <p className="mt-1 text-xs">남은 구성: 취미공유 2회 + 가족·지인 산책동행 1회</p>
+          </div>
         </div>
         <div className="grid gap-4 p-5 lg:grid-cols-3">
           {['9월', '10월', '11월'].map(month => (
@@ -577,7 +589,7 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
         <div className="border-b border-teal-100 bg-teal-50 p-5">
           <p className="text-xs font-black tracking-[.18em] text-teal-700">SESSION PLAN</p>
           <h2 className="mt-1 text-xl font-black">회기별 시행계획</h2>
-          <p className="mt-2 text-sm font-bold leading-6 text-slate-600">새 활동을 임의로 만들지 않고 작은만남·하루 한 걸음 실시기안에 적힌 회기 분류와 내용을 그대로 반영했습니다.</p>
+          <p className="mt-2 text-sm font-bold leading-6 text-slate-600">실제 일지의 ‘아주 작은 것부터, 천천히’ 원칙과 집단·개별 병행 방식을 유지하면서 최초 계획안의 남은 활동 수를 충족하도록 구성했습니다.</p>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-[1050px] w-full text-sm">
