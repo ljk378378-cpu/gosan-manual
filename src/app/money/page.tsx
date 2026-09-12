@@ -300,8 +300,9 @@ export default function MoneyPage() {
       localStorage.setItem(monthKey, JSON.stringify(cloudMonths))
     }
     if (cloudSpends.length) {
-      setLeaks(cloudSpends)
-      localStorage.setItem(leakKey, JSON.stringify(cloudSpends))
+      const mergedSpends = mergeById(cloudSpends, load<LeakRecord[]>(leakKey, []))
+      setLeaks(mergedSpends)
+      localStorage.setItem(leakKey, JSON.stringify(mergedSpends))
     }
     if (cloudSubscriptions.length) {
       setSubscriptions(cloudSubscriptions)
@@ -567,7 +568,7 @@ export default function MoneyPage() {
     setLeakDraft({ date: today(), type: '커피충전', method: '현대 M카드', amount: '', title: '', reason: '', keep: false })
   }
 
-  const useQuickTemplate = (template: (typeof quickTemplates)[number]) => {
+  const applyQuickTemplate = (template: (typeof quickTemplates)[number]) => {
     setLeakDraft(previous => ({
       ...previous,
       type: template.type,
@@ -913,7 +914,7 @@ export default function MoneyPage() {
               <p className="mb-2 text-xs font-black text-slate-500">자주 쓰는 지출</p>
               <div className="flex flex-wrap gap-2">
                 {quickTemplates.map(template => (
-                  <button key={template.label} onClick={() => useQuickTemplate(template)} className="rounded-full border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:border-emerald-500 hover:text-emerald-800">
+                  <button key={template.label} onClick={() => applyQuickTemplate(template)} className="rounded-full border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:border-emerald-500 hover:text-emerald-800">
                     {template.label}
                   </button>
                 ))}

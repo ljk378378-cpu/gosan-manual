@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 
 const navItems = [
   { href: '/', label: '홈' },
+  { href: '/quick', label: '빠른 기록' },
   { href: '/evaluation-2027', label: '27년 평가' },
   { href: '/inspection-2026', label: '지도점검' },
   { href: '/team-command', label: '팀 운영' },

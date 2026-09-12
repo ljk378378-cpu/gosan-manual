@@ -3,6 +3,13 @@ import Nav from '@/components/Nav'
 
 const primaryCards = [
   {
+    href: '/quick',
+    label: '생활 기록',
+    title: '빠른 기록',
+    desc: '소비와 개인 건강 기록을 휴대전화에서 몇 초 안에 남기기',
+    tone: 'border-cyan-200 bg-cyan-50 text-cyan-950',
+  },
+  {
     href: '/evaluation-2027',
     label: '27년 사회복지관 평가',
     title: '평가 대비 특별반',
