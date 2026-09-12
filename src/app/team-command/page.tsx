@@ -1,6 +1,17 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import type { User } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
+import {
+  mergeWorkInboxItems,
+  workInboxFromRow,
+  workInboxKey,
+  workInboxStatuses,
+  type WorkInboxItem,
+  type WorkInboxRow,
+  type WorkInboxStatus,
+} from '@/lib/work-inbox'
 
 type TeamKey = '지역사회조직팀' | '서비스제공팀' | '공통'
 type StaffKey = '1차 판단 지원 필요' | '기본업무 누락관리 필요' | '실행형 업무 중심 배정' | '겸직 우선순위 조정 필요' | '공통'
@@ -279,6 +290,13 @@ function statusTone(status: ReportStatus) {
   return 'border-slate-200 bg-white text-slate-700'
 }
 
+function inboxStatusTone(status: WorkInboxStatus) {
+  if (status === '완료') return 'border-emerald-200 bg-emerald-50 text-emerald-800'
+  if (status === '미확인') return 'border-red-200 bg-red-50 text-red-700'
+  if (status === '내가 처리') return 'border-blue-200 bg-blue-50 text-blue-800'
+  return 'border-amber-200 bg-amber-50 text-amber-800'
+}
+
 export default function TeamCommandPage() {
   const [records, setRecords] = useState<ReportRecord[]>([])
   const [condition, setCondition] = useState<ConditionRecord>(conditionDefaults)
@@ -287,6 +305,9 @@ export default function TeamCommandPage() {
   const [quickFollowUp, setQuickFollowUp] = useState(false)
   const [closingNote, setClosingNote] = useState<ClosingNote>(closingDefaults)
   const [detailLogOpen, setDetailLogOpen] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+  const [workInboxItems, setWorkInboxItems] = useState<WorkInboxItem[]>([])
+  const [workInboxError, setWorkInboxError] = useState('')
   const [draft, setDraft] = useState({
     team: '공통' as TeamKey,
     staff: '공통' as StaffKey,
@@ -327,7 +348,105 @@ export default function TeamCommandPage() {
         localStorage.setItem(MONEY_LEAK_KEY, JSON.stringify(cleanedMoney))
       }
     }
+    const localWorkItems = (() => {
+      try {
+        const raw = localStorage.getItem(workInboxKey)
+        return raw ? JSON.parse(raw) as WorkInboxItem[] : []
+      } catch {
+        return []
+      }
+    })()
+    setWorkInboxItems(localWorkItems)
+    supabase.auth.getSession().then(({ data }) => {
+      const sessionUser = data.session?.user ?? null
+      setUser(sessionUser)
+      if (sessionUser) loadCloudWorkInbox(sessionUser.id, localWorkItems)
+    })
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const sessionUser = session?.user ?? null
+      setUser(sessionUser)
+      if (sessionUser) loadCloudWorkInbox(sessionUser.id)
+    })
+    return () => data.subscription.unsubscribe()
   }, [])
+
+  async function loadCloudWorkInbox(userId: string, localItems = workInboxItems) {
+    setWorkInboxError('')
+    const { data, error } = await supabase
+      .from('work_inbox_items')
+      .select('*')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+    if (error) {
+      setWorkInboxError(`업무 수집함을 불러오지 못했습니다: ${error.message}`)
+      return
+    }
+    const cloudItems = ((data ?? []) as WorkInboxRow[]).map(workInboxFromRow)
+    const merged = mergeWorkInboxItems(cloudItems, localItems)
+    setWorkInboxItems(merged)
+    localStorage.setItem(workInboxKey, JSON.stringify(merged))
+
+    const cloudById = new Map(cloudItems.map(item => [item.id, item]))
+    const pendingUploads = localItems.filter(item => {
+      const cloudItem = cloudById.get(item.id)
+      return !cloudItem || item.updatedAt > cloudItem.updatedAt
+    })
+    if (pendingUploads.length) {
+      const { error: uploadError } = await supabase.from('work_inbox_items').upsert(
+        pendingUploads.map(item => ({
+          user_id: userId,
+          id: item.id,
+          category: item.category,
+          content: item.content,
+          team: item.team,
+          due_kind: item.due,
+          due_date: item.dueDate || null,
+          status: item.status,
+          created_at: item.createdAt,
+          updated_at: item.updatedAt,
+        })),
+        { onConflict: 'user_id,id' },
+      )
+      if (uploadError) setWorkInboxError(`기기 메모 자동 업로드 실패: ${uploadError.message}`)
+    }
+  }
+
+  async function saveWorkInboxItem(item: WorkInboxItem) {
+    const next = mergeWorkInboxItems([item], workInboxItems)
+    setWorkInboxItems(next)
+    localStorage.setItem(workInboxKey, JSON.stringify(next))
+    if (!user) return
+    const { error } = await supabase.from('work_inbox_items').upsert({
+      user_id: user.id,
+      id: item.id,
+      category: item.category,
+      content: item.content,
+      team: item.team,
+      due_kind: item.due,
+      due_date: item.dueDate || null,
+      status: item.status,
+      created_at: item.createdAt,
+      updated_at: item.updatedAt,
+    }, { onConflict: 'user_id,id' })
+    if (error) setWorkInboxError(`업무 수집함 저장 실패: ${error.message}`)
+  }
+
+  function updateWorkInboxStatus(item: WorkInboxItem, status: WorkInboxStatus) {
+    saveWorkInboxItem({ ...item, status, updatedAt: new Date().toISOString() })
+  }
+
+  async function removeWorkInboxItem(id: string) {
+    if (user) {
+      const { error } = await supabase.from('work_inbox_items').delete().eq('user_id', user.id).eq('id', id)
+      if (error) {
+        setWorkInboxError(`업무 메모 삭제 실패: ${error.message}`)
+        return
+      }
+    }
+    const next = workInboxItems.filter(item => item.id !== id)
+    setWorkInboxItems(next)
+    localStorage.setItem(workInboxKey, JSON.stringify(next))
+  }
 
   useEffect(() => {
     const raw = localStorage.getItem(CLOSING_KEY)
@@ -777,6 +896,55 @@ export default function TeamCommandPage() {
           <div className="rounded-2xl border border-red-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black text-red-600">전체 미완료</p>
             <p className="mt-2 text-3xl font-black">{stats.active}</p>
+          </div>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border border-amber-200 bg-white shadow-sm">
+          <div className="flex flex-col justify-between gap-3 border-b border-amber-100 bg-amber-50 p-5 md:flex-row md:items-center">
+            <div>
+              <p className="text-xs font-black tracking-[.18em] text-amber-700">WORK INBOX</p>
+              <h2 className="mt-1 text-xl font-black text-amber-950">업무 수집함</h2>
+              <p className="mt-1 text-sm font-bold leading-6 text-amber-900">
+                빠른 기록에서 들어온 아이디어·지시·전달사항을 여기에서 처리 상태로 바꿉니다.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <a href="/quick" className="rounded-lg border border-amber-300 bg-white px-4 py-3 text-sm font-black text-amber-900">빠른 기록 열기</a>
+              {user ? <button onClick={() => loadCloudWorkInbox(user.id)} className="rounded-lg bg-amber-700 px-4 py-3 text-sm font-black text-white">새로 불러오기</button> : null}
+            </div>
+          </div>
+          <div className="grid gap-3 border-b border-slate-100 p-5 sm:grid-cols-3">
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+              <p className="text-xs font-black text-red-700">미확인</p>
+              <p className="mt-2 text-2xl font-black text-red-950">{workInboxItems.filter(item => item.status === '미확인').length}</p>
+            </div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <p className="text-xs font-black text-amber-700">처리 중</p>
+              <p className="mt-2 text-2xl font-black text-amber-950">{workInboxItems.filter(item => item.status !== '미확인' && item.status !== '완료').length}</p>
+            </div>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+              <p className="text-xs font-black text-emerald-700">완료</p>
+              <p className="mt-2 text-2xl font-black text-emerald-950">{workInboxItems.filter(item => item.status === '완료').length}</p>
+            </div>
+          </div>
+          {workInboxError ? <p className="mx-5 mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-black text-red-700">{workInboxError}</p> : null}
+          {!user ? <p className="mx-5 mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-600">현재 기기 자료만 표시됩니다. 휴대폰과 컴퓨터를 연결하려면 소비점검에서 로그인하세요.</p> : null}
+          <div className="divide-y divide-slate-100">
+            {workInboxItems.length ? workInboxItems.slice(0, 50).map(item => (
+              <div key={item.id} className="grid gap-3 p-5 lg:grid-cols-[150px_1fr_180px_auto] lg:items-center">
+                <div>
+                  <span className={`inline-block rounded-full border px-3 py-1 text-xs font-black ${inboxStatusTone(item.status)}`}>{item.category}</span>
+                  <p className="mt-2 text-xs font-bold text-slate-500">{item.team} · {item.due}{item.dueDate ? ` ${item.dueDate}` : ''}</p>
+                </div>
+                <p className="font-black leading-6 text-slate-950">{item.content}</p>
+                <select value={item.status} onChange={event => updateWorkInboxStatus(item, event.target.value as WorkInboxStatus)} className="rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm font-black">
+                  {workInboxStatuses.map(status => <option key={status}>{status}</option>)}
+                </select>
+                <button onClick={() => removeWorkInboxItem(item.id)} className="rounded-lg border border-red-200 bg-white px-4 py-3 text-sm font-black text-red-700">삭제</button>
+              </div>
+            )) : (
+              <p className="p-8 text-center text-sm font-bold text-slate-500">수집된 업무 메모가 없습니다.</p>
+            )}
           </div>
         </section>
 

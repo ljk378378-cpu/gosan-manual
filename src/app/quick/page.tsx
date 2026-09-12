@@ -5,6 +5,18 @@ import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
+import {
+  dueDateFor,
+  mergeWorkInboxItems,
+  workInboxCategories,
+  workInboxDueOptions,
+  workInboxKey,
+  workInboxTeams,
+  type WorkInboxCategory,
+  type WorkInboxDue,
+  type WorkInboxItem,
+  type WorkInboxTeam,
+} from '@/lib/work-inbox'
 
 type QuickType = 'expense' | 'health_a' | 'health_b' | 'water' | 'medicine_morning' | 'medicine_night'
 type PayMethod = '현대 M카드' | '신한카드' | '롯데카드' | '국민카드' | '현금' | '체크카드' | '계좌이체'
@@ -73,17 +85,24 @@ function eventLabel(event: QuickEvent) {
 
 export default function QuickPage() {
   const [events, setEvents] = useState<QuickEvent[]>([])
-  const [panel, setPanel] = useState<'none' | 'expense' | 'health'>('none')
+  const [panel, setPanel] = useState<'none' | 'expense' | 'health' | 'work'>('none')
   const [amount, setAmount] = useState('')
   const [title, setTitle] = useState('')
   const [method, setMethod] = useState<PayMethod>('현대 M카드')
   const [notice, setNotice] = useState('')
   const [user, setUser] = useState<User | null>(null)
   const [saving, setSaving] = useState(false)
+  const [workItems, setWorkItems] = useState<WorkInboxItem[]>([])
+  const [workCategory, setWorkCategory] = useState<WorkInboxCategory>('상급자 전달')
+  const [workTeam, setWorkTeam] = useState<WorkInboxTeam>('공통')
+  const [workDue, setWorkDue] = useState<WorkInboxDue>('날짜 없음')
+  const [workContent, setWorkContent] = useState('')
+  const [workSaving, setWorkSaving] = useState(false)
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       setEvents(load(quickKey, []))
+      setWorkItems(load(workInboxKey, []))
       const savedMethod = localStorage.getItem(lastMethodKey) as PayMethod | null
       if (savedMethod && payMethods.includes(savedMethod)) setMethod(savedMethod)
     })
@@ -122,6 +141,53 @@ export default function QuickPage() {
     const event: QuickEvent = { id: crypto.randomUUID(), type, occurredAt: now, recordedAt: now }
     saveEvents([event, ...events].slice(0, 500))
     setNotice(`${eventLabel(event)} 기록 완료 · ${timeInKorea(now)}`)
+  }
+
+  async function handleWorkMemo() {
+    if (!workContent.trim()) {
+      setNotice('업무 메모 내용을 입력해 주세요.')
+      return
+    }
+    setWorkSaving(true)
+    const now = new Date().toISOString()
+    const item: WorkInboxItem = {
+      id: crypto.randomUUID(),
+      category: workCategory,
+      content: workContent.trim(),
+      team: workTeam,
+      due: workDue,
+      dueDate: dueDateFor(workDue),
+      status: '미확인',
+      createdAt: now,
+      updatedAt: now,
+    }
+    const next = mergeWorkInboxItems([item], workItems)
+    setWorkItems(next)
+    localStorage.setItem(workInboxKey, JSON.stringify(next))
+
+    if (user) {
+      const { error } = await supabase.from('work_inbox_items').upsert({
+        user_id: user.id,
+        id: item.id,
+        category: item.category,
+        content: item.content,
+        team: item.team,
+        due_kind: item.due,
+        due_date: item.dueDate || null,
+        status: item.status,
+        created_at: item.createdAt,
+        updated_at: item.updatedAt,
+      }, { onConflict: 'user_id,id' })
+      if (error) {
+        setNotice(`기기에는 저장됐지만 업무 수집함 동기화에 실패했습니다: ${error.message}`)
+        setWorkSaving(false)
+        return
+      }
+    }
+
+    setWorkContent('')
+    setNotice(`업무 메모 저장 완료 · ${user ? '팀 운영 수집함에 반영' : '이 기기에 저장'}`)
+    setWorkSaving(false)
   }
 
   async function handleExpense() {
@@ -250,6 +316,15 @@ export default function QuickPage() {
             <strong className="mt-4 block text-lg font-black text-sky-950">건강 체크</strong>
             <span className="mt-1 block text-xs font-bold text-sky-800">필요할 때만 열기</span>
           </button>
+          <button
+            type="button"
+            onClick={() => setPanel(panel === 'work' ? 'none' : 'work')}
+            className="col-span-2 min-h-24 rounded-3xl border border-amber-200 bg-amber-50 p-5 text-left shadow-sm active:scale-[.98]"
+          >
+            <span className="text-2xl">＋</span>
+            <strong className="ml-3 text-lg font-black text-amber-950">업무 메모</strong>
+            <span className="mt-2 block text-xs font-bold text-amber-800">아이디어·지시·전달사항을 수집함으로</span>
+          </button>
         </section>
 
         {panel === 'expense' ? (
@@ -321,6 +396,48 @@ export default function QuickPage() {
                 <strong className="block text-lg font-black">{nightMedicineDone ? '✓ 자기 전 복용완료' : '자기 전 · 탈모약'}</strong>
               </button>
             </div>
+          </section>
+        ) : null}
+
+        {panel === 'work' ? (
+          <section className="mt-4 rounded-3xl border border-amber-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-black">업무 메모</h2>
+                <p className="mt-1 text-xs font-bold text-slate-500">사람 이름보다 해야 할 일을 한 줄로 남깁니다.</p>
+              </div>
+              <button type="button" onClick={() => setPanel('none')} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black">닫기</button>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {workInboxCategories.map(category => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setWorkCategory(category)}
+                  className={`rounded-xl border px-3 py-3 text-sm font-black ${workCategory === category ? 'border-amber-500 bg-amber-100 text-amber-950' : 'border-slate-200 bg-white text-slate-600'}`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={workContent}
+              onChange={event => setWorkContent(event.target.value)}
+              placeholder="예: 후원자 선물 견적을 이번 주 안에 다시 확인"
+              className="mt-3 min-h-24 w-full rounded-xl border-2 border-amber-200 p-4 text-base font-bold leading-6 outline-none focus:border-amber-500"
+            />
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <select value={workTeam} onChange={event => setWorkTeam(event.target.value as WorkInboxTeam)} className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold">
+                {workInboxTeams.map(team => <option key={team}>{team}</option>)}
+              </select>
+              <select value={workDue} onChange={event => setWorkDue(event.target.value as WorkInboxDue)} className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold">
+                {workInboxDueOptions.map(due => <option key={due}>{due}</option>)}
+              </select>
+            </div>
+            <button type="button" disabled={workSaving} onClick={handleWorkMemo} className="mt-3 w-full rounded-2xl bg-amber-500 py-4 text-lg font-black text-amber-950 active:bg-amber-400 disabled:bg-slate-300 disabled:text-slate-500">
+              {workSaving ? '저장 중' : '업무 수집함에 저장'}
+            </button>
+            <p className="mt-3 text-center text-xs font-bold text-slate-500">오늘 수집 {workItems.filter(item => dateInKorea(new Date(item.createdAt)) === dateInKorea()).length}건</p>
           </section>
         ) : null}
 
