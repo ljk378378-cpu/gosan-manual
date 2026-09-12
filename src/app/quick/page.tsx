@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
+import { supabase } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
 
 type QuickType = 'expense' | 'health_a' | 'health_b' | 'water' | 'medicine_morning' | 'medicine_night'
 type PayMethod = '현대 M카드' | '신한카드' | '롯데카드' | '국민카드' | '현금' | '체크카드' | '계좌이체'
@@ -76,6 +78,8 @@ export default function QuickPage() {
   const [title, setTitle] = useState('')
   const [method, setMethod] = useState<PayMethod>('현대 M카드')
   const [notice, setNotice] = useState('')
+  const [user, setUser] = useState<User | null>(null)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -83,7 +87,14 @@ export default function QuickPage() {
       const savedMethod = localStorage.getItem(lastMethodKey) as PayMethod | null
       if (savedMethod && payMethods.includes(savedMethod)) setMethod(savedMethod)
     })
-    return () => cancelAnimationFrame(frame)
+    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => {
+      cancelAnimationFrame(frame)
+      data.subscription.unsubscribe()
+    }
   }, [])
 
   const todayEvents = useMemo(
@@ -113,16 +124,21 @@ export default function QuickPage() {
     setNotice(`${eventLabel(event)} 기록 완료 · ${timeInKorea(now)}`)
   }
 
-  function handleExpense(preset?: number) {
-    const parsedAmount = preset || Number(amount.replaceAll(',', '').replace(/[^0-9]/g, ''))
+  async function handleExpense() {
+    const parsedAmount = Number(amount.replaceAll(',', '').replace(/[^0-9]/g, ''))
     if (!parsedAmount) {
       setNotice('금액을 입력해 주세요.')
       return
     }
+    if (!title.trim()) {
+      setNotice('어디에 썼는지 입력해 주세요.')
+      return
+    }
 
+    setSaving(true)
     const id = crypto.randomUUID()
     const now = new Date().toISOString()
-    const expenseTitle = title.trim() || '빠른 소비 기록'
+    const expenseTitle = title.trim()
     const event: QuickEvent = {
       id,
       type: 'expense',
@@ -146,19 +162,48 @@ export default function QuickPage() {
     localStorage.setItem(moneyKey, JSON.stringify([moneyRecord, ...moneyRecords].slice(0, 500)))
     localStorage.setItem(lastMethodKey, method)
     saveEvents([event, ...events].slice(0, 500))
+
+    if (user) {
+      const { error } = await supabase.from('money_spends').upsert({
+        user_id: user.id,
+        id: moneyRecord.id,
+        spend_date: moneyRecord.date,
+        type: moneyRecord.type,
+        method: moneyRecord.method,
+        amount: moneyRecord.amount,
+        title: moneyRecord.title,
+        reason: moneyRecord.reason,
+        keep: moneyRecord.keep,
+        updated_at: now,
+      }, { onConflict: 'user_id,id' })
+      if (error) {
+        setNotice(`기기에는 저장됐지만 클라우드 저장에 실패했습니다: ${error.message}`)
+        setSaving(false)
+        return
+      }
+    }
+
     setAmount('')
     setTitle('')
-    setNotice(`소비 기록 완료 · ${won(parsedAmount)} · ${timeInKorea(now)}`)
+    setNotice(`소비 기록 완료 · ${won(parsedAmount)} · ${user ? '클라우드 저장' : '이 기기 저장'} · ${timeInKorea(now)}`)
+    setSaving(false)
   }
 
-  function undoLatest() {
+  async function undoLatest() {
     const latest = events[0]
     if (!latest) return
-    saveEvents(events.slice(1))
+    if (latest.type === 'expense' && user) {
+      const { error } = await supabase.from('money_spends').delete().eq('user_id', user.id).eq('id', latest.id)
+      if (error) {
+        setNotice(`취소하지 못했습니다: ${error.message}`)
+        return
+      }
+    }
     if (latest.type === 'expense') {
       const moneyRecords = load<MoneyRecord[]>(moneyKey, [])
       localStorage.setItem(moneyKey, JSON.stringify(moneyRecords.filter(record => record.id !== latest.id)))
     }
+    saveEvents(events.slice(1))
     setNotice('마지막 기록을 취소했습니다.')
   }
 
@@ -172,6 +217,18 @@ export default function QuickPage() {
           <p className="mt-2 text-sm leading-6 text-slate-300">
             설명보다 기록이 먼저입니다. 기본 화면에는 민감한 항목명을 표시하지 않습니다.
           </p>
+        </section>
+
+        <section className="mt-4 rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-sm">
+          <p className="text-sm font-black text-slate-900">
+            소비 기록: {user ? '클라우드 연결됨' : '현재 기기에 저장'}
+          </p>
+          <p className="mt-1 text-xs font-bold leading-5 text-slate-500">
+            {user
+              ? '휴대폰과 컴퓨터의 소비점검에서 같은 기록을 확인합니다. 건강 기록은 개인정보 보호를 위해 이 기기에만 저장합니다.'
+              : '휴대폰과 컴퓨터에서 함께 보려면 소비점검에서 먼저 로그인하세요. 로그인 전 기록도 나중에 올릴 수 있습니다.'}
+          </p>
+          {!user ? <Link href="/money" className="mt-2 inline-block text-xs font-black text-emerald-700 underline underline-offset-4">소비점검 로그인</Link> : null}
         </section>
 
         <section className="mt-4 grid grid-cols-2 gap-3">
@@ -213,7 +270,7 @@ export default function QuickPage() {
             </div>
             <div className="mt-3 grid grid-cols-4 gap-2">
               {quickAmounts.map(value => (
-                <button key={value} type="button" onClick={() => handleExpense(value)} className="rounded-xl bg-lime-100 px-2 py-3 text-sm font-black text-lime-950 active:bg-lime-200">
+                <button key={value} type="button" onClick={() => setAmount(String(value))} className="rounded-xl bg-lime-100 px-2 py-3 text-sm font-black text-lime-950 active:bg-lime-200">
                   {value >= 10000 ? `${value / 10000}만` : `${value / 1000}천`}
                 </button>
               ))}
@@ -221,14 +278,14 @@ export default function QuickPage() {
             <input
               value={title}
               onChange={event => setTitle(event.target.value)}
-              placeholder="어디에 썼나요? (선택)"
+              placeholder="어디에 썼나요? (필수)"
               className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold outline-none focus:border-lime-500"
             />
             <select value={method} onChange={event => setMethod(event.target.value as PayMethod)} className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold">
               {payMethods.map(item => <option key={item}>{item}</option>)}
             </select>
-            <button type="button" onClick={() => handleExpense()} className="mt-3 w-full rounded-2xl bg-lime-500 py-4 text-lg font-black text-slate-950 active:bg-lime-400">
-              저장
+            <button type="button" disabled={saving} onClick={handleExpense} className="mt-3 w-full rounded-2xl bg-lime-500 py-4 text-lg font-black text-slate-950 active:bg-lime-400 disabled:bg-slate-300 disabled:text-slate-500">
+              {saving ? '저장 중' : '저장'}
             </button>
           </section>
         ) : null}
@@ -280,7 +337,7 @@ export default function QuickPage() {
               <p className="text-xs font-black tracking-[.16em] text-slate-400">TODAY</p>
               <h2 className="mt-1 text-lg font-black">오늘 기록</h2>
             </div>
-            <span className="text-xs font-bold text-slate-500">이 기기에만 저장</span>
+            <span className="text-xs font-bold text-slate-500">소비 {user ? '클라우드' : '기기'} · 건강 기기</span>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
             <div className="rounded-2xl bg-lime-50 p-3"><strong className="block text-lg font-black text-lime-950">{won(expenseTotal)}</strong><span className="text-xs font-bold text-lime-800">소비</span></div>
