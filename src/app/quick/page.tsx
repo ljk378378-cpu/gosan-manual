@@ -27,6 +27,7 @@ type QuickEvent = {
   occurredAt: string
   recordedAt: string
   amount?: number
+  volumeMl?: number
   title?: string
   method?: PayMethod
 }
@@ -78,7 +79,7 @@ function eventLabel(event: QuickEvent) {
   if (event.type === 'expense') return `${event.title || '소비'} · ${won(event.amount || 0)}`
   if (event.type === 'health_a') return '1번 체크'
   if (event.type === 'health_b') return '2번 체크'
-  if (event.type === 'water') return '물 마시기'
+  if (event.type === 'water') return `물 ${event.volumeMl || 250}mL`
   if (event.type === 'medicine_morning') return '아침 · 협심증약'
   return '자기 전 · 탈모약'
 }
@@ -122,7 +123,9 @@ export default function QuickPage() {
   )
   const healthACount = todayEvents.filter(event => event.type === 'health_a').length
   const healthBCount = todayEvents.filter(event => event.type === 'health_b').length
-  const waterCount = todayEvents.filter(event => event.type === 'water').length
+  const waterEvents = todayEvents.filter(event => event.type === 'water')
+  const waterCount = waterEvents.length
+  const waterTotalMl = waterEvents.reduce((sum, event) => sum + (event.volumeMl || 250), 0)
   const morningMedicineDone = todayEvents.some(event => event.type === 'medicine_morning')
   const nightMedicineDone = todayEvents.some(event => event.type === 'medicine_night')
   const expenseTotal = todayEvents
@@ -134,11 +137,17 @@ export default function QuickPage() {
     localStorage.setItem(quickKey, JSON.stringify(next))
   }
 
-  function handleHealth(type: Exclude<QuickType, 'expense'>) {
+  function handleHealth(type: Exclude<QuickType, 'expense'>, volumeMl?: number) {
     if (type === 'medicine_morning' && morningMedicineDone) return
     if (type === 'medicine_night' && nightMedicineDone) return
     const now = new Date().toISOString()
-    const event: QuickEvent = { id: crypto.randomUUID(), type, occurredAt: now, recordedAt: now }
+    const event: QuickEvent = {
+      id: crypto.randomUUID(),
+      type,
+      occurredAt: now,
+      recordedAt: now,
+      ...(type === 'water' ? { volumeMl: volumeMl || 250 } : {}),
+    }
     saveEvents([event, ...events].slice(0, 500))
     setNotice(`${eventLabel(event)} 기록 완료 · ${timeInKorea(now)}`)
   }
@@ -385,10 +394,22 @@ export default function QuickPage() {
               </button>
             </div>
             <div className="mt-3 grid gap-3">
-              <button type="button" onClick={() => handleHealth('water')} className="rounded-2xl bg-cyan-100 p-4 text-left text-cyan-950 active:bg-cyan-200">
-                <strong className="block text-lg font-black">물 마시기 · 오늘 {waterCount}회</strong>
-                <span className="mt-1 block text-xs font-bold text-cyan-700">마실 때마다 한 번씩</span>
-              </button>
+              <div className="rounded-2xl bg-cyan-50 p-4 text-cyan-950">
+                <strong className="block text-lg font-black">물 마시기 · 오늘 {waterCount}회 · {waterTotalMl.toLocaleString('ko-KR')}mL</strong>
+                <span className="mt-1 block text-xs font-bold text-cyan-700">마신 용량을 한 번 누르면 바로 기록됩니다.</span>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {[150, 250, 500].map(volume => (
+                    <button
+                      key={volume}
+                      type="button"
+                      onClick={() => handleHealth('water', volume)}
+                      className={`min-h-14 rounded-xl px-2 py-3 text-base font-black active:scale-[0.98] ${volume === 250 ? 'bg-cyan-600 text-white active:bg-cyan-500' : 'border border-cyan-200 bg-white text-cyan-950 active:bg-cyan-100'}`}
+                    >
+                      {volume}mL
+                    </button>
+                  ))}
+                </div>
+              </div>
               <button type="button" disabled={morningMedicineDone} onClick={() => handleHealth('medicine_morning')} className="rounded-2xl bg-amber-100 p-4 text-left text-amber-950 active:bg-amber-200 disabled:bg-emerald-100 disabled:text-emerald-900">
                 <strong className="block text-lg font-black">{morningMedicineDone ? '✓ 아침 복용완료' : '아침 · 협심증약'}</strong>
               </button>
@@ -460,7 +481,7 @@ export default function QuickPage() {
             <div className="rounded-2xl bg-lime-50 p-3"><strong className="block text-lg font-black text-lime-950">{won(expenseTotal)}</strong><span className="text-xs font-bold text-lime-800">소비</span></div>
             <div className="rounded-2xl bg-sky-50 p-3"><strong className="block text-lg font-black text-sky-950">{healthACount}</strong><span className="text-xs font-bold text-sky-800">건강 1</span></div>
             <div className="rounded-2xl bg-indigo-50 p-3"><strong className="block text-lg font-black text-indigo-950">{healthBCount}</strong><span className="text-xs font-bold text-indigo-800">건강 2</span></div>
-            <div className="rounded-2xl bg-cyan-50 p-3"><strong className="block text-lg font-black text-cyan-950">{waterCount}</strong><span className="text-xs font-bold text-cyan-800">물</span></div>
+            <div className="rounded-2xl bg-cyan-50 p-3"><strong className="block text-lg font-black text-cyan-950">{waterTotalMl.toLocaleString('ko-KR')}mL</strong><span className="text-xs font-bold text-cyan-800">물 · {waterCount}회</span></div>
             <div className="rounded-2xl bg-amber-50 p-3"><strong className="block text-lg font-black text-amber-950">{morningMedicineDone ? '완료' : '-'}</strong><span className="text-xs font-bold text-amber-800">아침 약</span></div>
             <div className="rounded-2xl bg-violet-50 p-3"><strong className="block text-lg font-black text-violet-950">{nightMedicineDone ? '완료' : '-'}</strong><span className="text-xs font-bold text-violet-800">자기 전 약</span></div>
           </div>
