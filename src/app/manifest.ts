@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: '청곡 AI 업무시스템',
     short_name: '청곡AI',
     description: '평가, 지도점검, 팀 운영, 인사노무 학습, 소비점검을 관리하는 개인 업무 대시보드',
-    start_url: '/',
+    start_url: '/quick',
     scope: '/',
     display: 'standalone',
     background_color: '#f3f6f4',
