@@ -39,8 +39,10 @@ const inspectionSteps = [
   { date: '2026-09-18', title: '구청 지도점검', done: '확정된 자료만 제시하고 추가요청은 바로 기록' },
 ]
 
+type PrioritySlot = '마감 위험' | '팀을 움직이는 결정' | '내 핵심업무'
+
 type Recommendation = {
-  slot: '마감 위험' | '팀을 움직이는 결정' | '내 핵심업무'
+  slot: PrioritySlot
   title: string
   reason: string
   href: string
@@ -48,12 +50,35 @@ type Recommendation = {
   item?: WorkInboxItem
 }
 
+type ConfirmedPriority = {
+  slot: PrioritySlot
+  title: string
+  reason: string
+  href: string
+  sourceItemId?: string
+  status: '확정' | '완료'
+  updatedAt: string
+}
+
+type PriorityHistory = Record<string, Partial<Record<PrioritySlot, ConfirmedPriority>>>
+
+const priorityKey = 'cheonggok-home-priorities-v1'
+
 function readLocalWorkInbox() {
   try {
     const raw = localStorage.getItem(workInboxKey)
     return raw ? JSON.parse(raw) as WorkInboxItem[] : []
   } catch {
     return []
+  }
+}
+
+function readPriorityHistory() {
+  try {
+    const raw = localStorage.getItem(priorityKey)
+    return raw ? JSON.parse(raw) as PriorityHistory : {}
+  } catch {
+    return {}
   }
 }
 
@@ -96,15 +121,19 @@ function dueText(item: WorkInboxItem, today: string) {
 export default function HomeControlDashboard() {
   const [user, setUser] = useState<User | null>(null)
   const [workItems, setWorkItems] = useState<WorkInboxItem[]>([])
+  const [confirmedPriorities, setConfirmedPriorities] = useState<Partial<Record<PrioritySlot, ConfirmedPriority>>>({})
   const [syncMessage, setSyncMessage] = useState('기기 자료 확인 중')
-  const [updatingId, setUpdatingId] = useState('')
   const today = koreaDate()
 
   useEffect(() => {
     let active = true
     const localItems = readLocalWorkInbox()
+    const priorityHistory = readPriorityHistory()
     const frame = requestAnimationFrame(() => {
-      if (active) setWorkItems(localItems)
+      if (active) {
+        setWorkItems(localItems)
+        setConfirmedPriorities(priorityHistory[today] || {})
+      }
     })
 
     async function loadCloud(userId: string) {
@@ -140,7 +169,7 @@ export default function HomeControlDashboard() {
       cancelAnimationFrame(frame)
       data.subscription.unsubscribe()
     }
-  }, [])
+  }, [today])
 
   const activeItems = useMemo(
     () => workItems.filter(item => item.status !== '완료').sort((a, b) => itemScore(b, today) - itemScore(a, today)),
@@ -200,7 +229,6 @@ export default function HomeControlDashboard() {
 
   async function updateStatus(item: WorkInboxItem, status: WorkInboxStatus) {
     const updated = { ...item, status, updatedAt: new Date().toISOString() }
-    setUpdatingId(item.id)
     setWorkItems(current => {
       const next = mergeWorkInboxItems([updated], current)
       localStorage.setItem(workInboxKey, JSON.stringify(next))
@@ -214,7 +242,38 @@ export default function HomeControlDashboard() {
       }, { onConflict: 'user_id,id' })
       if (error) setSyncMessage('기기에는 저장됨·클라우드 업로드 실패')
     }
-    setUpdatingId('')
+  }
+
+  function saveConfirmedPriorities(next: Partial<Record<PrioritySlot, ConfirmedPriority>>) {
+    setConfirmedPriorities(next)
+    const history = readPriorityHistory()
+    history[today] = next
+    localStorage.setItem(priorityKey, JSON.stringify(history))
+  }
+
+  async function confirmPriority(recommendation: Recommendation) {
+    const priority: ConfirmedPriority = {
+      slot: recommendation.slot,
+      title: recommendation.title,
+      reason: recommendation.reason,
+      href: recommendation.href,
+      sourceItemId: recommendation.item?.id,
+      status: '확정',
+      updatedAt: new Date().toISOString(),
+    }
+    saveConfirmedPriorities({ ...confirmedPriorities, [recommendation.slot]: priority })
+    if (recommendation.item?.status === '미확인') await updateStatus(recommendation.item, '내가 처리')
+  }
+
+  async function completePriority(slot: PrioritySlot) {
+    const priority = confirmedPriorities[slot]
+    if (!priority) return
+    saveConfirmedPriorities({
+      ...confirmedPriorities,
+      [slot]: { ...priority, status: '완료', updatedAt: new Date().toISOString() },
+    })
+    const sourceItem = priority.sourceItemId ? workItems.find(item => item.id === priority.sourceItemId) : undefined
+    if (sourceItem && sourceItem.status !== '완료') await updateStatus(sourceItem, '완료')
   }
 
   return (
@@ -239,18 +298,27 @@ export default function HomeControlDashboard() {
           <Link href="/team-command" className="text-sm font-black text-slate-600 underline decoration-slate-300 underline-offset-4">전체 수집함</Link>
         </div>
         <div className="mt-4 grid gap-3 lg:grid-cols-3">
-          {recommendations.map(recommendation => (
-            <article key={recommendation.slot} className={`flex min-h-60 flex-col rounded-lg border p-5 ${recommendation.tone}`}>
-              <p className="text-xs font-black opacity-70">{recommendation.slot}</p>
-              <h3 className="mt-3 text-lg font-black leading-7">{recommendation.title}</h3>
-              <p className="mt-3 flex-1 text-sm font-semibold leading-6 opacity-80">{recommendation.reason}</p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <Link href={recommendation.href} className="rounded-md bg-white px-3 py-2 text-sm font-black text-slate-900 shadow-sm">열기</Link>
-                {recommendation.item?.status === '미확인' && <button type="button" disabled={updatingId === recommendation.item.id} onClick={() => updateStatus(recommendation.item!, '내가 처리')} className="rounded-md bg-slate-950 px-3 py-2 text-sm font-black text-white disabled:opacity-50">오늘 확정</button>}
-                {recommendation.item && recommendation.item.status !== '미확인' && <button type="button" disabled={updatingId === recommendation.item.id} onClick={() => updateStatus(recommendation.item!, '완료')} className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-black text-white disabled:opacity-50">완료</button>}
-              </div>
-            </article>
-          ))}
+          {recommendations.map(recommendation => {
+            const confirmed = confirmedPriorities[recommendation.slot]
+            const title = confirmed?.title || recommendation.title
+            const reason = confirmed?.reason || recommendation.reason
+            const href = confirmed?.href || recommendation.href
+            return (
+              <article key={recommendation.slot} className={`flex min-h-60 flex-col rounded-lg border p-5 ${recommendation.tone}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-black opacity-70">{recommendation.slot}</p>
+                  {confirmed ? <span className={`rounded-md px-2 py-1 text-[11px] font-black ${confirmed.status === '완료' ? 'bg-emerald-700 text-white' : 'bg-white text-slate-700'}`}>{confirmed.status === '완료' ? '오늘 완료' : '오늘 확정됨'}</span> : null}
+                </div>
+                <h3 className="mt-3 text-lg font-black leading-7">{title}</h3>
+                <p className="mt-3 flex-1 text-sm font-semibold leading-6 opacity-80">{reason}</p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <Link href={href} className="rounded-md bg-white px-3 py-2 text-sm font-black text-slate-900 shadow-sm">열기</Link>
+                  {!confirmed ? <button type="button" onClick={() => confirmPriority(recommendation)} className="rounded-md bg-slate-950 px-3 py-2 text-sm font-black text-white">오늘 확정</button> : null}
+                  {confirmed?.status === '확정' ? <button type="button" onClick={() => completePriority(recommendation.slot)} className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-black text-white">완료</button> : null}
+                </div>
+              </article>
+            )
+          })}
         </div>
       </section>
 
