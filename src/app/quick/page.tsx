@@ -20,6 +20,7 @@ import {
 
 type QuickType = 'expense' | 'health_a' | 'health_b' | 'water' | 'medicine_morning' | 'medicine_night'
 type PayMethod = '현대 M카드' | '신한카드' | '롯데카드' | '국민카드' | '현금' | '체크카드' | '계좌이체'
+type LeakType = '식사·외식' | '커피·본인' | '커피·함께' | '커피충전' | '배달음식' | '가족·관계' | '업무도구' | '생활구매' | '기타'
 
 type QuickEvent = {
   id: string
@@ -35,7 +36,7 @@ type QuickEvent = {
 type MoneyRecord = {
   id: string
   date: string
-  type: '기타'
+  type: LeakType
   method: PayMethod
   amount: number
   title: string
@@ -46,7 +47,9 @@ type MoneyRecord = {
 const quickKey = 'cheonggok-quick-events-v1'
 const moneyKey = 'cheonggok-money-leak-v1'
 const lastMethodKey = 'cheonggok-quick-last-method-v1'
+const lastTypeKey = 'cheonggok-quick-last-type-v1'
 const payMethods: PayMethod[] = ['현대 M카드', '신한카드', '롯데카드', '국민카드', '현금', '체크카드', '계좌이체']
+const leakTypes: LeakType[] = ['식사·외식', '커피·본인', '커피·함께', '커피충전', '배달음식', '가족·관계', '업무도구', '생활구매', '기타']
 const quickAmounts = [4500, 10000, 20000, 30000]
 
 function load<T>(key: string, fallback: T): T {
@@ -75,11 +78,16 @@ function won(value: number) {
   return `${value.toLocaleString('ko-KR')}원`
 }
 
+function waterVolume(event: QuickEvent) {
+  // 용량 기능 추가 전 기록은 당시 기본값인 250mL로 계산한다.
+  return event.volumeMl ?? 250
+}
+
 function eventLabel(event: QuickEvent) {
   if (event.type === 'expense') return `${event.title || '소비'} · ${won(event.amount || 0)}`
-  if (event.type === 'health_a') return '1번 체크'
-  if (event.type === 'health_b') return '2번 체크'
-  if (event.type === 'water') return `물 ${event.volumeMl || 250}mL`
+  if (event.type === 'health_a') return '소변'
+  if (event.type === 'health_b') return '대변'
+  if (event.type === 'water') return `물 ${waterVolume(event)}mL`
   if (event.type === 'medicine_morning') return '아침 · 협심증약'
   return '자기 전 · 탈모약'
 }
@@ -90,6 +98,7 @@ export default function QuickPage() {
   const [amount, setAmount] = useState('')
   const [title, setTitle] = useState('')
   const [method, setMethod] = useState<PayMethod>('현대 M카드')
+  const [expenseType, setExpenseType] = useState<LeakType>('식사·외식')
   const [notice, setNotice] = useState('')
   const [user, setUser] = useState<User | null>(null)
   const [saving, setSaving] = useState(false)
@@ -106,6 +115,8 @@ export default function QuickPage() {
       setWorkItems(load(workInboxKey, []))
       const savedMethod = localStorage.getItem(lastMethodKey) as PayMethod | null
       if (savedMethod && payMethods.includes(savedMethod)) setMethod(savedMethod)
+      const savedType = localStorage.getItem(lastTypeKey) as LeakType | null
+      if (savedType && leakTypes.includes(savedType)) setExpenseType(savedType)
     })
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -125,7 +136,7 @@ export default function QuickPage() {
   const healthBCount = todayEvents.filter(event => event.type === 'health_b').length
   const waterEvents = todayEvents.filter(event => event.type === 'water')
   const waterCount = waterEvents.length
-  const waterTotalMl = waterEvents.reduce((sum, event) => sum + (event.volumeMl || 250), 0)
+  const waterTotalMl = waterEvents.reduce((sum, event) => sum + waterVolume(event), 0)
   const morningMedicineDone = todayEvents.some(event => event.type === 'medicine_morning')
   const nightMedicineDone = todayEvents.some(event => event.type === 'medicine_night')
   const expenseTotal = todayEvents
@@ -146,7 +157,7 @@ export default function QuickPage() {
       type,
       occurredAt: now,
       recordedAt: now,
-      ...(type === 'water' ? { volumeMl: volumeMl || 250 } : {}),
+      ...(type === 'water' ? { volumeMl: volumeMl || 120 } : {}),
     }
     saveEvents([event, ...events].slice(0, 500))
     setNotice(`${eventLabel(event)} 기록 완료 · ${timeInKorea(now)}`)
@@ -226,7 +237,7 @@ export default function QuickPage() {
     const moneyRecord: MoneyRecord = {
       id,
       date: dateInKorea(),
-      type: '기타',
+      type: expenseType,
       method,
       amount: parsedAmount,
       title: expenseTitle,
@@ -236,6 +247,7 @@ export default function QuickPage() {
     const moneyRecords = load<MoneyRecord[]>(moneyKey, [])
     localStorage.setItem(moneyKey, JSON.stringify([moneyRecord, ...moneyRecords].slice(0, 500)))
     localStorage.setItem(lastMethodKey, method)
+    localStorage.setItem(lastTypeKey, expenseType)
     saveEvents([event, ...events].slice(0, 500))
 
     if (user) {
@@ -365,9 +377,14 @@ export default function QuickPage() {
               placeholder="어디에 썼나요? (필수)"
               className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold outline-none focus:border-lime-500"
             />
-            <select value={method} onChange={event => setMethod(event.target.value as PayMethod)} className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold">
-              {payMethods.map(item => <option key={item}>{item}</option>)}
-            </select>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <select aria-label="지출 분류" value={expenseType} onChange={event => setExpenseType(event.target.value as LeakType)} className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold">
+                {leakTypes.map(item => <option key={item}>{item}</option>)}
+              </select>
+              <select aria-label="결제 수단" value={method} onChange={event => setMethod(event.target.value as PayMethod)} className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold">
+                {payMethods.map(item => <option key={item}>{item}</option>)}
+              </select>
+            </div>
             <button type="button" disabled={saving} onClick={handleExpense} className="mt-3 w-full rounded-2xl bg-lime-500 py-4 text-lg font-black text-slate-950 active:bg-lime-400 disabled:bg-slate-300 disabled:text-slate-500">
               {saving ? '저장 중' : '저장'}
             </button>
@@ -386,11 +403,11 @@ export default function QuickPage() {
             <div className="mt-4 grid grid-cols-2 gap-3">
               <button type="button" onClick={() => handleHealth('health_a')} className="min-h-28 rounded-2xl bg-sky-500 p-4 text-white active:bg-sky-400">
                 <span className="block text-3xl">○</span>
-                <strong className="mt-2 block text-lg font-black">1번 체크</strong>
+                <strong className="mt-2 block text-lg font-black">소변</strong>
               </button>
               <button type="button" onClick={() => handleHealth('health_b')} className="min-h-28 rounded-2xl bg-indigo-500 p-4 text-white active:bg-indigo-400">
                 <span className="block text-3xl">◇</span>
-                <strong className="mt-2 block text-lg font-black">2번 체크</strong>
+                <strong className="mt-2 block text-lg font-black">대변</strong>
               </button>
             </div>
             <div className="mt-3 grid gap-3">
@@ -398,12 +415,12 @@ export default function QuickPage() {
                 <strong className="block text-lg font-black">물 마시기 · 오늘 {waterCount}회 · {waterTotalMl.toLocaleString('ko-KR')}mL</strong>
                 <span className="mt-1 block text-xs font-bold text-cyan-700">마신 용량을 한 번 누르면 바로 기록됩니다.</span>
                 <div className="mt-3 grid grid-cols-3 gap-2">
-                  {[150, 250, 500].map(volume => (
+                  {[120, 250, 500].map(volume => (
                     <button
                       key={volume}
                       type="button"
                       onClick={() => handleHealth('water', volume)}
-                      className={`min-h-14 rounded-xl px-2 py-3 text-base font-black active:scale-[0.98] ${volume === 250 ? 'bg-cyan-600 text-white active:bg-cyan-500' : 'border border-cyan-200 bg-white text-cyan-950 active:bg-cyan-100'}`}
+                      className={`min-h-14 rounded-xl px-2 py-3 text-base font-black active:scale-[0.98] ${volume === 120 ? 'bg-cyan-600 text-white active:bg-cyan-500' : 'border border-cyan-200 bg-white text-cyan-950 active:bg-cyan-100'}`}
                     >
                       {volume}mL
                     </button>
@@ -479,8 +496,8 @@ export default function QuickPage() {
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
             <div className="rounded-2xl bg-lime-50 p-3"><strong className="block text-lg font-black text-lime-950">{won(expenseTotal)}</strong><span className="text-xs font-bold text-lime-800">소비</span></div>
-            <div className="rounded-2xl bg-sky-50 p-3"><strong className="block text-lg font-black text-sky-950">{healthACount}</strong><span className="text-xs font-bold text-sky-800">건강 1</span></div>
-            <div className="rounded-2xl bg-indigo-50 p-3"><strong className="block text-lg font-black text-indigo-950">{healthBCount}</strong><span className="text-xs font-bold text-indigo-800">건강 2</span></div>
+            <div className="rounded-2xl bg-sky-50 p-3"><strong className="block text-lg font-black text-sky-950">{healthACount}</strong><span className="text-xs font-bold text-sky-800">소변</span></div>
+            <div className="rounded-2xl bg-indigo-50 p-3"><strong className="block text-lg font-black text-indigo-950">{healthBCount}</strong><span className="text-xs font-bold text-indigo-800">대변</span></div>
             <div className="rounded-2xl bg-cyan-50 p-3"><strong className="block text-lg font-black text-cyan-950">{waterTotalMl.toLocaleString('ko-KR')}mL</strong><span className="text-xs font-bold text-cyan-800">물 · {waterCount}회</span></div>
             <div className="rounded-2xl bg-amber-50 p-3"><strong className="block text-lg font-black text-amber-950">{morningMedicineDone ? '완료' : '-'}</strong><span className="text-xs font-bold text-amber-800">아침 약</span></div>
             <div className="rounded-2xl bg-violet-50 p-3"><strong className="block text-lg font-black text-violet-950">{nightMedicineDone ? '완료' : '-'}</strong><span className="text-xs font-bold text-violet-800">자기 전 약</span></div>

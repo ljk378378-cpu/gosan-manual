@@ -5,7 +5,7 @@ import Nav from '@/components/Nav'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 
-type LeakType = '커피충전' | '배달음식' | '가족·관계' | '업무도구' | '생활구매' | '기타'
+type LeakType = '식사·외식' | '커피·본인' | '커피·함께' | '커피충전' | '배달음식' | '가족·관계' | '업무도구' | '생활구매' | '기타'
 type PayMethod = '현대 M카드' | '신한카드' | '롯데카드' | '국민카드' | '현금' | '체크카드' | '계좌이체'
 type SpendGroup = '현금' | '계좌이체' | '신용카드'
 type SubscriptionNeed = '필수' | '유지검토' | '해지예정' | '해지후보'
@@ -95,7 +95,7 @@ type MoneySubscriptionRow = {
 const monthKey = 'cheonggok-money-month-simple-v1'
 const leakKey = 'cheonggok-money-leak-v1'
 const subscriptionKey = 'cheonggok-money-subscription-v1'
-const leakTypes: LeakType[] = ['커피충전', '배달음식', '가족·관계', '업무도구', '생활구매', '기타']
+const leakTypes: LeakType[] = ['식사·외식', '커피·본인', '커피·함께', '커피충전', '배달음식', '가족·관계', '업무도구', '생활구매', '기타']
 const payMethods: PayMethod[] = ['현대 M카드', '신한카드', '롯데카드', '국민카드', '현금', '체크카드', '계좌이체']
 const subscriptionNeeds: SubscriptionNeed[] = ['필수', '유지검토', '해지예정', '해지후보']
 const personalCards: PayMethod[] = ['현대 M카드', '신한카드']
@@ -107,7 +107,9 @@ const quickAmounts = ['5000', '10000', '20000', '30000', '50000']
 const quickTemplates: Array<{ label: string; type: LeakType; title: string; amount: string; method: PayMethod }> = [
   { label: '커피 3만', type: '커피충전', title: '커피 충전', amount: '30000', method: '현대 M카드' },
   { label: '커피 5만', type: '커피충전', title: '커피 충전', amount: '50000', method: '현대 M카드' },
-  { label: '점심', type: '생활구매', title: '식비', amount: '10000', method: '현대 M카드' },
+  { label: '점심', type: '식사·외식', title: '점심식사', amount: '10000', method: '현대 M카드' },
+  { label: '내 커피', type: '커피·본인', title: '커피', amount: '4500', method: '현대 M카드' },
+  { label: '함께 커피', type: '커피·함께', title: '함께 마신 커피', amount: '9000', method: '현대 M카드' },
   { label: '배달', type: '배달음식', title: '배달음식', amount: '20000', method: '현대 M카드' },
   { label: '가족식사', type: '가족·관계', title: '가족식사', amount: '30000', method: '국민카드' },
   { label: '업무물품', type: '업무도구', title: '업무도구 구매', amount: '20000', method: '신한카드' },
@@ -194,7 +196,7 @@ export default function MoneyPage() {
   })
   const [leakDraft, setLeakDraft] = useState({
     date: today(),
-    type: '커피충전' as LeakType,
+    type: '식사·외식' as LeakType,
     method: '현대 M카드' as PayMethod,
     amount: '',
     title: '',
@@ -459,7 +461,7 @@ export default function MoneyPage() {
   const realtimeCash = currentCash - monthlyInstantCashOut
   const cashAfterCardDue = realtimeCash - remainingFixedOut - totalCardActual
   const relationTotal = currentLeaks.filter(item => item.type === '가족·관계').reduce((sum, item) => sum + item.amount, 0)
-  const coffeeTotal = currentLeaks.filter(item => item.type === '커피충전').reduce((sum, item) => sum + item.amount, 0)
+  const coffeeTotal = currentLeaks.filter(item => item.type.startsWith('커피')).reduce((sum, item) => sum + item.amount, 0)
   const hyundaiOver = activeMonthRecord ? Math.max(0, activeMonthRecord.cardHyundaiActual - activeMonthRecord.cardHyundaiTarget) : 0
   const coffeeOver = activeMonthRecord ? Math.max(0, activeMonthRecord.coffeeActual - activeMonthRecord.coffeeTarget) : 0
 
@@ -565,7 +567,7 @@ export default function MoneyPage() {
     setLeakError('')
     setSelectedDate(record.date)
     setMonthDraft(previous => ({ ...previous, month: record.date.slice(0, 7) }))
-    setLeakDraft({ date: today(), type: '커피충전', method: '현대 M카드', amount: '', title: '', reason: '', keep: false })
+    setLeakDraft({ date: today(), type: '식사·외식', method: '현대 M카드', amount: '', title: '', reason: '', keep: false })
   }
 
   const applyQuickTemplate = (template: (typeof quickTemplates)[number]) => {
@@ -1147,7 +1149,7 @@ export default function MoneyPage() {
                 <p className="mt-2 text-xl font-black text-red-800">{won(relationTotal)}</p>
               </div>
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                <p className="text-xs font-black text-amber-700">커피충전</p>
+                <p className="text-xs font-black text-amber-700">커피 전체</p>
                 <p className="mt-2 text-xl font-black text-amber-800">{won(coffeeTotal)}</p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
