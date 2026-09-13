@@ -49,6 +49,8 @@ type Recommendation = {
   href: string
   tone: string
   item?: WorkInboxItem
+  candidateIndex?: number
+  candidateTotal?: number
 }
 
 type ConfirmedPriority = {
@@ -278,9 +280,13 @@ export default function HomeControlDashboard() {
   const recommendationPools = useMemo(() => {
     const nextStep = inspectionSteps.find(step => step.date >= today)
     const inspectionDays = dayDifference(today, '2026-09-18')
-    const fallbackDeadline = nextStep && inspectionDays >= 0
-      ? { slot: '마감 위험' as const, title: nextStep.title, reason: `${koreanDateLabel(nextStep.date)} 기준 · 완료기준: ${nextStep.done}`, href: '/inspection-2026', tone: 'border-red-300 bg-red-50 text-red-950' }
-      : { slot: '마감 위험' as const, title: '27년 평가 증빙 1건 확인', reason: '지표를 읽는 것에서 끝내지 말고 실제 파일 위치까지 확인', href: '/evaluation-2027', tone: 'border-red-300 bg-red-50 text-red-950' }
+    const deadlineFallbacks: Recommendation[] = [
+      nextStep && inspectionDays >= 0
+        ? { slot: '마감 위험', title: nextStep.title, reason: `${koreanDateLabel(nextStep.date)} 기준 · 완료기준: ${nextStep.done}`, href: '/inspection-2026', tone: 'border-red-300 bg-red-50 text-red-950' }
+        : { slot: '마감 위험', title: '27년 평가 증빙 1건 확인', reason: '지표를 읽는 것에서 끝내지 말고 실제 파일 위치까지 확인', href: '/evaluation-2027', tone: 'border-red-300 bg-red-50 text-red-950' },
+      { slot: '마감 위험', title: '오늘·이번 주 마감 문서 1건 끝내기', reason: '결재·결과보고·제출자료 중 가장 가까운 기한 1건의 완료본을 남김', href: '/team-command', tone: 'border-red-300 bg-red-50 text-red-950' },
+      { slot: '마감 위험', title: '기한 없는 업무 1건에 날짜 지정하기', reason: '수집함에서 미뤄진 업무 하나를 골라 담당자와 완료일을 확정', href: '/team-command', tone: 'border-red-300 bg-red-50 text-red-950' },
+    ]
 
     const deadline = activeItems.filter(item => item.dueDate).map(item => ({
       slot: '마감 위험' as const, title: item.content,
@@ -302,15 +308,31 @@ export default function HomeControlDashboard() {
     }))
 
     const pools: Record<PrioritySlot, Recommendation[]> = {
-      '마감 위험': [...deadline, fallbackDeadline],
+      '마감 위험': [...deadline, ...deadlineFallbacks],
       '팀을 움직이는 결정': [...decision, {
         slot: '팀을 움직이는 결정' as const, title: '팀별 과장 판단 대기 안건 1건만 결론내기',
         reason: '직원의 상의를 대신 처리하지 말고 결론·담당자·기한만 확정',
+        href: '/team-command', tone: 'border-amber-300 bg-amber-50 text-amber-950',
+      }, {
+        slot: '팀을 움직이는 결정' as const, title: '반복 보고 1건을 직원 판단으로 돌려보내기',
+        reason: '직원이 선택지와 자기 의견을 먼저 적어 다시 보고하도록 기준을 전달',
+        href: '/team-command', tone: 'border-amber-300 bg-amber-50 text-amber-950',
+      }, {
+        slot: '팀을 움직이는 결정' as const, title: '팀원 1명의 다음 행동만 명확히 하기',
+        reason: '긴 피드백 대신 오늘 할 일·완료기준·확인시간을 한 문장으로 정함',
         href: '/team-command', tone: 'border-amber-300 bg-amber-50 text-amber-950',
       }],
       '내 핵심업무': [...core, {
         slot: '내 핵심업무' as const, title: '생활쿠폰지원사업 다음 일정·증빙 1건 확정',
         reason: '순서가 변경된 회기와 다음 결제·미션지 회수 시점 중 하나를 확정',
+        href: '/programs', tone: 'border-emerald-300 bg-emerald-50 text-emerald-950',
+      }, {
+        slot: '내 핵심업무' as const, title: '27년 평가 지표 1개와 실제 증빙 연결하기',
+        reason: '담당자·파일 위치·부족한 자료를 확인해 평가 준비를 한 칸 전진',
+        href: '/evaluation-2027', tone: 'border-emerald-300 bg-emerald-50 text-emerald-950',
+      }, {
+        slot: '내 핵심업무' as const, title: '내 사업 1개의 다음 마감과 산출물 확정하기',
+        reason: '오늘 직접 남길 수 있는 문서·명단·일정 중 하나를 완료',
         href: '/programs', tone: 'border-emerald-300 bg-emerald-50 text-emerald-950',
       }],
     }
@@ -321,9 +343,10 @@ export default function HomeControlDashboard() {
     const chosen = new Set<string>()
     return (['마감 위험', '팀을 움직이는 결정', '내 핵심업무'] as PrioritySlot[]).map(slot => {
       const available = recommendationPools[slot].filter(candidate => !candidate.item || !chosen.has(candidate.item.id))
-      const candidate = available[candidateOffsets[slot] % available.length]
+      const candidateIndex = candidateOffsets[slot] % available.length
+      const candidate = available[candidateIndex]
       if (candidate.item) chosen.add(candidate.item.id)
-      return candidate
+      return { ...candidate, candidateIndex, candidateTotal: available.length }
     })
   }, [candidateOffsets, recommendationPools])
 
@@ -465,6 +488,7 @@ export default function HomeControlDashboard() {
 
   function showNextRecommendation(slot: PrioritySlot) {
     setCandidateOffsets(current => ({ ...current, [slot]: current[slot] + 1 }))
+    setSyncMessage(`${slot}의 다음 추천을 표시했습니다`)
   }
 
   function directRecommendation(slot: PrioritySlot, item: WorkInboxItem): Recommendation {
@@ -510,7 +534,7 @@ export default function HomeControlDashboard() {
               <article key={recommendation.slot} className={`flex min-h-60 flex-col rounded-lg border p-5 ${recommendation.tone}`}>
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs font-black opacity-70">{recommendation.slot}</p>
-                  {badge ? <span className={`rounded-md px-2 py-1 text-[11px] font-black ${confirmed?.status === '완료' ? 'bg-emerald-700 text-white' : confirmed?.status === '제외' ? 'bg-slate-600 text-white' : 'bg-white text-slate-700'}`}>{badge}</span> : <span className="text-[11px] font-black opacity-60">후보 {recommendationPools[recommendation.slot].length}개</span>}
+                  {badge ? <span className={`rounded-md px-2 py-1 text-[11px] font-black ${confirmed?.status === '완료' ? 'bg-emerald-700 text-white' : confirmed?.status === '제외' ? 'bg-slate-600 text-white' : 'bg-white text-slate-700'}`}>{badge}</span> : <span className="text-[11px] font-black opacity-60">추천 {(recommendation.candidateIndex ?? 0) + 1}/{recommendation.candidateTotal ?? recommendationPools[recommendation.slot].length}</span>}
                 </div>
                 <h3 className="mt-3 text-lg font-black leading-7">{title}</h3>
                 <p className="mt-3 flex-1 text-sm font-semibold leading-6 opacity-80">{reason}</p>
@@ -519,7 +543,7 @@ export default function HomeControlDashboard() {
                 <div className="mt-5 flex flex-wrap gap-2">
                   {confirmed?.status !== '제외' ? <Link href={href} className="rounded-md bg-white px-3 py-2 text-sm font-black text-slate-900 shadow-sm">열기</Link> : null}
                   {!confirmed ? <button type="button" onClick={() => confirmPriority(recommendation)} className="rounded-md bg-slate-950 px-3 py-2 text-sm font-black text-white">오늘 확정</button> : null}
-                  {!confirmed ? <button type="button" onClick={() => showNextRecommendation(recommendation.slot)} className="rounded-md border border-slate-400 bg-white/70 px-3 py-2 text-sm font-black text-slate-800">다른 추천</button> : null}
+                  {!confirmed ? <button type="button" onClick={() => showNextRecommendation(recommendation.slot)} disabled={(recommendation.candidateTotal ?? 0) <= 1} className="rounded-md border border-slate-400 bg-white/70 px-3 py-2 text-sm font-black text-slate-800 disabled:cursor-not-allowed disabled:opacity-40">다른 추천</button> : null}
                   {!confirmed ? <button type="button" onClick={() => setSelectingSlot(recommendation.slot)} className="rounded-md border border-slate-400 bg-white/70 px-3 py-2 text-sm font-black text-slate-800">직접 선택</button> : null}
                   {!confirmed ? <button type="button" onClick={() => excludePriority(recommendation)} className="rounded-md px-3 py-2 text-xs font-black opacity-70 underline underline-offset-4">오늘 제외</button> : null}
                   {confirmed?.status === '확정' ? <button type="button" onClick={() => completePriority(recommendation.slot)} className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-black text-white">결과 남기고 완료</button> : null}
