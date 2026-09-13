@@ -11,6 +11,7 @@ const navItems = [
   { href: '/programs', label: '사업관리' },
   { href: '/hr-labor', label: '인사노무' },
   { href: '/money', label: '소비점검' },
+  { href: '/health', label: '건강관리' },
   { href: '/ai-system', label: 'AI원칙' },
 ]
 

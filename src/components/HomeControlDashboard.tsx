@@ -20,6 +20,7 @@ const workAreas = [
   { href: '/programs', label: '개별사업', title: '사업 컨트롤타워', desc: '일정·회기·참여자·증빙' },
   { href: '/evaluation-2027', label: '27년 평가', title: '평가 대비 특별반', desc: '지표·담당자·증빙준비율' },
   { href: '/hr-labor', label: '학습', title: '인사노무 학습실', desc: '오늘의 10분 학습과 적용' },
+  { href: '/health', label: '건강', title: '건강관리', desc: '물·운동·체중·증상 누적 확인' },
   { href: '/report', label: '보고', title: '보고서 출력', desc: '사업·평가·팀운영 보고자료' },
 ]
 
@@ -352,7 +353,7 @@ export default function HomeControlDashboard() {
       <section className="border-t border-slate-300 py-6">
         <h2 className="text-lg font-black">필요할 때만 여는 업무탭</h2>
         <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{workAreas.map(area => <Link key={area.href} href={area.href} className="min-h-28 rounded-lg border border-slate-200 bg-white p-4 transition hover:border-slate-400"><p className="text-xs font-black text-slate-500">{area.label}</p><h3 className="mt-2 text-base font-black">{area.title}</h3><p className="mt-1 text-xs font-semibold leading-5 text-slate-500">{area.desc}</p></Link>)}</div>
-        <div className="mt-4 flex flex-wrap gap-2 text-sm font-black"><Link href="/money" className="rounded-md border border-slate-300 bg-white px-3 py-2">소비점검</Link><Link href="/quick" className="rounded-md border border-slate-300 bg-white px-3 py-2">건강·소비 빠른기록</Link><Link href="/ai-system" className="rounded-md border border-slate-300 bg-white px-3 py-2">AI 사용원칙</Link></div>
+        <div className="mt-4 flex flex-wrap gap-2 text-sm font-black"><Link href="/money" className="rounded-md border border-slate-300 bg-white px-3 py-2">소비점검</Link><Link href="/health" className="rounded-md border border-slate-300 bg-white px-3 py-2">건강관리</Link><Link href="/quick" className="rounded-md border border-slate-300 bg-white px-3 py-2">건강·소비 빠른기록</Link><Link href="/ai-system" className="rounded-md border border-slate-300 bg-white px-3 py-2">AI 사용원칙</Link></div>
       </section>
     </main>
   )

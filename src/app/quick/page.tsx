@@ -92,6 +92,16 @@ function timeInKorea(value: string) {
   }).format(new Date(value))
 }
 
+function dateLabelInKorea(date: string) {
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  }).format(new Date(`${date}T12:00:00+09:00`))
+}
+
 function won(value: number) {
   return `${value.toLocaleString('ko-KR')}원`
 }
@@ -726,6 +736,7 @@ export default function QuickPage() {
             <div>
               <p className="text-xs font-black tracking-[.16em] text-slate-400">TODAY</p>
               <h2 className="mt-1 text-lg font-black">오늘 기록</h2>
+              <p className="mt-1 text-xs font-bold text-slate-500">{dateLabelInKorea(dateInKorea())}</p>
             </div>
             <span className="text-xs font-bold text-slate-500">소비·건강 {user ? '클라우드' : '기기'}</span>
           </div>
@@ -745,18 +756,21 @@ export default function QuickPage() {
             <div className="rounded-2xl bg-violet-50 p-3"><strong className="block text-lg font-black text-violet-950">{nightMedicineDone ? '완료' : '-'}</strong><span className="text-xs font-bold text-violet-800">자기 전 약</span></div>
           </div>
           <div className="mt-4 space-y-2">
-            {events.slice(0, 5).map(event => (
+            {todayEvents.slice(0, 5).map(event => (
               <div key={event.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-3">
                 <span className="text-sm font-bold text-slate-800">{eventLabel(event)}</span>
                 <span className="text-xs font-semibold text-slate-500">{timeInKorea(event.occurredAt)}</span>
               </div>
             ))}
-            {!events.length ? <p className="py-4 text-center text-sm font-semibold text-slate-400">아직 기록이 없습니다.</p> : null}
+            {!todayEvents.length ? <p className="py-4 text-center text-sm font-semibold text-slate-400">오늘 기록이 없습니다.</p> : null}
           </div>
         </section>
 
         <div className="mt-4 flex justify-center">
-          <Link href="/money" className="rounded-xl bg-slate-200 px-4 py-3 text-sm font-black text-slate-700">소비점검에서 자세히 보기</Link>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Link href="/health" className="rounded-xl bg-sky-700 px-4 py-3 text-sm font-black text-white">건강관리에서 누적 보기</Link>
+            <Link href="/money" className="rounded-xl bg-slate-200 px-4 py-3 text-sm font-black text-slate-700">소비점검에서 자세히 보기</Link>
+          </div>
         </div>
       </main>
     </div>
