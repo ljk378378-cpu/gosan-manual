@@ -57,11 +57,26 @@ type ConfirmedPriority = {
   reason: string
   href: string
   sourceItemId?: string
-  status: '확정' | '완료'
+  status: '확정' | '완료' | '제외'
+  outcome: string
+  skipCount: number
   updatedAt: string
 }
 
 type PriorityHistory = Record<string, Partial<Record<PrioritySlot, ConfirmedPriority>>>
+
+type PriorityRow = {
+  priority_date: string
+  slot: PrioritySlot
+  title: string
+  reason: string
+  href: string
+  source_item_id: string | null
+  status: ConfirmedPriority['status']
+  outcome: string
+  skip_count: number
+  updated_at: string
+}
 
 const priorityKey = 'cheonggok-home-priorities-v1'
 
@@ -83,6 +98,35 @@ function readPriorityHistory() {
   }
 }
 
+function priorityFromRow(row: PriorityRow): ConfirmedPriority {
+  return {
+    slot: row.slot,
+    title: row.title,
+    reason: row.reason,
+    href: row.href,
+    sourceItemId: row.source_item_id || undefined,
+    status: row.status,
+    outcome: row.outcome || '',
+    skipCount: row.skip_count || 0,
+    updatedAt: row.updated_at,
+  }
+}
+
+function mergePriorityHistory(...histories: PriorityHistory[]) {
+  const merged: PriorityHistory = {}
+  histories.forEach(history => {
+    Object.entries(history).forEach(([date, slots]) => {
+      const next = { ...(merged[date] || {}) }
+      ;(Object.entries(slots) as Array<[PrioritySlot, ConfirmedPriority]>).forEach(([slot, priority]) => {
+        const saved = next[slot]
+        if (!saved || priority.updatedAt > saved.updatedAt) next[slot] = priority
+      })
+      merged[date] = next
+    })
+  })
+  return merged
+}
+
 function dayDifference(from: string, to: string) {
   const fromTime = new Date(`${from}T12:00:00+09:00`).getTime()
   const toTime = new Date(`${to}T12:00:00+09:00`).getTime()
@@ -93,6 +137,18 @@ function koreanDateLabel(date: string) {
   return new Intl.DateTimeFormat('ko-KR', {
     timeZone: 'Asia/Seoul', month: 'long', day: 'numeric', weekday: 'short',
   }).format(new Date(`${date}T12:00:00+09:00`))
+}
+
+function dateOffset(date: string, offset: number) {
+  const value = new Date(`${date}T12:00:00+09:00`)
+  value.setDate(value.getDate() + offset)
+  return koreaDate(value)
+}
+
+function weekStart(date: string) {
+  const value = new Date(`${date}T12:00:00+09:00`)
+  const mondayOffset = value.getDay() === 0 ? -6 : 1 - value.getDay()
+  return dateOffset(date, mondayOffset)
 }
 
 function itemScore(item: WorkInboxItem, today: string) {
@@ -123,32 +179,74 @@ export default function HomeControlDashboard() {
   const [user, setUser] = useState<User | null>(null)
   const [workItems, setWorkItems] = useState<WorkInboxItem[]>([])
   const [confirmedPriorities, setConfirmedPriorities] = useState<Partial<Record<PrioritySlot, ConfirmedPriority>>>({})
+  const [priorityHistory, setPriorityHistory] = useState<PriorityHistory>({})
+  const [candidateOffsets, setCandidateOffsets] = useState<Record<PrioritySlot, number>>({ '마감 위험': 0, '팀을 움직이는 결정': 0, '내 핵심업무': 0 })
+  const [selectingSlot, setSelectingSlot] = useState<PrioritySlot | null>(null)
+  const [outcomeDrafts, setOutcomeDrafts] = useState<Partial<Record<PrioritySlot, string>>>({})
   const [syncMessage, setSyncMessage] = useState('기기 자료 확인 중')
   const today = koreaDate()
 
   useEffect(() => {
     let active = true
     const localItems = readLocalWorkInbox()
-    const priorityHistory = readPriorityHistory()
+    const localPriorityHistory = readPriorityHistory()
     const frame = requestAnimationFrame(() => {
       if (active) {
         setWorkItems(localItems)
-        setConfirmedPriorities(priorityHistory[today] || {})
+        setConfirmedPriorities(localPriorityHistory[today] || {})
+        setPriorityHistory(localPriorityHistory)
       }
     })
 
     async function loadCloud(userId: string) {
-      const { data, error } = await supabase.from('work_inbox_items').select('*').eq('user_id', userId).order('updated_at', { ascending: false })
+      const [workResult, priorityResult] = await Promise.all([
+        supabase.from('work_inbox_items').select('*').eq('user_id', userId).order('updated_at', { ascending: false }),
+        supabase.from('daily_priorities').select('priority_date,slot,title,reason,href,source_item_id,status,outcome,skip_count,updated_at').eq('user_id', userId).order('priority_date', { ascending: false }).limit(180),
+      ])
       if (!active) return
-      if (error) {
+      if (workResult.error) {
         setSyncMessage('클라우드 연결 실패·기기 자료 표시')
         return
       }
-      const cloudItems = ((data ?? []) as WorkInboxRow[]).map(workInboxFromRow)
+      const cloudItems = ((workResult.data ?? []) as WorkInboxRow[]).map(workInboxFromRow)
       const merged = mergeWorkInboxItems(cloudItems, localItems)
       setWorkItems(merged)
       localStorage.setItem(workInboxKey, JSON.stringify(merged))
-      setSyncMessage('클라우드 연결됨')
+      if (priorityResult.error) {
+        setSyncMessage('업무는 연결됨·실행성과는 이 기기 자료 표시')
+        return
+      }
+      const cloudHistory: PriorityHistory = {}
+      ;((priorityResult.data ?? []) as PriorityRow[]).forEach(row => {
+        cloudHistory[row.priority_date] = { ...(cloudHistory[row.priority_date] || {}), [row.slot]: priorityFromRow(row) }
+      })
+      const mergedHistory = mergePriorityHistory(cloudHistory, localPriorityHistory)
+      setPriorityHistory(mergedHistory)
+      setConfirmedPriorities(mergedHistory[today] || {})
+      localStorage.setItem(priorityKey, JSON.stringify(mergedHistory))
+
+      const localRows = Object.entries(localPriorityHistory).flatMap(([date, slots]) =>
+        (Object.values(slots) as ConfirmedPriority[])
+          .filter(priority => {
+            const cloudPriority = cloudHistory[date]?.[priority.slot]
+            return !cloudPriority || priority.updatedAt > cloudPriority.updatedAt
+          })
+          .map(priority => ({
+          user_id: userId,
+          priority_date: date,
+          slot: priority.slot,
+          title: priority.title,
+          reason: priority.reason,
+          href: priority.href,
+          source_item_id: priority.sourceItemId || null,
+          status: priority.status,
+          outcome: priority.outcome || '',
+          skip_count: priority.skipCount || 0,
+          updated_at: priority.updatedAt,
+          })),
+      )
+      if (localRows.length) await supabase.from('daily_priorities').upsert(localRows, { onConflict: 'user_id,priority_date,slot' })
+      setSyncMessage('업무·실행성과 클라우드 연결됨')
     }
 
     supabase.auth.getSession().then(({ data }) => {
@@ -177,56 +275,88 @@ export default function HomeControlDashboard() {
     [today, workItems],
   )
 
-  const recommendations = useMemo(() => {
-    const chosen = new Set<string>()
+  const recommendationPools = useMemo(() => {
     const nextStep = inspectionSteps.find(step => step.date >= today)
     const inspectionDays = dayDifference(today, '2026-09-18')
-    const deadlineItem = activeItems.find(item => item.dueDate)
-    if (deadlineItem) chosen.add(deadlineItem.id)
-    const decisionItem = activeItems.find(item => !chosen.has(item.id) && item.status === '미확인'
-      && ['상급자 전달', '지시사항', '갑작스러운 요청'].includes(item.category))
-    if (decisionItem) chosen.add(decisionItem.id)
-    const coreItem = activeItems.find(item => !chosen.has(item.id)
-      && (item.status === '사업에 연결' || item.status === '내가 처리'
-        || /지도점검|평가|생활쿠폰|사업|결과보고/.test(item.content)))
-
     const fallbackDeadline = nextStep && inspectionDays >= 0
-      ? { title: nextStep.title, reason: `${koreanDateLabel(nextStep.date)} 기준 · 완료기준: ${nextStep.done}`, href: '/inspection-2026' }
-      : { title: '27년 평가 증빙 1건 확인', reason: '지표를 읽는 것에서 끝내지 말고 실제 파일 위치까지 확인', href: '/evaluation-2027' }
+      ? { slot: '마감 위험' as const, title: nextStep.title, reason: `${koreanDateLabel(nextStep.date)} 기준 · 완료기준: ${nextStep.done}`, href: '/inspection-2026', tone: 'border-red-300 bg-red-50 text-red-950' }
+      : { slot: '마감 위험' as const, title: '27년 평가 증빙 1건 확인', reason: '지표를 읽는 것에서 끝내지 말고 실제 파일 위치까지 확인', href: '/evaluation-2027', tone: 'border-red-300 bg-red-50 text-red-950' }
 
-    return [
-      deadlineItem ? {
-        slot: '마감 위험', title: deadlineItem.content,
-        reason: `${dueText(deadlineItem, today)} · ${deadlineItem.team} · 완료기준을 확인하고 처리`,
-        href: '/team-command', tone: 'border-red-300 bg-red-50 text-red-950', item: deadlineItem,
-      } : { slot: '마감 위험', ...fallbackDeadline, tone: 'border-red-300 bg-red-50 text-red-950' },
-      decisionItem ? {
-        slot: '팀을 움직이는 결정', title: decisionItem.content,
-        reason: `${decisionItem.category} · ${decisionItem.team} · 결론·담당자·기한 중 하나를 확정`,
-        href: '/team-command', tone: 'border-amber-300 bg-amber-50 text-amber-950', item: decisionItem,
-      } : {
-        slot: '팀을 움직이는 결정', title: '팀별 과장 판단 대기 안건 1건만 결론내기',
+    const deadline = activeItems.filter(item => item.dueDate).map(item => ({
+      slot: '마감 위험' as const, title: item.content,
+      reason: `${dueText(item, today)} · ${item.team} · 완료기준을 확인하고 처리`,
+      href: '/team-command', tone: 'border-red-300 bg-red-50 text-red-950', item,
+    }))
+    const decision = activeItems.filter(item => item.status === '미확인'
+      && ['상급자 전달', '지시사항', '갑작스러운 요청'].includes(item.category)).map(item => ({
+      slot: '팀을 움직이는 결정' as const, title: item.content,
+      reason: `${item.category} · ${item.team} · 결론·담당자·기한 중 하나를 확정`,
+      href: '/team-command', tone: 'border-amber-300 bg-amber-50 text-amber-950', item,
+    }))
+    const core = activeItems.filter(item => item.status === '사업에 연결' || item.status === '내가 처리'
+      || /지도점검|평가|생활쿠폰|사업|결과보고/.test(item.content)).map(item => ({
+      slot: '내 핵심업무' as const, title: item.content,
+      reason: `${item.team} · ${dueText(item, today)} · 오늘 눈에 보이는 산출물 1개를 남김`,
+      href: item.status === '사업에 연결' ? '/programs' : '/team-command',
+      tone: 'border-emerald-300 bg-emerald-50 text-emerald-950', item,
+    }))
+
+    const pools: Record<PrioritySlot, Recommendation[]> = {
+      '마감 위험': [...deadline, fallbackDeadline],
+      '팀을 움직이는 결정': [...decision, {
+        slot: '팀을 움직이는 결정' as const, title: '팀별 과장 판단 대기 안건 1건만 결론내기',
         reason: '직원의 상의를 대신 처리하지 말고 결론·담당자·기한만 확정',
         href: '/team-command', tone: 'border-amber-300 bg-amber-50 text-amber-950',
-      },
-      coreItem ? {
-        slot: '내 핵심업무', title: coreItem.content,
-        reason: `${coreItem.team} · ${dueText(coreItem, today)} · 오늘 눈에 보이는 산출물 1개를 남김`,
-        href: coreItem.status === '사업에 연결' ? '/programs' : '/team-command',
-        tone: 'border-emerald-300 bg-emerald-50 text-emerald-950', item: coreItem,
-      } : {
-        slot: '내 핵심업무', title: '생활쿠폰지원사업 다음 일정·증빙 1건 확정',
+      }],
+      '내 핵심업무': [...core, {
+        slot: '내 핵심업무' as const, title: '생활쿠폰지원사업 다음 일정·증빙 1건 확정',
         reason: '순서가 변경된 회기와 다음 결제·미션지 회수 시점 중 하나를 확정',
         href: '/programs', tone: 'border-emerald-300 bg-emerald-50 text-emerald-950',
-      },
-    ] as Recommendation[]
+      }],
+    }
+    return pools
   }, [activeItems, today])
+
+  const recommendations = useMemo(() => {
+    const chosen = new Set<string>()
+    return (['마감 위험', '팀을 움직이는 결정', '내 핵심업무'] as PrioritySlot[]).map(slot => {
+      const available = recommendationPools[slot].filter(candidate => !candidate.item || !chosen.has(candidate.item.id))
+      const candidate = available[candidateOffsets[slot] % available.length]
+      if (candidate.item) chosen.add(candidate.item.id)
+      return candidate
+    })
+  }, [candidateOffsets, recommendationPools])
 
   const overdueCount = activeItems.filter(item => item.dueDate && item.dueDate < today).length
   const todayCount = activeItems.filter(item => item.dueDate === today).length
   const decisionCount = activeItems.filter(item => item.status === '미확인').length
   const unsortedItems = activeItems.filter(item => item.status === '미확인' && !item.dueDate)
   const inspectionDays = dayDifference(today, '2026-09-18')
+  const weekStartDate = weekStart(today)
+  const period28Start = dateOffset(today, -27)
+  const historyEntries = Object.entries(priorityHistory).flatMap(([date, slots]) =>
+    (Object.values(slots) as ConfirmedPriority[]).map(priority => ({ date, priority })),
+  )
+  const weekEntries = historyEntries.filter(entry => entry.date >= weekStartDate && entry.date <= today)
+  const period28Entries = historyEntries.filter(entry => entry.date >= period28Start && entry.date <= today)
+  const weekPlanned = weekEntries.filter(entry => entry.priority.status !== '제외')
+  const weekCompleted = weekPlanned.filter(entry => entry.priority.status === '완료')
+  const period28Planned = period28Entries.filter(entry => entry.priority.status !== '제외')
+  const period28Completed = period28Planned.filter(entry => entry.priority.status === '완료')
+  const weekRate = weekPlanned.length ? Math.round((weekCompleted.length / weekPlanned.length) * 100) : 0
+  const period28Rate = period28Planned.length ? Math.round((period28Completed.length / period28Planned.length) * 100) : 0
+  const activeDays28 = new Set(period28Planned.map(entry => entry.date)).size
+  const changedRecommendations28 = period28Entries.reduce((sum, entry) => sum + (entry.priority.skipCount || 0), 0)
+  const slotStats28 = (['마감 위험', '팀을 움직이는 결정', '내 핵심업무'] as PrioritySlot[]).map(slot => {
+    const planned = period28Planned.filter(entry => entry.priority.slot === slot)
+    const completed = planned.filter(entry => entry.priority.status === '완료')
+    return { slot, planned: planned.length, completed: completed.length, rate: planned.length ? Math.round((completed.length / planned.length) * 100) : 0 }
+  })
+  const weakSlot = [...slotStats28].filter(stat => stat.planned).sort((a, b) => a.rate - b.rate)[0]
+  const recentOutcomes = weekCompleted
+    .filter(entry => entry.priority.outcome)
+    .sort((a, b) => b.priority.updatedAt.localeCompare(a.priority.updatedAt))
+    .slice(0, 6)
 
   async function updateStatus(item: WorkInboxItem, status: WorkInboxStatus) {
     const updated = { ...item, status, updatedAt: new Date().toISOString() }
@@ -245,11 +375,30 @@ export default function HomeControlDashboard() {
     }
   }
 
-  function saveConfirmedPriorities(next: Partial<Record<PrioritySlot, ConfirmedPriority>>) {
+  async function saveConfirmedPriorities(next: Partial<Record<PrioritySlot, ConfirmedPriority>>) {
     setConfirmedPriorities(next)
-    const history = readPriorityHistory()
-    history[today] = next
-    localStorage.setItem(priorityKey, JSON.stringify(history))
+    const nextHistory = { ...priorityHistory, [today]: next }
+    setPriorityHistory(nextHistory)
+    localStorage.setItem(priorityKey, JSON.stringify(nextHistory))
+    if (user) {
+      const rows = (Object.values(next) as ConfirmedPriority[]).map(priority => ({
+        user_id: user.id,
+        priority_date: today,
+        slot: priority.slot,
+        title: priority.title,
+        reason: priority.reason,
+        href: priority.href,
+        source_item_id: priority.sourceItemId || null,
+        status: priority.status,
+        outcome: priority.outcome || '',
+        skip_count: priority.skipCount || 0,
+        updated_at: priority.updatedAt,
+      }))
+      if (rows.length) {
+        const { error } = await supabase.from('daily_priorities').upsert(rows, { onConflict: 'user_id,priority_date,slot' })
+        if (error) setSyncMessage('기기에는 저장됨·실행성과 업로드 실패')
+      }
+    }
   }
 
   async function confirmPriority(recommendation: Recommendation) {
@@ -260,21 +409,73 @@ export default function HomeControlDashboard() {
       href: recommendation.href,
       sourceItemId: recommendation.item?.id,
       status: '확정',
+      outcome: '',
+      skipCount: candidateOffsets[recommendation.slot],
       updatedAt: new Date().toISOString(),
     }
-    saveConfirmedPriorities({ ...confirmedPriorities, [recommendation.slot]: priority })
+    await saveConfirmedPriorities({ ...confirmedPriorities, [recommendation.slot]: priority })
+    setSelectingSlot(null)
     if (recommendation.item?.status === '미확인') await updateStatus(recommendation.item, '내가 처리')
   }
 
   async function completePriority(slot: PrioritySlot) {
     const priority = confirmedPriorities[slot]
     if (!priority) return
-    saveConfirmedPriorities({
+    const outcome = outcomeDrafts[slot]?.trim() || priority.outcome
+    if (!outcome) {
+      setSyncMessage('완료 결과를 한 줄 입력한 뒤 완료해 주세요')
+      return
+    }
+    await saveConfirmedPriorities({
       ...confirmedPriorities,
-      [slot]: { ...priority, status: '완료', updatedAt: new Date().toISOString() },
+      [slot]: { ...priority, status: '완료', outcome, updatedAt: new Date().toISOString() },
     })
     const sourceItem = priority.sourceItemId ? workItems.find(item => item.id === priority.sourceItemId) : undefined
     if (sourceItem && sourceItem.status !== '완료') await updateStatus(sourceItem, '완료')
+  }
+
+  async function excludePriority(recommendation: Recommendation) {
+    const priority: ConfirmedPriority = {
+      slot: recommendation.slot,
+      title: recommendation.title,
+      reason: recommendation.reason,
+      href: recommendation.href,
+      sourceItemId: recommendation.item?.id,
+      status: '제외',
+      outcome: '',
+      skipCount: candidateOffsets[recommendation.slot],
+      updatedAt: new Date().toISOString(),
+    }
+    await saveConfirmedPriorities({ ...confirmedPriorities, [recommendation.slot]: priority })
+  }
+
+  async function changeConfirmedPriority(slot: PrioritySlot) {
+    const next = { ...confirmedPriorities }
+    delete next[slot]
+    setConfirmedPriorities(next)
+    const nextHistory = { ...priorityHistory, [today]: next }
+    setPriorityHistory(nextHistory)
+    localStorage.setItem(priorityKey, JSON.stringify(nextHistory))
+    setOutcomeDrafts(current => ({ ...current, [slot]: '' }))
+    if (user) {
+      const { error } = await supabase.from('daily_priorities').delete().eq('user_id', user.id).eq('priority_date', today).eq('slot', slot)
+      if (error) setSyncMessage('기기에서는 변경됨·클라우드 변경 실패')
+    }
+  }
+
+  function showNextRecommendation(slot: PrioritySlot) {
+    setCandidateOffsets(current => ({ ...current, [slot]: current[slot] + 1 }))
+  }
+
+  function directRecommendation(slot: PrioritySlot, item: WorkInboxItem): Recommendation {
+    return {
+      slot,
+      title: item.content,
+      reason: `직접 선택 · ${item.team} · ${dueText(item, today)}`,
+      href: item.status === '사업에 연결' ? '/programs' : '/team-command',
+      tone: slot === '마감 위험' ? 'border-red-300 bg-red-50 text-red-950' : slot === '팀을 움직이는 결정' ? 'border-amber-300 bg-amber-50 text-amber-950' : 'border-emerald-300 bg-emerald-50 text-emerald-950',
+      item,
+    }
   }
 
   return (
@@ -304,23 +505,67 @@ export default function HomeControlDashboard() {
             const title = confirmed?.title || recommendation.title
             const reason = confirmed?.reason || recommendation.reason
             const href = confirmed?.href || recommendation.href
+            const badge = confirmed?.status === '완료' ? '오늘 완료' : confirmed?.status === '제외' ? '오늘 제외' : confirmed ? '오늘 확정됨' : null
             return (
               <article key={recommendation.slot} className={`flex min-h-60 flex-col rounded-lg border p-5 ${recommendation.tone}`}>
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs font-black opacity-70">{recommendation.slot}</p>
-                  {confirmed ? <span className={`rounded-md px-2 py-1 text-[11px] font-black ${confirmed.status === '완료' ? 'bg-emerald-700 text-white' : 'bg-white text-slate-700'}`}>{confirmed.status === '완료' ? '오늘 완료' : '오늘 확정됨'}</span> : null}
+                  {badge ? <span className={`rounded-md px-2 py-1 text-[11px] font-black ${confirmed?.status === '완료' ? 'bg-emerald-700 text-white' : confirmed?.status === '제외' ? 'bg-slate-600 text-white' : 'bg-white text-slate-700'}`}>{badge}</span> : <span className="text-[11px] font-black opacity-60">후보 {recommendationPools[recommendation.slot].length}개</span>}
                 </div>
                 <h3 className="mt-3 text-lg font-black leading-7">{title}</h3>
                 <p className="mt-3 flex-1 text-sm font-semibold leading-6 opacity-80">{reason}</p>
+                {confirmed?.status === '완료' ? <div className="mt-4 rounded-md bg-white/80 p-3"><p className="text-xs font-black opacity-60">남긴 결과</p><p className="mt-1 text-sm font-black leading-6">{confirmed.outcome}</p></div> : null}
+                {confirmed?.status === '확정' ? <input value={outcomeDrafts[recommendation.slot] ?? confirmed.outcome} onChange={event => setOutcomeDrafts(current => ({ ...current, [recommendation.slot]: event.target.value }))} placeholder="완료 결과 한 줄 (필수)" className="mt-4 w-full rounded-md border border-white/80 bg-white px-3 py-3 text-sm font-bold text-slate-950 outline-none" /> : null}
                 <div className="mt-5 flex flex-wrap gap-2">
-                  <Link href={href} className="rounded-md bg-white px-3 py-2 text-sm font-black text-slate-900 shadow-sm">열기</Link>
+                  {confirmed?.status !== '제외' ? <Link href={href} className="rounded-md bg-white px-3 py-2 text-sm font-black text-slate-900 shadow-sm">열기</Link> : null}
                   {!confirmed ? <button type="button" onClick={() => confirmPriority(recommendation)} className="rounded-md bg-slate-950 px-3 py-2 text-sm font-black text-white">오늘 확정</button> : null}
-                  {confirmed?.status === '확정' ? <button type="button" onClick={() => completePriority(recommendation.slot)} className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-black text-white">완료</button> : null}
+                  {!confirmed ? <button type="button" onClick={() => showNextRecommendation(recommendation.slot)} className="rounded-md border border-slate-400 bg-white/70 px-3 py-2 text-sm font-black text-slate-800">다른 추천</button> : null}
+                  {!confirmed ? <button type="button" onClick={() => setSelectingSlot(recommendation.slot)} className="rounded-md border border-slate-400 bg-white/70 px-3 py-2 text-sm font-black text-slate-800">직접 선택</button> : null}
+                  {!confirmed ? <button type="button" onClick={() => excludePriority(recommendation)} className="rounded-md px-3 py-2 text-xs font-black opacity-70 underline underline-offset-4">오늘 제외</button> : null}
+                  {confirmed?.status === '확정' ? <button type="button" onClick={() => completePriority(recommendation.slot)} className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-black text-white">결과 남기고 완료</button> : null}
+                  {confirmed ? <button type="button" onClick={() => changeConfirmedPriority(recommendation.slot)} className="rounded-md border border-slate-400 bg-white/70 px-3 py-2 text-xs font-black text-slate-700">확정 변경</button> : null}
                 </div>
               </article>
             )
           })}
         </div>
+        {selectingSlot ? <div className="mt-4 rounded-lg border border-slate-300 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black text-slate-500">{selectingSlot}</p><h3 className="mt-1 text-base font-black">업무 수집함에서 직접 선택</h3></div><button type="button" onClick={() => setSelectingSlot(null)} className="rounded-md border border-slate-300 px-3 py-2 text-xs font-black">닫기</button></div>
+          {activeItems.length ? <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {activeItems.slice(0, 12).map(item => <button key={item.id} type="button" onClick={() => confirmPriority(directRecommendation(selectingSlot, item))} className="rounded-md border border-slate-200 bg-slate-50 p-3 text-left hover:border-emerald-400">
+              <span className="text-xs font-black text-slate-500">{item.team} · {dueText(item, today)}</span><strong className="mt-1 block text-sm leading-6">{item.content}</strong>
+            </button>)}
+          </div> : <p className="mt-3 py-5 text-center text-sm font-semibold text-slate-500">선택할 업무가 없습니다. 빠른기록에서 먼저 업무를 남겨주세요.</p>}
+        </div> : null}
+      </section>
+
+      <section className="grid gap-4 border-y border-slate-300 py-6 lg:grid-cols-[1fr_1.15fr]">
+        <div>
+          <p className="text-xs font-black text-emerald-700">WEEKLY RESULT</p>
+          <h2 className="mt-1 text-xl font-black">이번 주 실행성과</h2>
+          <p className="mt-1 text-sm font-semibold text-slate-500">{koreanDateLabel(weekStartDate)}부터 오늘까지</p>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-lg border border-slate-200 bg-white p-3"><span className="text-xs font-black text-slate-500">확정</span><strong className="mt-2 block text-2xl font-black">{weekPlanned.length}</strong></div>
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3"><span className="text-xs font-black text-emerald-700">완료</span><strong className="mt-2 block text-2xl font-black">{weekCompleted.length}</strong></div>
+            <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-3"><span className="text-xs font-black text-cyan-700">완료율</span><strong className="mt-2 block text-2xl font-black">{weekRate}%</strong></div>
+          </div>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between gap-3"><h3 className="text-base font-black">이번 주 남긴 결과</h3><span className="text-xs font-black text-slate-500">{recentOutcomes.length}건</span></div>
+          {recentOutcomes.length ? <div className="mt-3 divide-y divide-slate-200 border-y border-slate-200">{recentOutcomes.map(entry => <div key={`${entry.date}-${entry.priority.slot}`} className="py-3"><p className="text-xs font-black text-slate-500">{entry.date} · {entry.priority.slot}</p><p className="mt-1 text-sm font-black leading-6">{entry.priority.outcome}</p></div>)}</div> : <p className="mt-3 border-y border-slate-200 py-7 text-center text-sm font-semibold text-slate-400">완료할 때 결과 한 줄을 남기면 여기에 성취물이 쌓입니다.</p>}
+        </div>
+      </section>
+
+      <section className="border-b border-slate-300 py-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-black text-indigo-700">28 DAY PATTERN</p><h2 className="mt-1 text-xl font-black">최근 28일 실행패턴</h2></div><p className="text-sm font-bold text-slate-500">{period28Start} ~ {today}</p></div>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="rounded-lg border border-slate-200 bg-white p-4"><span className="text-xs font-black text-slate-500">실행한 날</span><strong className="mt-2 block text-2xl font-black">{activeDays28}일</strong></div>
+          <div className="rounded-lg border border-slate-200 bg-white p-4"><span className="text-xs font-black text-slate-500">확정 업무</span><strong className="mt-2 block text-2xl font-black">{period28Planned.length}건</strong></div>
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4"><span className="text-xs font-black text-emerald-700">완료율</span><strong className="mt-2 block text-2xl font-black">{period28Rate}%</strong></div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4"><span className="text-xs font-black text-amber-700">추천 변경</span><strong className="mt-2 block text-2xl font-black">{changedRecommendations28}회</strong></div>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">{slotStats28.map(stat => <div key={stat.slot} className="rounded-lg border border-slate-200 bg-white p-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-black">{stat.slot}</span><strong className="text-lg">{stat.rate}%</strong></div><p className="mt-2 text-xs font-bold text-slate-500">{stat.completed}/{stat.planned}건 완료</p><div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full bg-slate-800" style={{ width: `${stat.rate}%` }} /></div></div>)}</div>
+        <p className="mt-3 text-sm font-semibold text-slate-600">{weakSlot ? `현재 가장 보완할 영역은 ‘${weakSlot.slot}’입니다. 확정한 일을 줄이더라도 완료 결과를 남기는 데 집중합니다.` : '기록이 쌓이면 가장 자주 미완료되는 영역을 여기에서 알려드립니다.'}</p>
       </section>
 
       <section className="grid border-y border-slate-300 py-6 lg:grid-cols-[1.15fr_.85fr] lg:gap-8">
