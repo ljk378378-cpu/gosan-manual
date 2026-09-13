@@ -18,7 +18,8 @@ import {
   type WorkInboxTeam,
 } from '@/lib/work-inbox'
 
-type QuickType = 'expense' | 'health_a' | 'health_b' | 'water' | 'medicine_morning' | 'medicine_night'
+type HealthType = 'health_a' | 'health_b' | 'water' | 'medicine_morning' | 'medicine_night' | 'sleep' | 'neck_pain' | 'back_pain' | 'weight' | 'exercise'
+type QuickType = 'expense' | HealthType
 type PayMethod = '현대 M카드' | '신한카드' | '롯데카드' | '국민카드' | '현금' | '체크카드' | '계좌이체'
 type LeakType = '식사·외식' | '커피·본인' | '커피·함께' | '커피충전' | '배달음식' | '가족·관계' | '업무도구' | '생활구매' | '기타'
 
@@ -31,6 +32,20 @@ type QuickEvent = {
   volumeMl?: number
   title?: string
   method?: PayMethod
+  numericValue?: number
+  unit?: string
+  cloudSynced?: boolean
+  ownerId?: string
+}
+
+type HealthEventRow = {
+  id: string
+  event_type: HealthType
+  occurred_at: string
+  recorded_at: string
+  numeric_value: number | null
+  unit: string | null
+  volume_ml: number | null
 }
 
 type MoneyRecord = {
@@ -83,13 +98,58 @@ function waterVolume(event: QuickEvent) {
   return event.volumeMl ?? 250
 }
 
+function isHealthEvent(event: QuickEvent): event is QuickEvent & { type: HealthType } {
+  return event.type !== 'expense'
+}
+
+function healthRow(userId: string, event: QuickEvent & { type: HealthType }) {
+  return {
+    user_id: userId,
+    id: event.id,
+    event_type: event.type,
+    occurred_at: event.occurredAt,
+    recorded_at: event.recordedAt,
+    numeric_value: event.numericValue ?? null,
+    unit: event.unit ?? null,
+    volume_ml: event.volumeMl ?? null,
+    updated_at: new Date().toISOString(),
+  }
+}
+
+function healthEventFromRow(row: HealthEventRow, ownerId: string): QuickEvent {
+  return {
+    id: row.id,
+    type: row.event_type,
+    occurredAt: row.occurred_at,
+    recordedAt: row.recorded_at,
+    numericValue: row.numeric_value ?? undefined,
+    unit: row.unit ?? undefined,
+    volumeMl: row.volume_ml ?? undefined,
+    cloudSynced: true,
+    ownerId,
+  }
+}
+
+function mergeEvents(...groups: QuickEvent[][]) {
+  const byId = new Map<string, QuickEvent>()
+  groups.flat().forEach(event => byId.set(event.id, event))
+  return [...byId.values()]
+    .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
+    .slice(0, 1000)
+}
+
 function eventLabel(event: QuickEvent) {
   if (event.type === 'expense') return `${event.title || '소비'} · ${won(event.amount || 0)}`
   if (event.type === 'health_a') return '소변'
   if (event.type === 'health_b') return '대변'
   if (event.type === 'water') return `물 ${waterVolume(event)}mL`
   if (event.type === 'medicine_morning') return '아침 · 협심증약'
-  return '자기 전 · 탈모약'
+  if (event.type === 'medicine_night') return '자기 전 · 탈모약'
+  if (event.type === 'sleep') return `수면 ${event.numericValue ?? '-'}시간`
+  if (event.type === 'neck_pain') return `목 통증 ${event.numericValue ?? '-'}점`
+  if (event.type === 'back_pain') return `등 통증 ${event.numericValue ?? '-'}점`
+  if (event.type === 'weight') return `체중 ${event.numericValue ?? '-'}kg`
+  return `운동 ${event.numericValue ?? '-'}분`
 }
 
 export default function QuickPage() {
@@ -108,6 +168,8 @@ export default function QuickPage() {
   const [workDue, setWorkDue] = useState<WorkInboxDue>('날짜 없음')
   const [workContent, setWorkContent] = useState('')
   const [workSaving, setWorkSaving] = useState(false)
+  const [healthSyncing, setHealthSyncing] = useState(false)
+  const [dailyHealth, setDailyHealth] = useState({ sleep: '', neckPain: '', backPain: '', weight: '', exercise: '' })
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -128,6 +190,64 @@ export default function QuickPage() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!user) return
+    const userId = user.id
+    let cancelled = false
+
+    async function syncHealthEvents() {
+      setHealthSyncing(true)
+      const localEvents = load<QuickEvent[]>(quickKey, [])
+      const pending = localEvents
+        .filter(isHealthEvent)
+        .filter(event => !event.cloudSynced && (!event.ownerId || event.ownerId === userId))
+
+      if (pending.length) {
+        const { error } = await supabase
+          .from('health_events')
+          .upsert(pending.map(event => healthRow(userId, event)), { onConflict: 'user_id,id' })
+        if (error) {
+          if (!cancelled) {
+            setNotice(`건강 기록 동기화가 보류됐습니다: ${error.message}`)
+            setHealthSyncing(false)
+          }
+          return
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('health_events')
+        .select('id,event_type,occurred_at,recorded_at,numeric_value,unit,volume_ml')
+        .eq('user_id', userId)
+        .order('occurred_at', { ascending: false })
+        .limit(1000)
+
+      if (cancelled) return
+      if (error) {
+        setNotice(`건강 기록을 불러오지 못했습니다: ${error.message}`)
+        setHealthSyncing(false)
+        return
+      }
+
+      const latestLocal = load<QuickEvent[]>(quickKey, [])
+      const expenses = latestLocal.filter(event => event.type === 'expense')
+      const pendingIds = new Set(pending.map(event => event.id))
+      const stillPending = latestLocal
+        .filter(isHealthEvent)
+        .filter(event => !event.cloudSynced && !pendingIds.has(event.id) && (!event.ownerId || event.ownerId === userId))
+      const cloudEvents = (data as HealthEventRow[]).map(row => healthEventFromRow(row, userId))
+      const next = mergeEvents(expenses, stillPending, cloudEvents)
+      localStorage.setItem(quickKey, JSON.stringify(next))
+      setEvents(next)
+      setHealthSyncing(false)
+    }
+
+    syncHealthEvents()
+    return () => {
+      cancelled = true
+    }
+  }, [user])
+
   const todayEvents = useMemo(
     () => events.filter(event => dateInKorea(new Date(event.occurredAt)) === dateInKorea()),
     [events],
@@ -139,6 +259,11 @@ export default function QuickPage() {
   const waterTotalMl = waterEvents.reduce((sum, event) => sum + waterVolume(event), 0)
   const morningMedicineDone = todayEvents.some(event => event.type === 'medicine_morning')
   const nightMedicineDone = todayEvents.some(event => event.type === 'medicine_night')
+  const todayDailyHealth = Object.fromEntries(
+    todayEvents
+      .filter(event => ['sleep', 'neck_pain', 'back_pain', 'weight', 'exercise'].includes(event.type))
+      .map(event => [event.type, event.numericValue]),
+  ) as Partial<Record<HealthType, number>>
   const expenseTotal = todayEvents
     .filter(event => event.type === 'expense')
     .reduce((sum, event) => sum + (event.amount || 0), 0)
@@ -148,19 +273,82 @@ export default function QuickPage() {
     localStorage.setItem(quickKey, JSON.stringify(next))
   }
 
-  function handleHealth(type: Exclude<QuickType, 'expense'>, volumeMl?: number) {
+  async function saveHealthRecords(records: Array<QuickEvent & { type: HealthType }>) {
+    const current = load<QuickEvent[]>(quickKey, [])
+    const localRecords = records.map(record => ({ ...record, cloudSynced: false, ownerId: user?.id }))
+    saveEvents(mergeEvents(current, localRecords))
+
+    if (!user) {
+      setNotice('건강 기록이 이 기기에 저장됐습니다. 로그인하면 클라우드로 합쳐집니다.')
+      return false
+    }
+
+    const { error } = await supabase
+      .from('health_events')
+      .upsert(localRecords.map(event => healthRow(user.id, event)), { onConflict: 'user_id,id' })
+
+    if (error) {
+      setNotice(`기기에는 저장됐지만 클라우드 동기화가 보류됐습니다: ${error.message}`)
+      return false
+    }
+
+    const latest = load<QuickEvent[]>(quickKey, [])
+    const savedIds = new Set(records.map(record => record.id))
+    const synced = latest.map(event => savedIds.has(event.id) ? { ...event, cloudSynced: true } : event)
+    saveEvents(synced)
+    return true
+  }
+
+  async function handleHealth(type: Exclude<HealthType, 'sleep' | 'neck_pain' | 'back_pain' | 'weight' | 'exercise'>, volumeMl?: number) {
     if (type === 'medicine_morning' && morningMedicineDone) return
     if (type === 'medicine_night' && nightMedicineDone) return
     const now = new Date().toISOString()
-    const event: QuickEvent = {
+    const event: QuickEvent & { type: HealthType } = {
       id: crypto.randomUUID(),
       type,
       occurredAt: now,
       recordedAt: now,
       ...(type === 'water' ? { volumeMl: volumeMl || 120 } : {}),
     }
-    saveEvents([event, ...events].slice(0, 500))
-    setNotice(`${eventLabel(event)} 기록 완료 · ${timeInKorea(now)}`)
+    const cloudSaved = await saveHealthRecords([event])
+    if (cloudSaved) setNotice(`${eventLabel(event)} 기록 완료 · 클라우드 저장 · ${timeInKorea(now)}`)
+  }
+
+  async function handleDailyHealth() {
+    const definitions: Array<{ key: keyof typeof dailyHealth; type: HealthType; unit: string; min: number; max: number }> = [
+      { key: 'sleep', type: 'sleep', unit: '시간', min: 0, max: 24 },
+      { key: 'neckPain', type: 'neck_pain', unit: '점', min: 0, max: 10 },
+      { key: 'backPain', type: 'back_pain', unit: '점', min: 0, max: 10 },
+      { key: 'weight', type: 'weight', unit: 'kg', min: 20, max: 300 },
+      { key: 'exercise', type: 'exercise', unit: '분', min: 0, max: 1440 },
+    ]
+    const invalid = definitions.find(item => {
+      if (dailyHealth[item.key] === '') return false
+      const value = Number(dailyHealth[item.key])
+      return !Number.isFinite(value) || value < item.min || value > item.max
+    })
+    if (invalid) {
+      setNotice('하루 상태의 입력 범위를 확인해 주세요. 통증은 0~10점입니다.')
+      return
+    }
+    const now = new Date().toISOString()
+    const date = dateInKorea()
+    const records = definitions
+      .filter(item => dailyHealth[item.key] !== '')
+      .map(item => ({
+        id: `${date}-${item.type}`,
+        type: item.type,
+        occurredAt: now,
+        recordedAt: now,
+        numericValue: Number(dailyHealth[item.key]),
+        unit: item.unit,
+      }))
+    if (!records.length) {
+      setNotice('하루 상태에서 한 항목 이상 입력해 주세요.')
+      return
+    }
+    const cloudSaved = await saveHealthRecords(records)
+    if (cloudSaved) setNotice(`하루 상태 ${records.length}개 항목 · 클라우드 저장 완료`)
   }
 
   async function handleWorkMemo() {
@@ -286,6 +474,13 @@ export default function QuickPage() {
         return
       }
     }
+    if (isHealthEvent(latest) && user) {
+      const { error } = await supabase.from('health_events').delete().eq('user_id', user.id).eq('id', latest.id)
+      if (error) {
+        setNotice(`취소하지 못했습니다: ${error.message}`)
+        return
+      }
+    }
     if (latest.type === 'expense') {
       const moneyRecords = load<MoneyRecord[]>(moneyKey, [])
       localStorage.setItem(moneyKey, JSON.stringify(moneyRecords.filter(record => record.id !== latest.id)))
@@ -308,12 +503,12 @@ export default function QuickPage() {
 
         <section className="mt-4 rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-sm">
           <p className="text-sm font-black text-slate-900">
-            소비 기록: {user ? '클라우드 연결됨' : '현재 기기에 저장'}
+            기록 저장: {user ? (healthSyncing ? '클라우드 동기화 중' : '클라우드 연결됨') : '현재 기기에 저장'}
           </p>
           <p className="mt-1 text-xs font-bold leading-5 text-slate-500">
             {user
-              ? '휴대폰과 컴퓨터의 소비점검에서 같은 기록을 확인합니다. 건강 기록은 개인정보 보호를 위해 이 기기에만 저장합니다.'
-              : '휴대폰과 컴퓨터에서 함께 보려면 소비점검에서 먼저 로그인하세요. 로그인 전 기록도 나중에 올릴 수 있습니다.'}
+              ? '소비와 건강 기록을 휴대폰·회사·집에서 같은 자료로 확인합니다. 건강 자료는 로그인한 본인만 볼 수 있습니다.'
+              : '로그인 전 기록은 기기에 보관되며, 소비점검에서 로그인하면 본인 클라우드 자료에 합쳐집니다.'}
           </p>
           {!user ? <Link href="/money" className="mt-2 inline-block text-xs font-black text-emerald-700 underline underline-offset-4">소비점검 로그인</Link> : null}
         </section>
@@ -433,6 +628,23 @@ export default function QuickPage() {
               <button type="button" disabled={nightMedicineDone} onClick={() => handleHealth('medicine_night')} className="rounded-2xl bg-violet-100 p-4 text-left text-violet-950 active:bg-violet-200 disabled:bg-emerald-100 disabled:text-emerald-900">
                 <strong className="block text-lg font-black">{nightMedicineDone ? '✓ 자기 전 복용완료' : '자기 전 · 탈모약'}</strong>
               </button>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <strong className="block text-lg font-black text-slate-950">하루 상태</strong>
+                    <span className="mt-1 block text-xs font-bold text-slate-500">아는 항목만 하루 한 번 입력합니다.</span>
+                  </div>
+                  {Object.keys(todayDailyHealth).length ? <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800">오늘 기록됨</span> : null}
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <input inputMode="decimal" value={dailyHealth.sleep} onChange={event => setDailyHealth(previous => ({ ...previous, sleep: event.target.value }))} placeholder="수면시간" aria-label="수면시간" className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold outline-none focus:border-sky-500" />
+                  <input inputMode="decimal" value={dailyHealth.weight} onChange={event => setDailyHealth(previous => ({ ...previous, weight: event.target.value }))} placeholder="체중 kg" aria-label="체중" className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold outline-none focus:border-sky-500" />
+                  <input inputMode="numeric" value={dailyHealth.neckPain} onChange={event => setDailyHealth(previous => ({ ...previous, neckPain: event.target.value }))} placeholder="목 통증 0~10" aria-label="목 통증" className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold outline-none focus:border-sky-500" />
+                  <input inputMode="numeric" value={dailyHealth.backPain} onChange={event => setDailyHealth(previous => ({ ...previous, backPain: event.target.value }))} placeholder="등 통증 0~10" aria-label="등 통증" className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold outline-none focus:border-sky-500" />
+                  <input inputMode="numeric" value={dailyHealth.exercise} onChange={event => setDailyHealth(previous => ({ ...previous, exercise: event.target.value }))} placeholder="운동시간 분" aria-label="운동시간" className="col-span-2 min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold outline-none focus:border-sky-500" />
+                </div>
+                <button type="button" onClick={handleDailyHealth} className="mt-3 w-full rounded-xl bg-slate-900 py-3 text-sm font-black text-white active:bg-slate-700">하루 상태 저장</button>
+              </div>
             </div>
           </section>
         ) : null}
@@ -492,8 +704,17 @@ export default function QuickPage() {
               <p className="text-xs font-black tracking-[.16em] text-slate-400">TODAY</p>
               <h2 className="mt-1 text-lg font-black">오늘 기록</h2>
             </div>
-            <span className="text-xs font-bold text-slate-500">소비 {user ? '클라우드' : '기기'} · 건강 기기</span>
+            <span className="text-xs font-bold text-slate-500">소비·건강 {user ? '클라우드' : '기기'}</span>
           </div>
+          {Object.keys(todayDailyHealth).length ? (
+            <div className="mt-3 flex flex-wrap gap-2 rounded-2xl bg-slate-50 p-3 text-xs font-black text-slate-700">
+              {todayDailyHealth.sleep !== undefined ? <span>수면 {todayDailyHealth.sleep}시간</span> : null}
+              {todayDailyHealth.neck_pain !== undefined ? <span>목 {todayDailyHealth.neck_pain}점</span> : null}
+              {todayDailyHealth.back_pain !== undefined ? <span>등 {todayDailyHealth.back_pain}점</span> : null}
+              {todayDailyHealth.weight !== undefined ? <span>체중 {todayDailyHealth.weight}kg</span> : null}
+              {todayDailyHealth.exercise !== undefined ? <span>운동 {todayDailyHealth.exercise}분</span> : null}
+            </div>
+          ) : null}
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
             <div className="rounded-2xl bg-lime-50 p-3"><strong className="block text-lg font-black text-lime-950">{won(expenseTotal)}</strong><span className="text-xs font-bold text-lime-800">소비</span></div>
             <div className="rounded-2xl bg-sky-50 p-3"><strong className="block text-lg font-black text-sky-950">{healthACount}</strong><span className="text-xs font-bold text-sky-800">소변</span></div>
