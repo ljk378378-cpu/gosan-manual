@@ -18,8 +18,9 @@ import {
   type WorkInboxTeam,
 } from '@/lib/work-inbox'
 
-type HealthType = 'health_a' | 'health_b' | 'water' | 'medicine_morning' | 'medicine_night' | 'sleep' | 'neck_pain' | 'back_pain' | 'weight' | 'exercise'
+type HealthType = 'health_a' | 'health_b' | 'water' | 'medicine_morning' | 'medicine_night' | 'sleep' | 'neck_pain' | 'back_pain' | 'weight' | 'exercise' | 'symptom'
 type QuickType = 'expense' | HealthType
+type ExerciseKind = '걷기' | '근력' | '둘 다'
 type PayMethod = '현대 M카드' | '신한카드' | '롯데카드' | '국민카드' | '현금' | '체크카드' | '계좌이체'
 type LeakType = '식사·외식' | '커피·본인' | '커피·함께' | '커피충전' | '배달음식' | '가족·관계' | '업무도구' | '생활구매' | '기타'
 
@@ -36,6 +37,7 @@ type QuickEvent = {
   unit?: string
   cloudSynced?: boolean
   ownerId?: string
+  detail?: string
 }
 
 type HealthEventRow = {
@@ -46,6 +48,7 @@ type HealthEventRow = {
   numeric_value: number | null
   unit: string | null
   volume_ml: number | null
+  detail: string | null
 }
 
 type MoneyRecord = {
@@ -112,6 +115,7 @@ function healthRow(userId: string, event: QuickEvent & { type: HealthType }) {
     numeric_value: event.numericValue ?? null,
     unit: event.unit ?? null,
     volume_ml: event.volumeMl ?? null,
+    detail: event.detail ?? null,
     updated_at: new Date().toISOString(),
   }
 }
@@ -125,6 +129,7 @@ function healthEventFromRow(row: HealthEventRow, ownerId: string): QuickEvent {
     numericValue: row.numeric_value ?? undefined,
     unit: row.unit ?? undefined,
     volumeMl: row.volume_ml ?? undefined,
+    detail: row.detail ?? undefined,
     cloudSynced: true,
     ownerId,
   }
@@ -149,7 +154,8 @@ function eventLabel(event: QuickEvent) {
   if (event.type === 'neck_pain') return `목 통증 ${event.numericValue ?? '-'}점`
   if (event.type === 'back_pain') return `등 통증 ${event.numericValue ?? '-'}점`
   if (event.type === 'weight') return `체중 ${event.numericValue ?? '-'}kg`
-  return `운동 ${event.numericValue ?? '-'}분`
+  if (event.type === 'exercise') return `헬스장 · ${event.detail || '운동'} ${event.numericValue ?? '-'}분`
+  return `이상 증상 · ${event.detail || '내용 없음'}`
 }
 
 export default function QuickPage() {
@@ -169,7 +175,11 @@ export default function QuickPage() {
   const [workContent, setWorkContent] = useState('')
   const [workSaving, setWorkSaving] = useState(false)
   const [healthSyncing, setHealthSyncing] = useState(false)
-  const [dailyHealth, setDailyHealth] = useState({ sleep: '', neckPain: '', backPain: '', weight: '', exercise: '' })
+  const [gymVisited, setGymVisited] = useState(false)
+  const [exerciseKind, setExerciseKind] = useState<ExerciseKind | null>(null)
+  const [exerciseMinutes, setExerciseMinutes] = useState<number | null>(null)
+  const [weight, setWeight] = useState('')
+  const [symptom, setSymptom] = useState('')
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -217,7 +227,7 @@ export default function QuickPage() {
 
       const { data, error } = await supabase
         .from('health_events')
-        .select('id,event_type,occurred_at,recorded_at,numeric_value,unit,volume_ml')
+        .select('id,event_type,occurred_at,recorded_at,numeric_value,unit,volume_ml,detail')
         .eq('user_id', userId)
         .order('occurred_at', { ascending: false })
         .limit(1000)
@@ -259,11 +269,9 @@ export default function QuickPage() {
   const waterTotalMl = waterEvents.reduce((sum, event) => sum + waterVolume(event), 0)
   const morningMedicineDone = todayEvents.some(event => event.type === 'medicine_morning')
   const nightMedicineDone = todayEvents.some(event => event.type === 'medicine_night')
-  const todayDailyHealth = Object.fromEntries(
-    todayEvents
-      .filter(event => ['sleep', 'neck_pain', 'back_pain', 'weight', 'exercise'].includes(event.type))
-      .map(event => [event.type, event.numericValue]),
-  ) as Partial<Record<HealthType, number>>
+  const todayExercise = todayEvents.find(event => event.type === 'exercise')
+  const todayWeight = todayEvents.find(event => event.type === 'weight')
+  const todaySymptom = todayEvents.find(event => event.type === 'symptom')
   const expenseTotal = todayEvents
     .filter(event => event.type === 'expense')
     .reduce((sum, event) => sum + (event.amount || 0), 0)
@@ -314,41 +322,46 @@ export default function QuickPage() {
     if (cloudSaved) setNotice(`${eventLabel(event)} 기록 완료 · 클라우드 저장 · ${timeInKorea(now)}`)
   }
 
-  async function handleDailyHealth() {
-    const definitions: Array<{ key: keyof typeof dailyHealth; type: HealthType; unit: string; min: number; max: number }> = [
-      { key: 'sleep', type: 'sleep', unit: '시간', min: 0, max: 24 },
-      { key: 'neckPain', type: 'neck_pain', unit: '점', min: 0, max: 10 },
-      { key: 'backPain', type: 'back_pain', unit: '점', min: 0, max: 10 },
-      { key: 'weight', type: 'weight', unit: 'kg', min: 20, max: 300 },
-      { key: 'exercise', type: 'exercise', unit: '분', min: 0, max: 1440 },
-    ]
-    const invalid = definitions.find(item => {
-      if (dailyHealth[item.key] === '') return false
-      const value = Number(dailyHealth[item.key])
-      return !Number.isFinite(value) || value < item.min || value > item.max
-    })
-    if (invalid) {
-      setNotice('하루 상태의 입력 범위를 확인해 주세요. 통증은 0~10점입니다.')
+  async function handleExercise() {
+    if (!gymVisited || !exerciseKind || !exerciseMinutes) {
+      setNotice('헬스장 갔음, 운동 종류, 운동시간을 선택해 주세요.')
+      return
+    }
+    const parsedWeight = weight === '' ? null : Number(weight)
+    if (parsedWeight !== null && (!Number.isFinite(parsedWeight) || parsedWeight < 20 || parsedWeight > 300)) {
+      setNotice('체중을 확인해 주세요. 모르면 비워두어도 됩니다.')
       return
     }
     const now = new Date().toISOString()
     const date = dateInKorea()
-    const records = definitions
-      .filter(item => dailyHealth[item.key] !== '')
-      .map(item => ({
-        id: `${date}-${item.type}`,
-        type: item.type,
-        occurredAt: now,
-        recordedAt: now,
-        numericValue: Number(dailyHealth[item.key]),
-        unit: item.unit,
-      }))
-    if (!records.length) {
-      setNotice('하루 상태에서 한 항목 이상 입력해 주세요.')
-      return
-    }
+    const records: Array<QuickEvent & { type: HealthType }> = [{
+      id: `${date}-exercise`,
+      type: 'exercise',
+      occurredAt: now,
+      recordedAt: now,
+      numericValue: exerciseMinutes,
+      unit: '분',
+      detail: exerciseKind,
+    }]
+    if (parsedWeight !== null) records.push({
+      id: `${date}-weight`,
+      type: 'weight',
+      occurredAt: now,
+      recordedAt: now,
+      numericValue: parsedWeight,
+      unit: 'kg',
+    })
+    if (symptom.trim()) records.push({
+      id: `${date}-symptom`,
+      type: 'symptom',
+      occurredAt: now,
+      recordedAt: now,
+      numericValue: 1,
+      unit: '있음',
+      detail: symptom.trim(),
+    })
     const cloudSaved = await saveHealthRecords(records)
-    if (cloudSaved) setNotice(`하루 상태 ${records.length}개 항목 · 클라우드 저장 완료`)
+    if (cloudSaved) setNotice(`오늘 운동 · ${exerciseKind} ${exerciseMinutes}분 · 저장 완료`)
   }
 
   async function handleWorkMemo() {
@@ -631,19 +644,29 @@ export default function QuickPage() {
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <strong className="block text-lg font-black text-slate-950">하루 상태</strong>
-                    <span className="mt-1 block text-xs font-bold text-slate-500">아는 항목만 하루 한 번 입력합니다.</span>
+                    <strong className="block text-lg font-black text-slate-950">오늘 운동</strong>
+                    <span className="mt-1 block text-xs font-bold text-slate-500">헬스장에 간 사실부터 남깁니다.</span>
                   </div>
-                  {Object.keys(todayDailyHealth).length ? <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800">오늘 기록됨</span> : null}
+                  {todayExercise ? <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800">오늘 완료</span> : null}
                 </div>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <input inputMode="decimal" value={dailyHealth.sleep} onChange={event => setDailyHealth(previous => ({ ...previous, sleep: event.target.value }))} placeholder="수면시간" aria-label="수면시간" className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold outline-none focus:border-sky-500" />
-                  <input inputMode="decimal" value={dailyHealth.weight} onChange={event => setDailyHealth(previous => ({ ...previous, weight: event.target.value }))} placeholder="체중 kg" aria-label="체중" className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold outline-none focus:border-sky-500" />
-                  <input inputMode="numeric" value={dailyHealth.neckPain} onChange={event => setDailyHealth(previous => ({ ...previous, neckPain: event.target.value }))} placeholder="목 통증 0~10" aria-label="목 통증" className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold outline-none focus:border-sky-500" />
-                  <input inputMode="numeric" value={dailyHealth.backPain} onChange={event => setDailyHealth(previous => ({ ...previous, backPain: event.target.value }))} placeholder="등 통증 0~10" aria-label="등 통증" className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold outline-none focus:border-sky-500" />
-                  <input inputMode="numeric" value={dailyHealth.exercise} onChange={event => setDailyHealth(previous => ({ ...previous, exercise: event.target.value }))} placeholder="운동시간 분" aria-label="운동시간" className="col-span-2 min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold outline-none focus:border-sky-500" />
+                <button type="button" onClick={() => setGymVisited(previous => !previous)} className={`mt-3 w-full rounded-xl border py-3 text-sm font-black ${gymVisited ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-emerald-200 bg-white text-emerald-800'}`}>
+                  {gymVisited ? '✓ 헬스장 갔음' : '헬스장 갔음'}
+                </button>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {(['걷기', '근력', '둘 다'] as ExerciseKind[]).map(kind => (
+                    <button key={kind} type="button" onClick={() => setExerciseKind(kind)} className={`rounded-xl border px-2 py-3 text-sm font-black ${exerciseKind === kind ? 'border-sky-600 bg-sky-600 text-white' : 'border-slate-200 bg-white text-slate-700'}`}>{kind}</button>
+                  ))}
                 </div>
-                <button type="button" onClick={handleDailyHealth} className="mt-3 w-full rounded-xl bg-slate-900 py-3 text-sm font-black text-white active:bg-slate-700">하루 상태 저장</button>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {[20, 30, 40].map(minutes => (
+                    <button key={minutes} type="button" onClick={() => setExerciseMinutes(minutes)} className={`rounded-xl border px-2 py-3 text-sm font-black ${exerciseMinutes === minutes ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 bg-white text-slate-700'}`}>{minutes}분</button>
+                  ))}
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <input inputMode="decimal" value={weight} onChange={event => setWeight(event.target.value)} placeholder="체중 kg (선택)" aria-label="체중" className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold outline-none focus:border-sky-500" />
+                  <input value={symptom} onChange={event => setSymptom(event.target.value)} placeholder="이상 증상 (선택)" aria-label="이상 증상" className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold outline-none focus:border-sky-500" />
+                </div>
+                <button type="button" onClick={handleExercise} className="mt-3 w-full rounded-xl bg-slate-900 py-3 text-sm font-black text-white active:bg-slate-700">오늘 운동 저장</button>
               </div>
             </div>
           </section>
@@ -706,13 +729,11 @@ export default function QuickPage() {
             </div>
             <span className="text-xs font-bold text-slate-500">소비·건강 {user ? '클라우드' : '기기'}</span>
           </div>
-          {Object.keys(todayDailyHealth).length ? (
+          {todayExercise || todayWeight || todaySymptom ? (
             <div className="mt-3 flex flex-wrap gap-2 rounded-2xl bg-slate-50 p-3 text-xs font-black text-slate-700">
-              {todayDailyHealth.sleep !== undefined ? <span>수면 {todayDailyHealth.sleep}시간</span> : null}
-              {todayDailyHealth.neck_pain !== undefined ? <span>목 {todayDailyHealth.neck_pain}점</span> : null}
-              {todayDailyHealth.back_pain !== undefined ? <span>등 {todayDailyHealth.back_pain}점</span> : null}
-              {todayDailyHealth.weight !== undefined ? <span>체중 {todayDailyHealth.weight}kg</span> : null}
-              {todayDailyHealth.exercise !== undefined ? <span>운동 {todayDailyHealth.exercise}분</span> : null}
+              {todayExercise ? <span>헬스장 {todayExercise.detail || '운동'} {todayExercise.numericValue}분</span> : null}
+              {todayWeight ? <span>체중 {todayWeight.numericValue}kg</span> : null}
+              {todaySymptom ? <span>증상 {todaySymptom.detail}</span> : null}
             </div>
           ) : null}
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
