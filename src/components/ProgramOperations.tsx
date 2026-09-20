@@ -90,44 +90,56 @@ const remainingSessionPlan = [
     id: 'step-4',
     month: '9월',
     approvedDateLabel: '9.16.(수)~9.18.(금)',
-    dateLabel: '9.16.(수)~9.17.(목)',
-    dueDate: '2026-09-16',
+    dateLabel: '9.21.(월)~9.23.(수)',
+    dueDate: '2026-09-21',
+    prepDate: '2026-09-21',
+    endDate: '2026-09-23',
+    formFile: 'step-4.docx',
     program: '하루 한 걸음 4회기 · 생활쿠폰 7회기',
-    activity: '취미공유 1: 그림 또는 보드게임',
-    method: '그림그리기 또는 보드게임 중 부담이 적은 활동을 선택해 수행하고 사진과 짧은 소감을 남김. 집단 참여가 어려우면 개별 수행을 허용함.',
+    activity: '취미공유 1: 그림(주제: 요즘 내가 좋아하는 것) 또는 보드게임',
+    method: '그림그리기는 "요즘 내가 좋아하는 것 한 가지"를 주제로 그리고, 보드게임 중 부담이 적은 활동을 선택해 수행하고 사진과 짧은 소감을 남김. 집단 참여가 어려우면 개별 수행을 허용함.',
     preparation: '선택형 미션안내, 미션수행일지, 사진기록, 쿠폰 발행대장',
-    scheduleStatus: '계획 내 순서 조정',
+    scheduleStatus: '9.16.~17. 미실시로 재조정',
   },
   {
     id: 'small-4',
     month: '9월',
     approvedDateLabel: '8.20.(목)~8.21.(금)',
-    dateLabel: '9.21.(월)~9.22.(화)',
-    dueDate: '2026-09-21',
+    dateLabel: '9.28.(월)~9.30.(수) 중 하루',
+    dueDate: '2026-09-28',
+    prepDate: '2026-09-23',
+    endDate: '2026-09-30',
+    formFile: 'small-4.docx',
     program: '작은만남 4회기 · 생활쿠폰 8회기',
     activity: '마음나눔 2: 감정카드로 요즘 마음 표현하기',
     method: '감정카드 한 장을 고르고 선택한 이유와 최근의 마음을 짧게 나눔. 말하기가 부담되면 글 또는 1:1 방식으로 참여함.',
     preparation: '감정카드, 짧은 기록지, 참여확인, 운영일지, 쿠폰 발행대장',
-    scheduleStatus: '계획 내 순서 조정',
+    scheduleStatus: '추석 연휴 이후로 재조정',
   },
   {
     id: 'small-5',
     month: '10월',
     approvedDateLabel: '9.10.(목)~9.11.(금)',
-    dateLabel: '10.8.(목)~10.9.(금)',
-    dueDate: '2026-10-08',
+    dateLabel: '10.13.(화)~10.14.(수) 중 하루',
+    dueDate: '2026-10-13',
+    prepDate: '2026-10-08',
+    endDate: '2026-10-14',
+    formFile: 'small-5.docx',
     program: '작은만남 5회기 · 생활쿠폰 9회기',
     activity: '마음나눔 3: 가치카드로 나에게 중요한 것 찾기',
     method: '가치카드에서 현재 중요하게 생각하는 것을 선택하고, 지키고 싶은 작은 일상 한 가지를 정함. 집단·개별 방식을 병행함.',
     preparation: '가치카드, 작은 실천 기록지, 참여확인, 운영일지, 쿠폰 발행대장',
-    scheduleStatus: '계획 내 순서 조정',
+    scheduleStatus: '10.9. 한글날을 피해 재조정',
   },
   {
     id: 'small-6',
     month: '10월',
     approvedDateLabel: '10.22.(목)~10.23.(금)',
-    dateLabel: '10.22.(목)~10.23.(금)',
+    dateLabel: '10.22.(목)~10.23.(금) 중 하루',
     dueDate: '2026-10-22',
+    prepDate: '2026-10-19',
+    endDate: '2026-10-23',
+    formFile: 'small-6.docx',
     program: '작은만남 6회기 · 생활쿠폰 10회기',
     activity: '기관 자원봉사 체험 1회',
     method: '승인된 실시기안에 따라 복지관 프로그램에서 가능한 역할을 정해 자원봉사 체험을 진행함.',
@@ -140,6 +152,9 @@ const remainingSessionPlan = [
     approvedDateLabel: '10.28.(수)~10.30.(금)',
     dateLabel: '10.28.(수)~10.30.(금)',
     dueDate: '2026-10-28',
+    prepDate: '2026-10-26',
+    endDate: '2026-10-30',
+    formFile: 'step-5.docx',
     program: '하루 한 걸음 5회기 · 생활쿠폰 11회기',
     activity: '취미공유: 자유 주제 단문 쓰기',
     method: '승인된 실시기안에 따라 자유 주제로 짧은 글을 작성하고 수행 소감을 기록함.',
@@ -150,8 +165,11 @@ const remainingSessionPlan = [
     id: 'small-7',
     month: '11월',
     approvedDateLabel: '11.19.(목)~11.20.(금)',
-    dateLabel: '11.19.(목)~11.20.(금)',
+    dateLabel: '11.19.(목)~11.20.(금) 중 하루',
     dueDate: '2026-11-19',
+    prepDate: '2026-11-16',
+    endDate: '2026-11-20',
+    formFile: 'small-7.docx',
     program: '작은만남 7회기 · 생활쿠폰 12회기',
     activity: '기관 자원봉사 체험 2회',
     method: '승인된 실시기안에 따라 복지관 프로그램 자원봉사 체험을 진행하고 활동 경험을 나눔.',
@@ -164,6 +182,9 @@ const remainingSessionPlan = [
     approvedDateLabel: '11.25.(수)~11.27.(금)',
     dateLabel: '11.25.(수)~11.27.(금)',
     dueDate: '2026-11-25',
+    prepDate: '2026-11-23',
+    endDate: '2026-11-27',
+    formFile: 'step-6.docx',
     program: '하루 한 걸음 6회기 · 생활쿠폰 13회기',
     activity: '1:1 산책동행',
     method: '승인된 실시기안에 따라 가족·지인과 동네 한 바퀴를 걷고 사진기록과 연간 소감을 남김.',
@@ -172,22 +193,37 @@ const remainingSessionPlan = [
   },
 ]
 
-const participantNotice = `[생활쿠폰지원사업 9~11월 일정 안내]
+const evidenceItems = [
+  { id: 'approval', label: '실시기안·일정 변경 확인', timing: '시작 전' },
+  { id: 'notice', label: '참여자 안내·참석 가능 여부 확인', timing: '시작 전' },
+  { id: 'mission', label: '미션지·참여기록지 회수', timing: '종료 후' },
+  { id: 'attendance', label: '참여확인·사진 또는 활동기록', timing: '종료 후' },
+  { id: 'coupon', label: '쿠폰 발행대장·수령서명', timing: '지급 시' },
+  { id: 'diary', label: '운영일지·결과보고', timing: '종료 후' },
+  { id: 'payment', label: '황금마켓 결제·증빙', timing: '사용기간 종료 후' },
+] as const
 
-안녕하세요. 남은 작은만남과 하루 한 걸음 일정을 안내드립니다.
+const participantNotice = `[청년안심쿠폰 9~11월 활동 일정 안내]
 
-9월 16일~17일  하루 한 걸음 4회기(취미공유)
-9월 21일~22일  작은만남 4회기
-10월 8일~9일  작은만남 5회기
-10월 22일~23일  작은만남 6회기(자원봉사 체험)
-10월 28일~30일  하루 한 걸음 5회기(글쓰기)
-11월 19일~20일  작은만남 7회기(자원봉사 체험)
-11월 25일~27일  하루 한 걸음 6회기(산책동행) 및 마무리 조사
+안녕하세요. 남은 「하루 한 걸음」과 「작은 만남」 활동 일정을 안내드립니다.
 
-회기별 자세한 활동방법과 제출기한은 시작 전에 다시 안내드리겠습니다. 참여가 어려운 일정이 있으면 담당자에게 미리 알려주시기 바랍니다.
+9월 21~23일 | 하루 한 걸음 4회기: 좋아하는 것 한 가지 그림으로 표현하기(또는 사전 협의한 보드게임). 23일까지 사진 한 장과 짧은 소감을 보내 주세요.
+9월 28~30일 중 하루 | 작은 만남 4회기: 감정카드로 요즘 마음 나누기
+10월 13~14일 중 하루 | 작은 만남 5회기: 가치카드로 중요한 것 한 가지 찾기
+10월 22~23일 중 하루 | 작은 만남 6회기: 복지관 활동 체험
+10월 28~30일 | 하루 한 걸음 5회기: 짧은 글쓰기
+11월 19~20일 중 하루 | 작은 만남 7회기: 복지관 활동 체험
+11월 25~27일 | 하루 한 걸음 6회기: 가족·지인과 산책, 사진 기록
 
-※ 9월 24일~26일 추석 연휴에는 프로그램을 진행하지 않습니다.
-※ 위 일정은 연간 계획에 포함된 활동의 실행 순서를 조정한 것으로, 내부 확정 후 최종 안내드리겠습니다.`
+「중 하루」로 적힌 모임의 정확한 시간과 장소는 참여 가능 여부를 확인한 뒤 다시 안내드리겠습니다. 함께하기 어려운 활동은 미리 담당자에게 말씀해 주세요. 가능한 참여 방식을 함께 찾겠습니다.
+
+생활쿠폰은 각 회기의 참여 또는 미션 수행을 확인한 뒤 지급합니다. 9월 24~26일 추석 연휴와 10월 9일 한글날에는 활동을 진행하지 않습니다.
+
+※ 세부 모임일과 시간·장소는 참여 가능 여부와 내부 일정을 확인해 확정하고 다시 안내드리겠습니다.`
+
+function evidenceTaskId(sessionId: string, itemId: string) {
+  return `life-coupon-evidence-${sessionId}-${itemId}`
+}
 
 function normalizePlannedTask(task: ProgramTask) {
   if (!task.id.startsWith('life-coupon-plan-')) return task
@@ -202,6 +238,30 @@ function normalizePlannedTask(task: ProgramTask) {
     dueDate: item.dueDate,
     note: `최초 계획 ${item.approvedDateLabel} · 조정 일정 ${item.dateLabel}(${item.scheduleStatus}) · ${item.method} 준비: ${item.preparation}`,
   }
+}
+
+function plannedTask(item: (typeof remainingSessionPlan)[number], programId: string): ProgramTask {
+  return {
+    id: `life-coupon-plan-${item.id}`,
+    programId,
+    category: '회기운영',
+    sessionLabel: item.program,
+    title: item.activity,
+    dueDate: item.dueDate,
+    status: '미완료',
+    owner: '',
+    evidenceRequired: true,
+    evidenceConfirmed: false,
+    completedAt: '',
+    note: `최초 계획 ${item.approvedDateLabel} · 조정 일정 ${item.dateLabel}(${item.scheduleStatus}) · ${item.method} 준비: ${item.preparation}`,
+  }
+}
+
+function withRemainingPlan(tasks: ProgramTask[], programId: string) {
+  const normalized = tasks.map(normalizePlannedTask)
+  if (programId !== 'life-coupon-2026') return normalized
+  const existingIds = new Set(normalized.map(task => task.id))
+  return [...normalized, ...remainingSessionPlan.map(item => plannedTask(item, programId)).filter(task => !existingIds.has(task.id))]
 }
 
 function koreaToday() {
@@ -249,19 +309,20 @@ function taskFromRow(row: TaskRow): ProgramTask {
 }
 
 function loadLocalTasks() {
-  if (typeof window === 'undefined') return seedTasks
+  if (typeof window === 'undefined') return withRemainingPlan(seedTasks, 'life-coupon-2026')
   const raw = localStorage.getItem(tasksKey)
-  if (!raw) return seedTasks
+  if (!raw) return withRemainingPlan(seedTasks, 'life-coupon-2026')
   try {
-    return (JSON.parse(raw) as ProgramTask[]).map(normalizePlannedTask)
+    return withRemainingPlan(JSON.parse(raw) as ProgramTask[], 'life-coupon-2026')
   } catch {
-    return seedTasks
+    return withRemainingPlan(seedTasks, 'life-coupon-2026')
   }
 }
 
 export default function ProgramOperations({ user, programId }: { user: User | null; programId: string }) {
   const [tasks, setTasks] = useState<ProgramTask[]>(loadLocalTasks)
   const [message, setMessage] = useState('')
+  const [expandedSessionId, setExpandedSessionId] = useState('step-4')
   const [sessionDraft, setSessionDraft] = useState({
     label: '',
     sessionDate: '',
@@ -284,9 +345,9 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
           setMessage(`운영일정 클라우드 준비 필요: ${error.message}`)
           return
         }
-        const cloudTasks = ((data ?? []) as TaskRow[]).map(taskFromRow).map(normalizePlannedTask)
+        const cloudTasks = ((data ?? []) as TaskRow[]).map(taskFromRow)
         if (!cloudTasks.length) return
-        const next = cloudTasks
+        const next = withRemainingPlan(cloudTasks, programId)
         setTasks(next)
         localStorage.setItem(tasksKey, JSON.stringify(next))
       })
@@ -298,7 +359,7 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
   )
   const activeTasks = useMemo(
     () => programTasks
-      .filter(task => task.status !== '완료' && task.status !== '보류')
+      .filter(task => task.category !== '필수서류' && task.status !== '완료' && task.status !== '보류')
       .sort((a, b) => {
         const order: Record<AlertLevel, number> = { 기한초과: 0, 오늘: 1, '7일 이내': 2, '날짜 미정': 3, 예정: 4 }
         const levelDiff = order[alertLevel(a)] - order[alertLevel(b)]
@@ -313,6 +374,62 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
     soon: activeTasks.filter(task => alertLevel(task) === '7일 이내').length,
     undated: activeTasks.filter(task => alertLevel(task) === '날짜 미정').length,
   }), [activeTasks])
+  const urgentTasks = activeTasks.filter(task => alertLevel(task) !== '예정').slice(0, 8)
+
+  const sessionAlerts = remainingSessionPlan.map(session => {
+    const confirmed = evidenceItems.filter(item => {
+      const task = programTasks.find(entry => entry.id === evidenceTaskId(session.id, item.id))
+      return task?.status === '완료' && task.evidenceConfirmed
+    }).length
+    const today = koreaToday()
+    const paymentTask = programTasks.find(entry => entry.id === evidenceTaskId(session.id, 'payment'))
+    const paymentDue = Boolean(paymentTask?.dueDate && today >= paymentTask.dueDate && !paymentTask.evidenceConfirmed)
+    const phase = paymentDue ? '결제 확인' : today > session.endDate ? '증빙 점검' : today >= session.dueDate ? '진행 기간' : today >= session.prepDate ? '준비 마감' : '예정'
+    return { session, confirmed, phase, paymentDate: paymentTask?.dueDate ?? '' }
+  })
+
+  function evidenceChecked(sessionId: string, itemId: string) {
+    const task = programTasks.find(entry => entry.id === evidenceTaskId(sessionId, itemId))
+    return task?.status === '완료' && task.evidenceConfirmed
+  }
+
+  function toggleEvidence(session: (typeof remainingSessionPlan)[number], item: (typeof evidenceItems)[number], checked: boolean) {
+    const id = evidenceTaskId(session.id, item.id)
+    const existing = programTasks.find(task => task.id === id)
+    saveTask({
+      id,
+      programId,
+      category: '필수서류',
+      sessionLabel: session.program,
+      title: item.label,
+      dueDate: item.id === 'payment' ? existing?.dueDate ?? '' : item.timing === '시작 전' ? session.prepDate : session.endDate,
+      status: checked ? '완료' : '미완료',
+      owner: existing?.owner ?? '',
+      evidenceRequired: true,
+      evidenceConfirmed: checked,
+      completedAt: checked ? new Date().toISOString() : '',
+      note: item.id === 'payment' ? '쿠폰 사용기간 종료 후 실제 결제일과 결제증빙을 확인합니다.' : `${item.timing} 확인. 참여자 실명은 원본서류에만 기록합니다.`,
+    })
+  }
+
+  function setSessionPaymentDate(session: (typeof remainingSessionPlan)[number], dueDate: string) {
+    const id = evidenceTaskId(session.id, 'payment')
+    const existing = programTasks.find(task => task.id === id)
+    saveTask({
+      id,
+      programId,
+      category: '필수서류',
+      sessionLabel: session.program,
+      title: '황금마켓 결제·증빙',
+      dueDate,
+      status: existing?.status ?? '미완료',
+      owner: existing?.owner ?? '',
+      evidenceRequired: true,
+      evidenceConfirmed: existing?.evidenceConfirmed ?? false,
+      completedAt: existing?.completedAt ?? '',
+      note: '쿠폰 사용기간 종료 후 실제 결제일과 결제증빙을 확인합니다.',
+    })
+  }
 
   function saveLocal(next: ProgramTask[]) {
     setTasks(next)
@@ -390,7 +507,7 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
       return
     }
     const task: ProgramTask = {
-      id: `${Date.now()}-participant-change`,
+      id: `${window.crypto.randomUUID()}-participant-change`,
       programId,
       category: '참여자변경',
       sessionLabel: '참여자 관리',
@@ -415,29 +532,20 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
       category: '일정변경',
       sessionLabel: '작은만남 4·5회기',
       title: '연간 활동 순서 변경 반영·확정',
-      dueDate: '2026-09-14',
+      dueDate: '2026-09-21',
       status: '미완료',
       owner: '',
       evidenceRequired: true,
       evidenceConfirmed: false,
       completedAt: '',
-      note: '영화모임과 독서모임을 계획보다 먼저 실시했으므로 연간 활동의 총량과 내용은 유지하고 이후 회기 순서만 조정합니다. 추석 연휴 9.24.~26.에는 프로그램을 배치하지 않습니다.',
+      note: '영화·독서·마을탐방을 먼저 실시하여 남은 활동 순서를 조정합니다. 추석 연휴 9.24.~26.와 한글날 10.9.에는 회기를 배치하지 않습니다.',
     }
-    const plannedTasks: ProgramTask[] = remainingSessionPlan.map(item => ({
-      id: `life-coupon-plan-${item.id}`,
-      programId,
-      category: '회기운영',
-      sessionLabel: item.program,
-      title: item.activity,
-      dueDate: item.dueDate,
-      status: '미완료',
-      owner: '',
-      evidenceRequired: true,
-      evidenceConfirmed: false,
-      completedAt: '',
-      note: `최초 계획 ${item.approvedDateLabel} · 조정 일정 ${item.dateLabel}(${item.scheduleStatus}) · ${item.method} 준비: ${item.preparation}`,
-    }))
-    const tasksToSave = [scheduleReviewTask, ...plannedTasks]
+    const plannedTasks = remainingSessionPlan.map(item => plannedTask(item, programId))
+    const currentById = new Map(tasks.map(task => [task.id, task]))
+    const tasksToSave = [scheduleReviewTask, ...plannedTasks].map(task => {
+      const current = currentById.get(task.id)
+      return current ? { ...task, status: current.status, owner: current.owner, evidenceConfirmed: current.evidenceConfirmed, completedAt: current.completedAt } : task
+    })
     const planIds = new Set(tasksToSave.map(task => task.id))
     const next = [...tasks.filter(task => !planIds.has(task.id)), ...tasksToSave]
     saveLocal(next)
@@ -481,7 +589,10 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
               <h2 className="mt-1 text-xl font-black text-rose-950">오늘의 사업 알림</h2>
               <p className="mt-1 text-sm font-bold leading-6 text-rose-800">기한초과부터 확인하고, 오늘 할 일과 7일 이내 준비사항만 처리합니다.</p>
             </div>
-            <button onClick={uploadAllToCloud} className="rounded-lg border border-rose-300 bg-white px-4 py-3 text-sm font-black text-rose-800">운영일정 클라우드 반영</button>
+            <div className="flex flex-wrap gap-2">
+              <a href="#life-coupon-sessions" className="rounded-lg border border-rose-300 bg-white px-4 py-3 text-sm font-black text-rose-800">회기 확인</a>
+              <button onClick={uploadAllToCloud} className="rounded-lg border border-rose-300 bg-white px-4 py-3 text-sm font-black text-rose-800">운영일정 클라우드 반영</button>
+            </div>
           </div>
           {message ? <p className="mt-3 rounded-lg bg-white px-3 py-2 text-xs font-black text-slate-700">{message}</p> : null}
         </div>
@@ -492,7 +603,7 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
           <div className="rounded-xl border border-slate-200 p-3"><p className="text-xs font-black text-slate-600">날짜 미정</p><p className="mt-1 text-2xl font-black">{counts.undated}</p></div>
         </div>
         <div className="divide-y divide-slate-100">
-          {activeTasks.length ? activeTasks.slice(0, 12).map(task => {
+          {urgentTasks.length ? urgentTasks.map(task => {
             const level = alertLevel(task)
             return (
               <div key={task.id} className="grid gap-3 p-4 lg:grid-cols-[120px_1fr_150px_130px_70px] lg:items-center">
@@ -508,6 +619,50 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
               </div>
             )
           }) : <p className="p-8 text-center text-sm font-bold text-slate-500">현재 미완료 운영업무가 없습니다.</p>}
+        </div>
+      </section>
+
+      <section id="life-coupon-sessions" className="mb-5 scroll-mt-20 overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-5">
+          <div>
+            <p className="text-xs font-black text-teal-700">SESSION CONTROL</p>
+            <h2 className="mt-1 text-xl font-black">남은 7회기 실행·증빙</h2>
+            <p className="mt-1 text-sm text-slate-600">회기별 준비일, 미션지, 필수서류를 한곳에서 확인합니다.</p>
+          </div>
+          <a href="/programs/life-coupon/2026-schedule.ics" download className="rounded-md border border-teal-700 px-3 py-2 text-sm font-bold text-teal-800">캘린더 알림 파일</a>
+        </div>
+        <div className="divide-y divide-slate-200">
+          {sessionAlerts.map(({ session, confirmed, phase, paymentDate }) => {
+            const isUrgent = phase !== '예정' && confirmed < evidenceItems.length
+            return (
+              <article key={`control-${session.id}`} className="p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className={`text-xs font-black ${isUrgent ? 'text-rose-700' : 'text-teal-700'}`}>{phase} · 준비 확인 {session.prepDate} · {session.dateLabel}</p>
+                    <h3 className="mt-1 text-base font-black text-slate-950">{session.program}</h3>
+                    <p className="mt-1 text-sm text-slate-600">{session.activity}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <a href={`/programs/life-coupon/${session.formFile}`} download className="rounded-md bg-teal-700 px-3 py-2 text-sm font-bold text-white">미션·기록지 받기</a>
+                  </div>
+                </div>
+                <button onClick={() => setExpandedSessionId(current => current === session.id ? '' : session.id)} aria-expanded={expandedSessionId === session.id} className="mt-3 text-sm font-bold text-teal-800">{expandedSessionId === session.id ? '▴' : '▾'} 필수서류 {confirmed}/{evidenceItems.length}</button>
+                {expandedSessionId === session.id ? <div className="mt-3 border-t border-slate-100 pt-4">
+                  <div className="grid gap-x-5 gap-y-2 sm:grid-cols-2 xl:grid-cols-4">
+                    {evidenceItems.map(item => (
+                      <label key={`${session.id}-${item.id}`} className="flex min-h-10 items-start gap-2 text-sm text-slate-700">
+                        <input type="checkbox" checked={evidenceChecked(session.id, item.id) ?? false} onChange={event => toggleEvidence(session, item, event.target.checked)} className="mt-1 accent-teal-700" />
+                        <span><span className="font-semibold">{item.label}</span><span className="ml-1 text-xs text-slate-500">{item.timing}</span></span>
+                      </label>
+                    ))}
+                  </div>
+                  <label className="mt-4 block max-w-xs text-xs font-bold text-slate-600">황금마켓 결제 예정일
+                    <input type="date" value={paymentDate} min={session.endDate} onChange={event => setSessionPaymentDate(session, event.target.value)} className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900" />
+                  </label>
+                </div> : null}
+              </article>
+            )
+          })}
         </div>
       </section>
 
@@ -547,11 +702,11 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
             <h2 className="mt-1 text-xl font-black">실제 진행을 반영한 남은 회기 순서</h2>
             <p className="mt-2 text-sm font-bold leading-6 text-slate-600">최초 계획안의 총 활동구성은 유지하되, 실제로 앞당겨 실시한 영화·독서·마을탐방을 제외하고 남은 활동을 다시 배치했습니다.</p>
           </div>
-          <button onClick={addRemainingSchedule} className="shrink-0 rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">조정된 순서 업무에 반영</button>
+          <button onClick={addRemainingSchedule} className="shrink-0 rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">조정 일정 저장</button>
         </div>
         <div className="mx-5 mt-5 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm font-bold leading-6 text-amber-950">
           <p className="font-black">일정 검토 결과</p>
-          <p className="mt-1">기존 화면의 9.24.~25. 작은만남 일정은 추석 연휴와 겹쳐 삭제했습니다. 2026년 추석 연휴 9.24.~26.에는 회기·미션지 회수·대금결제를 배치하지 않습니다.</p>
+          <p className="mt-1">추석 연휴 9.24.~26.에는 회기·미션지 회수·대금결제를 배치하지 않습니다. 기존 10.8.~9. 작은만남 5회기는 10.9. 한글날과 겹쳐 10.13.~14. 중 하루로 조정했습니다.</p>
         </div>
         <div className="mx-5 mt-3 grid gap-3 border-b border-slate-100 pb-5 md:grid-cols-2">
           <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm font-bold leading-6 text-indigo-950">
