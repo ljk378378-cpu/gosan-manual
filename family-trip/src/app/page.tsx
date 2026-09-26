@@ -191,6 +191,17 @@ export default function FamilyTripPage() {
     saveTrip(nextTrip, vote === 'agree' ? '이 결정에 동의했습니다.' : '수정 의견으로 표시했습니다.')
   }
 
+  function chooseActivity(choice: 'bowling' | 'confucian') {
+    const bowling = choice === 'bowling'
+    saveTrip({ ...trip, activityChoice: choice,
+      schedule: { ...trip.schedule, day1: trip.schedule.day1.map(item => item.id === 'd1-4'
+        ? { ...item, title: bowling ? '아빠와 아이들 볼링' : '아빠와 아이들 유교랜드', location: bowling ? '월드컵락볼링장' : '안동 유교랜드', detail: bowling ? '어린이 공·범퍼레인·6명 요금을 확인합니다. 마사지팀과 합류 동선은 예약 후 확정합니다.' : '전시·체험 코스 후보입니다. 운영시간·6명 입장료·체험 가능 여부를 확인하고 마사지팀과 합류 동선을 정합니다.' }
+        : item.id === 'd1-5' ? { ...item, detail: '각 팀 체험 후 만나 숙소로 이동합니다. 합류 장소와 시각은 선택 코스에 맞춰 확정합니다.' } : item) },
+      tasks: trip.tasks.map(task => task.id === 't6' ? {...task, title: bowling ? '볼링장 어린이 공·범퍼레인·요금 확인' : '유교랜드 운영시간·입장료·체험 및 합류 동선 확인', done: false} : task),
+      budget: trip.budget.map(item => item.id === 'b5' && !item.paid ? {...item, title: bowling ? '볼링 6명' : '유교랜드 6명', memo:'임시 예산 · 선택 장소의 실제 요금 확인 필요'} : item),
+    }, bowling ? '볼링장을 가족 일정에 반영했습니다.' : '유교랜드를 가족 일정에 반영했습니다.')
+  }
+
   function updateBudget(id: string, field: 'actual' | 'paid', value: number | boolean) {
     setTrip(current => ({
       ...current,
@@ -363,6 +374,7 @@ export default function FamilyTripPage() {
             <div><span className="eyebrow">ITINERARY</span><h2 id="schedule-heading">1박 2일 일정</h2></div>
             <Link className="outline-button no-print" href="/report"><Printer size={17} /> 인쇄용 일정표</Link>
           </div>
+          <div className="activity-choice"><div><span className="eyebrow">DAY 1 · 13:30 · 아빠와 아이들 6명</span><h3>오후 코스, 어디로 갈까요?</h3><p>어머니와 며느리 마사지 시간에 다녀올 장소를 선택하세요. 가족 모두에게 같은 선택이 반영됩니다.</p></div><div className="activity-options"><button aria-pressed={(trip.activityChoice || 'bowling') === 'bowling'} disabled={saving} onClick={() => chooseActivity('bowling')}><strong>🎳 볼링장</strong><span>월드컵락볼링장 · 함께 게임하기</span><small>어린이 공·범퍼레인·요금 확인</small></button><button aria-pressed={trip.activityChoice === 'confucian'} disabled={saving} onClick={() => chooseActivity('confucian')}><strong>🏛️ 유교랜드</strong><span>전시·체험 코스</span><small>운영시간·입장료·합류 동선 확인</small></button></div><p className="muted">일정표·지도 링크·준비사항이 함께 바뀝니다. 미결제 체험비는 기존 임시 금액을 유지하므로 요금 확인 후 수정해주세요.</p></div>
           <div className="day-grid">
             {(['day1', 'day2'] as const).map((day, index) => (
               <article className="day-column" key={day}>

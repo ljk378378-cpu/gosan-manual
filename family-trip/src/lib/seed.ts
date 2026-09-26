@@ -64,4 +64,3 @@ export const initialTrip: TripState = {
     { id: 'v3', title: '둘째 날 체험', choice: '놀팍은 진규 확인 후 결정', note: '현재 일정 후보입니다. 이용 조건과 요금은 미확정입니다.', votes: {} },
   ],
 }
-

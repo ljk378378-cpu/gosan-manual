@@ -45,6 +45,7 @@ export type TripState = {
   tasks: TaskItem[]
   decisions: DecisionItem[]
   familyNotes?: string
+  activityChoice?: 'bowling' | 'confucian'
   rentalChoice?: string
   updatedAt?: string
 }
