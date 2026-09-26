@@ -4,6 +4,7 @@ import './globals.css'
 export const metadata: Metadata = {
   title: '엄마의 칠순, 안동 가족여행',
   description: '2026년 11월 7일부터 8일까지 함께 만드는 가족여행 일정표',
+  robots: { index: false, follow: false },
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,

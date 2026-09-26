@@ -47,6 +47,7 @@ export default function ReportPage() {
         <p>{trip.subtitle}</p>
         <dl><div><dt>기간</dt><dd>2026. 11. 7.(토) ~ 11. 8.(일)</dd></div><div><dt>장소</dt><dd>경상북도 안동 일원</dd></div><div><dt>숙소</dt><dd>안동 올웨이즈펜션</dd></div><div><dt>인원</dt><dd>총 9명</dd></div><div><dt>작성자</dt><dd>{author}</dd></div><div><dt>작성일</dt><dd>{issued}</dd></div></dl>
       </section>
+      <section className="report-section"><h2>가족 구성과 식사 기준</h2><p>{trip.travelers}</p><p>{trip.familyNotes}</p></section>
       <section className="report-section">
         <h2>여행 일정</h2>
         {(['day1', 'day2'] as const).map((day, index) => <div className="report-day" key={day}><h3>DAY {index + 1} · {index === 0 ? '11월 7일 토요일' : '11월 8일 일요일'}</h3>{trip.schedule[day].map(item => <div className="report-schedule-row" key={item.id}><time>{item.time}</time><div><strong>{item.title}</strong><p>{item.detail}</p></div></div>)}</div>)}

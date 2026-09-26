@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
+import { rentals } from '@/lib/rentals'
 import {
   Banknote,
   CalendarDays,
@@ -70,6 +72,8 @@ export default function FamilyTripPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [editing, setEditing] = useState(false)
+  const [editDraft, setEditDraft] = useState<TripState | null>(null)
   const [commentDraft, setCommentDraft] = useState('')
 
   useEffect(() => {
@@ -86,11 +90,11 @@ export default function FamilyTripPage() {
     const savedCode = sessionStorage.getItem(ACCESS_KEY) || ''
     const savedName = localStorage.getItem(NAME_KEY) || ''
     setLoginName(savedName)
-    if (!savedCode || !savedName) {
+    if (!savedName) {
       setLoading(false)
       return
     }
-    unlock(savedName, savedCode)
+    unlock(savedName, savedCode || 'session')
   }, [])
 
   const plannedTotal = useMemo(() => trip.budget.reduce((sum, item) => sum + item.planned, 0), [trip.budget])
@@ -115,7 +119,7 @@ export default function FamilyTripPage() {
       p_access_code: code.trim(),
     })
     if (rpcError || !data) {
-      setError('가족 암호가 맞지 않거나 연결이 원활하지 않습니다.')
+      setError(rpcError?.message || '가족 암호가 맞지 않거나 연결이 원활하지 않습니다.')
       setLoading(false)
       return
     }
@@ -123,9 +127,9 @@ export default function FamilyTripPage() {
     setTrip(payload.state || defaultTrip)
     setComments(payload.comments || [])
     setName(personName.trim())
-    setAccessCode(code.trim())
+    setAccessCode('session')
     setUnlocked(true)
-    sessionStorage.setItem(ACCESS_KEY, code.trim())
+    sessionStorage.setItem(ACCESS_KEY, 'session')
     localStorage.setItem(NAME_KEY, personName.trim())
     setLoading(false)
   }
@@ -158,7 +162,7 @@ export default function FamilyTripPage() {
     })
     if (rpcError || !data) {
       setTrip(previous)
-      setError('저장하지 못했습니다. 잠시 후 다시 시도해주세요.')
+      setError(rpcError?.message || '저장하지 못했습니다. 잠시 후 다시 시도해주세요.')
       setSaving(false)
       return false
     }
@@ -268,7 +272,7 @@ export default function FamilyTripPage() {
               <input type="password" value={loginCode} onChange={event => setLoginCode(event.target.value)} placeholder="가족 암호 입력" autoComplete="current-password" />
             </label>
             {error && <p className="form-error">{error}</p>}
-            <button className="primary-button wide" type="submit"><LockKeyhole size={18} /> 일정표 열기</button>
+            <button className="primary-button wide" type="submit" disabled={loading}><LockKeyhole size={18} /> 일정표 열기</button>
           </form>
         </section>
       </main>
@@ -281,7 +285,7 @@ export default function FamilyTripPage() {
         <a className="brand" href="#top"><Heart size={18} fill="currentColor" /> 엄마의 칠순여행</a>
         <nav aria-label="페이지 바로가기">
           <a href="#schedule">일정</a>
-          <a href="#budget">예산</a>
+          <a href="#rentals">칠순상</a><a href="#budget">예산</a>
           <a href="#tasks">준비</a>
           <a href="#comments">의견</a>
         </nav>
@@ -313,6 +317,7 @@ export default function FamilyTripPage() {
       </section>
 
       <div className="page-shell">
+        <aside className="local-notice"><strong>{name}님 · 가족 공동 준비장</strong><span>가족 모두 같은 계획을 보고 수정할 수 있습니다. 다른 가족의 최신 변경은 새로고침으로 확인하세요.</span><button className="outline-button" disabled={saving} onClick={() => { setEditDraft(structuredClone(trip)); setEditing(true) }}><PencilLine size={17}/> 일정·가족정보·준비사항 수정</button></aside>
         {!supabase && <aside className="local-notice"><strong>이 기기에 저장하는 여행 준비장</strong><span>수정 내용은 현재 브라우저에 보관됩니다. 가족 공동 저장·공유는 아직 연결되지 않았습니다.</span></aside>}
         <Link className="report-card" href="/report"><Printer size={24} /><div><strong>여행 계획서 · 보고서 출력</strong><span>일정과 경비, 준비사항을 한 번에 인쇄하거나 PDF로 저장하세요.</span></div><span aria-hidden="true">→</span></Link>
         <section className="intro-row">
@@ -323,6 +328,11 @@ export default function FamilyTripPage() {
           <p>{trip.travelers}<br />숙박비 33만원은 공동경비 통장에서 결제했습니다. 나머지는 두 가족이 함께 확인하고 준비합니다.</p>
         </section>
 
+        <section className="family-profile"><h2>우리 가족 여행 기준</h2><p>{trip.familyNotes || '가족 구성과 식사 선호를 수정창에 입력해주세요.'}</p><p className="muted">추가 확인: 아이들 키·체험 선호, 알레르기, 숙소 식탁 크기·벽 장식 가능 여부, 택배 수령·반납 장소</p></section>
+        <section id="rentals" className="section-block"><div className="section-heading"><div><span className="eyebrow">A TABLE FOR MOM</span><h2>칠순상, 사진으로 함께 고르기</h2></div><p>택배 대여 · 예산 10만~15만원<br/>2026.09.26 상품페이지 확인</p></div>
+          <div className="rental-grid">{rentals.map(item => <article className="rental-card" key={item.id}><a href={item.url} target="_blank" rel="noreferrer"><Image src={item.image} alt={`${item.vendor} ${item.title} 업체 제공 상차림 예시`} width={700} height={650} className="rental-image" /></a><div className="rental-content"><span className="eyebrow">{item.vendor}</span><h3>{item.title}</h3><p>{item.style}</p><strong>{item.total}</strong><p>대여 {won(item.price)} / {item.shipping}</p><p>{item.note}</p><small>사진 출처: {item.vendor} 상품페이지 · 사진 속 전체 소품이 기본 구성은 아닐 수 있습니다.</small><a className="outline-button" href={item.url} target="_blank" rel="noreferrer">상품·상세사진 보기 <ExternalLink size={15}/></a><button className="primary-button" disabled={saving} onClick={() => saveTrip({...trip, rentalChoice:item.id}, '칠순상 선호 후보를 공유했습니다.')}>{trip.rentalChoice===item.id ? '현재 선택한 후보' : '우리 가족 후보로 선택'}</button></div></article>)}</div>
+          <div className="rental-check"><strong>예약 전 확인할 5가지</strong><p>① 11월 7일 대여 재고 ② 안동 펜션 배송·회수 가능 여부 ③ 왕복배송·테이블·모형음식 포함 총액 ④ 금요일 수령 및 일요일 퇴실 후 반납 방법 ⑤ 보증금·파손·취소 규정</p><p>현재는 비교 후보이며 예약 확정이 아닙니다. 펜션에서 일요일 회수가 어렵다면 집으로 먼저 받아 차량에 싣고 이동하는 방식을 업체에 문의하세요.</p></div>
+        </section>
         <section className="section-block" aria-labelledby="decisions-heading">
           <div className="section-heading">
             <div><span className="eyebrow">FAMILY CHOICE</span><h2 id="decisions-heading">지금 함께 정할 것</h2></div>
@@ -407,7 +417,7 @@ export default function FamilyTripPage() {
             <div><span className="eyebrow">PREPARATION</span><h2 id="tasks-heading">누가 무엇을 준비하나요</h2></div>
             <strong className="progress-label">{completedTasks}/{trip.tasks.length} 완료</strong>
           </div>
-          <div className="progress-track"><span style={{ width: `${(completedTasks / trip.tasks.length) * 100}%` }} /></div>
+          <div className="progress-track"><span style={{ width: `${(completedTasks / Math.max(1,trip.tasks.length)) * 100}%` }} /></div>
           <div className="task-list">
             {trip.tasks.map(task => (
               <button className={task.done ? 'task-row done' : 'task-row'} key={task.id} disabled={saving} onClick={() => toggleTask(task.id)}>
@@ -441,6 +451,7 @@ export default function FamilyTripPage() {
         </section>
       </div>
 
+      {editing && editDraft && <div className="modal-backdrop"><section role="dialog" aria-modal="true" aria-label="가족 여행 계획 수정" className="plan-editor"><div className="section-heading"><h2>가족 여행 계획 수정</h2><button className="outline-button" onClick={() => setEditing(false)}>닫기</button></div><label>가족 구성·취향·준비 메모<textarea rows={4} value={editDraft.familyNotes || ''} onChange={e => setEditDraft({...editDraft,familyNotes:e.target.value})}/></label>{(['day1','day2'] as const).map((day,i)=><div key={day}><h3>DAY {i+1} 일정</h3>{editDraft.schedule[day].map((item,index)=><fieldset key={item.id}><legend>{item.title}</legend>{(['time','title','detail','location'] as const).map(field=><label key={field}>{({time:'시간',title:'일정명',detail:'상세 내용',location:'장소'})[field]}<input value={item[field] || ''} onChange={e => setEditDraft({...editDraft,schedule:{...editDraft.schedule,[day]:editDraft.schedule[day].map((x,j)=>j===index?{...x,[field]:e.target.value}:x)}})}/></label>)}</fieldset>)}</div>)}<h3>준비사항·담당자</h3>{editDraft.tasks.map((item,index)=><fieldset key={item.id}>{(['title','owner','due'] as const).map(field=><label key={field}>{({title:'준비사항',owner:'담당자',due:'기한'})[field]}<input type={field==='due'?'date':'text'} value={item[field]} onChange={e=>setEditDraft({...editDraft,tasks:editDraft.tasks.map((x,j)=>j===index?{...x,[field]:e.target.value}:x)})}/></label>)}</fieldset>)}<h3>예상 예산</h3>{editDraft.budget.map((item,index)=><label key={item.id}>{item.title}<input type="number" min="0" value={item.planned} onChange={e=>setEditDraft({...editDraft,budget:editDraft.budget.map((x,j)=>j===index?{...x,planned:Math.max(0,Number(e.target.value))}:x)})}/></label>)}<button className="primary-button wide" disabled={saving} onClick={async()=>{if(await saveTrip(editDraft))setEditing(false)}}>수정한 계획을 가족에게 반영</button></section></div>}
       <footer><Sparkles size={17} /> 2026년 11월, 엄마와 함께 만드는 우리 가족의 기록</footer>
 
       {(message || error) && <div role="status" className={error ? 'toast error' : 'toast'}><span>{error || message}</span><button onClick={() => { setMessage(''); setError('') }}><X size={16} /></button></div>}
