@@ -280,7 +280,7 @@ export default function FamilyTripPage() {
             </label>
             <label>
               가족 암호
-              <input type="password" value={loginCode} onChange={event => setLoginCode(event.target.value)} placeholder="가족 암호 입력" autoComplete="current-password" />
+              <input type="password" inputMode="numeric" pattern="[0-9]*" value={loginCode} onChange={event => setLoginCode(event.target.value)} placeholder="숫자 6자리 입력" autoComplete="current-password" />
             </label>
             {error && <p className="form-error">{error}</p>}
             <button className="primary-button wide" type="submit" disabled={loading}><LockKeyhole size={18} /> 일정표 열기</button>
