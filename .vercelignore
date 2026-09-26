@@ -28,3 +28,16 @@ public/reference/*.pdf
 !eslint.config.mjs
 !.vercelignore
 !README.md
+
+# Standalone family-trip Vercel project (source only).
+!family-trip
+!family-trip/src
+!family-trip/src/**
+!family-trip/public
+!family-trip/public/**
+!family-trip/package.json
+!family-trip/package-lock.json
+!family-trip/next.config.ts
+!family-trip/tsconfig.json
+!family-trip/eslint.config.mjs
+!family-trip/next-env.d.ts
