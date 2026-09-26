@@ -336,7 +336,7 @@ export default function FamilyTripPage() {
             <span className="eyebrow">OUR PLAN</span>
             <h2>어머니는 준비 없이<br />즐기시기만 하기</h2>
           </div>
-          <p>{trip.travelers}<br />숙박비 33만원은 공동경비 통장에서 결제했습니다. 나머지는 두 가족이 함께 확인하고 준비합니다.</p>
+          <p>{trip.accommodation}<br />{trip.travelers}<br />숙박비 33만원은 공동경비 통장에서 결제했습니다. 나머지는 두 가족이 함께 확인하고 준비합니다.</p>
         </section>
 
         <section className="family-profile"><h2>우리 가족 여행 기준</h2><p>{trip.familyNotes || '가족 구성과 식사 선호를 수정창에 입력해주세요.'}</p><p className="muted">추가 확인: 아이들 키·체험 선호, 알레르기, 숙소 식탁 크기·벽 장식 가능 여부, 택배 수령·반납 장소</p></section>

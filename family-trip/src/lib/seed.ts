@@ -4,6 +4,7 @@ export const initialTrip: TripState = {
   subtitle: '한 번뿐인 칠순을 우리답게, 편안하고 따뜻하게',
   startDate: '2026-11-07',
   endDate: '2026-11-08',
+  accommodation: '안동 올웨이즈펜션 304호',
   familyNotes: '중2 여학생 · 초6 여아 · 초4 여아 · 초2 남아. 어머니는 걷기에 무리가 없으시며 갈비·된장찌개·생선구이를 좋아하십니다. 우리 가족은 대구·경산, 동생 가족은 용인에서 출발해 안동에서 만납니다.',
   travelers: '성인 5명 · 중2 여학생 · 초6 여아 · 초4 여아 · 초2 남아 · 총 9명',
   schedule: {
@@ -14,7 +15,7 @@ export const initialTrip: TripState = {
       { id: 'd1-3', time: '13:30', title: '어머니와 며느리 마사지', detail: '힐링궁전타이 아로마 관리 60분', location: '옥동 힐링궁전타이', group: '힐링팀 3명' },
       { id: 'd1-4', time: '13:30', title: '아빠와 아이들 볼링', detail: '어린이 공과 범퍼레인을 먼저 확인합니다.', location: '월드컵락볼링장', group: '체험팀 6명' },
       { id: 'd1-5', time: '14:50', title: '가족 재집결', detail: '마사지숍 인근에서 만나 숙소로 이동합니다.' },
-      { id: 'd1-6', time: '15:20', title: '올웨이즈펜션 체크인', detail: '짐 정리 후 칠순상과 촬영을 준비합니다.', location: '올웨이즈펜션' },
+      { id: 'd1-6', time: '15:20', title: '올웨이즈펜션 304호 체크인', detail: '짐 정리 후 칠순상과 촬영을 준비합니다.', location: '올웨이즈펜션' },
       { id: 'd1-7', time: '16:10', title: '가족사진 촬영', detail: '해가 지기 전에 야외사진부터 찍고 실내 촬영을 이어갑니다.' },
       { id: 'd1-8', time: '17:00', title: '칠순 축하행사', detail: '케이크, 편지, 현금 이벤트, 가족별 사진 순으로 진행합니다.' },
       { id: 'd1-9', time: '18:00', title: '펜션 저녁식사', detail: '바비큐 대신 찜닭·미역국·전·과일을 간편하게 차립니다.' },
