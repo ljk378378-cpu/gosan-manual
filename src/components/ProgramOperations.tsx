@@ -5,6 +5,7 @@ import { useActivityPeriod } from '@/components/ActivityPeriod'
 import { useEffect, useMemo, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { mergeProgramTasks } from '@/lib/program-task-state'
 
 type TaskStatus = '미완료' | '진행중' | '완료' | '보류'
 
@@ -324,6 +325,8 @@ function loadLocalTasks() {
 export default function ProgramOperations({ user, programId }: { user: User | null; programId: string }) {
   const { includesDate } = useActivityPeriod()
   const [tasks, setTasks] = useState<ProgramTask[]>(loadLocalTasks)
+  const isLifeCoupon = programId === 'life-coupon-2026'
+  const [eventDraft, setEventDraft] = useState({ title: '', dueDate: '', owner: '', note: '' })
   const [message, setMessage] = useState('')
   const [expandedSessionId, setExpandedSessionId] = useState('step-4')
   const [sessionDraft, setSessionDraft] = useState({
@@ -337,6 +340,7 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
 
   useEffect(() => {
     if (!user) return
+    let active = true
     supabase
       .from('work_program_tasks')
       .select('*')
@@ -344,16 +348,20 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
       .eq('program_id', programId)
       .order('due_date', { ascending: true, nullsFirst: false })
       .then(({ data, error }) => {
+        if (!active) return
         if (error) {
           setMessage(`운영일정 클라우드 준비 필요: ${error.message}`)
           return
         }
         const cloudTasks = ((data ?? []) as TaskRow[]).map(taskFromRow)
         if (!cloudTasks.length) return
-        const next = withRemainingPlan(cloudTasks, programId)
-        setTasks(next)
-        localStorage.setItem(tasksKey, JSON.stringify(next))
+        setTasks(current => {
+          const next = mergeProgramTasks(current, withRemainingPlan(cloudTasks, programId), programId)
+          localStorage.setItem(tasksKey, JSON.stringify(next))
+          return next
+        })
       })
+    return () => { active = false }
   }, [programId, user])
 
   const programTasks = useMemo(
@@ -464,6 +472,15 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
     const next = [...tasks.filter(item => item.id !== task.id), task]
     saveLocal(next)
     saveCloud(task)
+  }
+
+  function addEventTask() {
+    if (!eventDraft.title.trim()) { setMessage('준비업무 제목을 입력해주세요.'); return }
+    saveTask({ id: crypto.randomUUID(), programId, category: '행사 준비', sessionLabel: '',
+      title: eventDraft.title.trim(), dueDate: eventDraft.dueDate, status: '미완료', owner: eventDraft.owner.trim(),
+      evidenceRequired: true, evidenceConfirmed: false, completedAt: '', note: eventDraft.note.trim(),
+    })
+    setEventDraft({ title: '', dueDate: '', owner: '', note: '' })
   }
 
   function updateTask(id: string, patch: Partial<ProgramTask>) {
@@ -593,7 +610,7 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
               <p className="mt-1 text-sm font-bold leading-6 text-rose-800">기한초과부터 확인하고, 오늘 할 일과 7일 이내 준비사항만 처리합니다.</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <a href="#life-coupon-sessions" className="rounded-lg border border-rose-300 bg-white px-4 py-3 text-sm font-black text-rose-800">회기 확인</a>
+              {isLifeCoupon ? <a href="#life-coupon-sessions" className="rounded-lg border border-rose-300 bg-white px-4 py-3 text-sm font-black text-rose-800">회기 확인</a> : null}
               <button onClick={uploadAllToCloud} className="rounded-lg border border-rose-300 bg-white px-4 py-3 text-sm font-black text-rose-800">운영일정 클라우드 반영</button>
             </div>
           </div>
@@ -625,6 +642,13 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
         </div>
       </section>
 
+      {!isLifeCoupon ? <section className="mb-5 rounded-lg border border-emerald-200 bg-white p-5">
+        <h2 className="text-xl font-black">행사 준비업무</h2><p className="mt-1 text-sm text-slate-600">준비할 일마다 마감일과 담당자를 정하고 완료 결과를 확인합니다.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2"><input aria-label="준비업무 제목" value={eventDraft.title} onChange={event => setEventDraft(current => ({ ...current, title: event.target.value }))} placeholder="준비할 일" className="rounded-lg border border-slate-300 px-3 py-3 text-sm" /><label className="text-xs font-bold text-slate-500">준비 마감일 (선택)<input type="date" value={eventDraft.dueDate} onChange={event => setEventDraft(current => ({ ...current, dueDate: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></label><input aria-label="준비업무 담당자" value={eventDraft.owner} onChange={event => setEventDraft(current => ({ ...current, owner: event.target.value }))} placeholder="담당자 (선택)" className="rounded-lg border border-slate-300 px-3 py-3 text-sm" /><input aria-label="준비업무 메모" value={eventDraft.note} onChange={event => setEventDraft(current => ({ ...current, note: event.target.value }))} placeholder="완료 기준·메모" className="rounded-lg border border-slate-300 px-3 py-3 text-sm" /><button onClick={addEventTask} className="rounded-lg bg-emerald-700 px-4 py-3 text-sm font-black text-white sm:col-span-2">준비업무 등록</button></div>
+        <div className="mt-5 divide-y divide-slate-200">{programTasks.length ? programTasks.map(task => <div key={task.id} className="grid gap-2 py-3 sm:grid-cols-[1fr_150px_120px]"><div><p className="text-sm font-black">{task.title}</p><p className="mt-1 text-xs text-slate-500">{task.note || '완료 기준 미입력'}</p></div><input aria-label={task.title + ' 마감일'} type="date" value={task.dueDate} onChange={event => updateTask(task.id, { dueDate: event.target.value })} className="rounded-lg border border-slate-300 px-2 py-2 text-xs" /><input aria-label={task.title + ' 담당자'} value={task.owner} onChange={event => updateTask(task.id, { owner: event.target.value })} placeholder="담당 미정" className="rounded-lg border border-slate-300 px-2 py-2 text-xs" /><select aria-label={task.title + ' 상태'} value={task.status} onChange={event => updateTask(task.id, { status: event.target.value as TaskStatus })} className="rounded-lg border border-slate-300 px-2 py-2 text-xs">{(['미완료', '진행중', '완료', '보류'] as TaskStatus[]).map(status => <option key={status}>{status}</option>)}</select><label className="flex items-center gap-2 text-xs font-bold"><input type="checkbox" checked={task.evidenceConfirmed} onChange={event => updateTask(task.id, { evidenceConfirmed: event.target.checked })} />증빙 확인</label><button onClick={() => removeTask(task.id)} className="text-left text-xs font-bold text-red-700">삭제</button></div>) : <p className="py-4 text-sm text-slate-500">등록한 준비업무가 없습니다.</p>}</div>
+      </section> : null}
+
+      {isLifeCoupon ? (<>
       <section id="life-coupon-sessions" className="mb-5 scroll-mt-20 overflow-hidden rounded-lg border border-slate-200 bg-white">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-5">
           <div>
@@ -791,6 +815,7 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
           <pre className="mt-4 whitespace-pre-wrap rounded-xl bg-slate-50 p-4 font-sans text-sm font-bold leading-6 text-slate-700">{participantNotice}</pre>
         </article>
       </section>
+      </>) : null}
     </>
   )
 }

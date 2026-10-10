@@ -5,6 +5,7 @@ import { useActivityPeriod } from '@/components/ActivityPeriod'
 import { useEffect, useMemo, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import Nav from '@/components/Nav'
+import { focusPrograms, focusProgramRecords, focusProgramDocuments } from '@/lib/focus-programs'
 import ProgramOperations from '@/components/ProgramOperations'
 import { supabase } from '@/lib/supabase'
 
@@ -362,7 +363,7 @@ function getDocumentActionUrl(document: ProgramDocument) {
 }
 
 function mergeProgramsWithBase(records: ProgramRecord[]) {
-  const merged = new Map<string, ProgramRecord>([[baseProgram.id, baseProgram]])
+  const merged = new Map<string, ProgramRecord>([...focusProgramRecords.map(program => [program.id, program] as [string, ProgramRecord]), [baseProgram.id, baseProgram]])
   records.forEach(program => {
     merged.set(program.id, program.id === baseProgram.id
       ? {
@@ -377,7 +378,7 @@ function mergeProgramsWithBase(records: ProgramRecord[]) {
 }
 
 function mergeDocumentsWithBase(records: ProgramDocument[]) {
-  const merged = new Map(baseDocuments.map(document => [document.id, document]))
+  const merged = new Map([...focusProgramDocuments, ...baseDocuments].map(document => [document.id, document]))
   records.forEach(document => {
     const baseDocument = baseDocuments.find(item => item.id === document.id)
     const useVerifiedBase = ['doc-coupon-issue', 'doc-small-meeting', 'doc-one-step'].includes(document.id)
@@ -438,10 +439,10 @@ function logFromRow(row: LogRow): ProgramLog {
 
 export default function ProgramsPage() {
   const { includesDate } = useActivityPeriod()
-  const [programs, setPrograms] = useState<ProgramRecord[]>([])
-  const [documents, setDocuments] = useState<ProgramDocument[]>([])
+  const [programs, setPrograms] = useState<ProgramRecord[]>(() => mergeProgramsWithBase([]))
+  const [documents, setDocuments] = useState<ProgramDocument[]>(() => mergeDocumentsWithBase([]))
   const [logs, setLogs] = useState<ProgramLog[]>([])
-  const [selectedProgramId, setSelectedProgramId] = useState(baseProgram.id)
+  const [selectedProgramId, setSelectedProgramId] = useState(focusProgramRecords[0].id)
   const [user, setUser] = useState<User | null>(null)
   const [cloudStatus, setCloudStatus] = useState('로컬 저장')
   const [cloudError, setCloudError] = useState('')
@@ -461,6 +462,8 @@ export default function ProgramsPage() {
     const localDocuments = mergeDocumentsWithBase(load(documentsKey, baseDocuments))
     const localLogs = load(logsKey, [] as ProgramLog[])
     setPrograms(localPrograms)
+    const requestedProgram = new URLSearchParams(window.location.search).get('program')
+    if (requestedProgram && localPrograms.some(program => program.id === requestedProgram)) setSelectedProgramId(requestedProgram)
     setDocuments(localDocuments)
     setLogs(localLogs)
 
@@ -478,7 +481,7 @@ export default function ProgramsPage() {
     return () => data.subscription.unsubscribe()
   }, [])
 
-  const selectedProgram = programs.find(program => program.id === selectedProgramId) || programs[0] || baseProgram
+  const selectedProgram = programs.find(program => program.id === selectedProgramId) || programs[0] || focusProgramRecords[0]
   const programDocuments = useMemo(
     () => documents.filter(document => document.programId === selectedProgram.id),
     [documents, selectedProgram.id],
@@ -662,9 +665,9 @@ export default function ProgramsPage() {
   }
 
   function resetBaseData() {
-    const nextPrograms = [baseProgram, ...programs.filter(program => program.id !== baseProgram.id)]
+    const nextPrograms = mergeProgramsWithBase(programs)
     const existingIds = new Set(documents.map(document => document.id))
-    const nextDocuments = [...documents, ...baseDocuments.filter(document => !existingIds.has(document.id))]
+    const nextDocuments = [...documents, ...[...focusProgramDocuments, ...baseDocuments].filter(document => !existingIds.has(document.id))]
     savePrograms(nextPrograms)
     saveDocuments(nextDocuments)
   }
@@ -677,15 +680,13 @@ export default function ProgramsPage() {
           <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
             <div>
               <p className="text-xs font-black tracking-[.22em] text-teal-300">PROGRAM CONTROL</p>
-              <h1 className="mt-3 text-3xl font-black tracking-tight">개별사업 컨트롤타워</h1>
+              <h1 className="mt-3 text-3xl font-black tracking-tight">{selectedProgram.title} 관리</h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
                 사업별 드라이브 폴더를 기준으로 기안, 계획, 모집, 실시, 활동일지, 결과보고, 증빙자료를 한 화면에서 확인합니다.
-                첫 사업은 생활쿠폰지원사업입니다.
+                현재 메인은 고산아놀자 축제·바자회·고산 ON·수성복지한마당·자원봉사자 나들이입니다.
               </p>
             </div>
-            <a href={selectedProgram.driveUrl} target="_blank" rel="noreferrer" className="rounded-xl bg-teal-400 px-5 py-3 text-center text-sm font-black text-slate-950">
-              드라이브 폴더 열기
-            </a>
+            {selectedProgram.driveUrl ? <a href={selectedProgram.driveUrl} target="_blank" rel="noreferrer" className="rounded-xl bg-teal-400 px-5 py-3 text-center text-sm font-black text-slate-950">드라이브 폴더 열기</a> : <span className="rounded-xl border border-slate-600 px-5 py-3 text-sm font-bold text-slate-300">자료 폴더 미등록</span>}
           </div>
         </section>
 
@@ -735,8 +736,9 @@ export default function ProgramsPage() {
           </div>
         </section>
 
-        <ProgramOperations user={user} programId={selectedProgram.id} />
+        <ProgramOperations key={selectedProgram.id} user={user} programId={selectedProgram.id} />
 
+        {selectedProgram.id === baseProgram.id ? (
         <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 bg-slate-50 p-5">
             <p className="text-xs font-black tracking-[.18em] text-slate-500">FIRST REVIEW</p>
@@ -774,10 +776,11 @@ export default function ProgramsPage() {
             </div>
           </div>
         </section>
+        ) : null}
 
         <section className="mb-5 grid gap-4 lg:grid-cols-[320px_1fr]">
           <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-black">사업 목록</h2>
+            <h2 className="text-lg font-black">메인 행사·기존 사업</h2>
             <div className="mt-4 grid gap-2">
               {programs.map(program => (
                 <button
@@ -803,6 +806,7 @@ export default function ProgramsPage() {
               <input value={selectedProgram.title} onChange={event => updateProgram('title', event.target.value)} className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-teal-700" />
               <input value={selectedProgram.team} onChange={event => updateProgram('team', event.target.value)} placeholder="팀" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-teal-700" />
               <input value={selectedProgram.owner} onChange={event => updateProgram('owner', event.target.value)} placeholder="담당자" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-teal-700" />
+              <input value={selectedProgram.driveUrl} onChange={event => updateProgram('driveUrl', event.target.value)} placeholder="자료 폴더 URL (선택)" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold md:col-span-2" />
               <input value={selectedProgram.period} onChange={event => updateProgram('period', event.target.value)} placeholder="기간" className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-teal-700" />
               <select value={selectedProgram.status} onChange={event => updateProgram('status', event.target.value)} className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-bold outline-none focus:border-teal-700">
                 {(['진행중', '점검필요', '완료', '보류'] as ProgramStatus[]).map(status => <option key={status}>{status}</option>)}
@@ -817,6 +821,7 @@ export default function ProgramsPage() {
           </section>
         </section>
 
+        {selectedProgram.id === baseProgram.id ? (<>
         <section className="mb-5 overflow-hidden rounded-2xl border border-teal-200 bg-white shadow-sm">
           <div className="border-b border-teal-100 bg-teal-50 p-5">
             <p className="text-xs font-black tracking-[.18em] text-teal-700">SESSION CHECK</p>
@@ -879,6 +884,8 @@ export default function ProgramsPage() {
           </article>
         </section>
 
+        </>) : null}
+
         <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 bg-slate-50 p-5">
             <p className="text-xs font-black tracking-[.18em] text-slate-500">DOCUMENT FLOW</p>
@@ -895,9 +902,8 @@ export default function ProgramsPage() {
                   <p className="mt-1 text-xs font-bold text-slate-400">{document.fileType}</p>
                 </div>
                 <div>
-                  <a href={document.driveUrl} target="_blank" rel="noreferrer" className="font-black text-slate-950 underline decoration-slate-300 underline-offset-4 hover:text-teal-700">
-                    {document.title}
-                  </a>
+                  {document.driveUrl ? <a href={document.driveUrl} target="_blank" rel="noreferrer" className="font-black text-slate-950 underline decoration-slate-300 underline-offset-4 hover:text-teal-700">{document.title}</a> : <p className="font-black text-slate-950">{document.title}</p>}
+                  {focusPrograms.some(program => program.id === selectedProgram.id) ? <input aria-label={document.title + ' 자료 URL'} value={document.driveUrl} onChange={event => updateDocument(document.id, { driveUrl: event.target.value })} placeholder="자료 URL (선택)" className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs" /> : null}
                   <textarea
                     value={document.note}
                     onChange={event => updateDocument(document.id, { note: event.target.value })}
@@ -913,9 +919,9 @@ export default function ProgramsPage() {
                     <option key={status} value={status}>{getDocumentStatusLabel(status)}</option>
                   ))}
                 </select>
-                <a href={getDocumentActionUrl(document)} target="_blank" rel="noreferrer" className="rounded-lg border border-teal-300 bg-white px-4 py-3 text-center text-sm font-black text-teal-800">
+                {document.driveUrl ? <a href={getDocumentActionUrl(document)} target="_blank" rel="noreferrer" className="rounded-lg border border-teal-300 bg-white px-4 py-3 text-center text-sm font-black text-teal-800">
                   {isHwpDocument(document) ? 'HWP 내려받기' : '자료 열기'}
-                </a>
+                </a> : <span className="text-xs font-bold text-slate-400">자료 미등록</span>}
               </div>
             ))}
           </div>

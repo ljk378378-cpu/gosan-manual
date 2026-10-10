@@ -4,6 +4,7 @@ import { useActivityPeriod } from '@/components/ActivityPeriod'
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { focusPrograms, focusProgramRecords, focusProgramsStorageKey, mergeFocusPrograms, focusProgramHref, focusProgramForContent, type FocusProgramRecord } from '@/lib/focus-programs'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import {
@@ -173,6 +174,7 @@ function dueText(item: WorkInboxItem, today: string) {
 export default function HomeControlDashboard() {
   const { includesDate } = useActivityPeriod()
   const [user, setUser] = useState<User | null>(null)
+  const [featuredPrograms, setFeaturedPrograms] = useState<FocusProgramRecord[]>(focusProgramRecords)
   const [workItems, setWorkItems] = useState<WorkInboxItem[]>([])
   const [confirmedPriorities, setConfirmedPriorities] = useState<Partial<Record<PrioritySlot, ConfirmedPriority>>>({})
   const [priorityHistory, setPriorityHistory] = useState<PriorityHistory>({})
@@ -184,20 +186,25 @@ export default function HomeControlDashboard() {
 
   useEffect(() => {
     let active = true
+    let localPrograms: FocusProgramRecord[] = []
+    try { localPrograms = JSON.parse(localStorage.getItem(focusProgramsStorageKey) || '[]') } catch { localPrograms = [] }
+    if (!Array.isArray(localPrograms)) localPrograms = []
     const localItems = readLocalWorkInbox()
     const localPriorityHistory = readPriorityHistory()
     const frame = requestAnimationFrame(() => {
       if (active) {
         setWorkItems(localItems)
+        setFeaturedPrograms(mergeFocusPrograms(localPrograms))
         setConfirmedPriorities(localPriorityHistory[today] || {})
         setPriorityHistory(localPriorityHistory)
       }
     })
 
     async function loadCloud(userId: string) {
-      const [workResult, priorityResult] = await Promise.all([
+      const [workResult, priorityResult, programResult] = await Promise.all([
         supabase.from('work_inbox_items').select('*').eq('user_id', userId).order('updated_at', { ascending: false }),
         supabase.from('daily_priorities').select('priority_date,slot,title,reason,href,source_item_id,status,outcome,skip_count,updated_at').eq('user_id', userId).order('priority_date', { ascending: false }).limit(180),
+        supabase.from('work_programs').select('id,title,team,owner,period,status,priority,next_action').eq('user_id', userId),
       ])
       if (!active) return
       if (workResult.error) {
@@ -273,7 +280,7 @@ export default function HomeControlDashboard() {
 
   const recommendationPools = useMemo(() => {
     const deadlineFallbacks: Recommendation[] = [
-      { slot: '마감 위험', title: '27년 평가 증빙 1건 확인', reason: '지표를 읽는 것에서 끝내지 말고 실제 파일 위치까지 확인', href: '/evaluation-2027', tone: 'border-red-300 bg-red-50 text-red-950' },
+      { slot: '마감 위험', title: '다섯 행사 중 가장 가까운 준비 마감 확인', reason: '행사별 일정과 다음 준비 마감을 확인하고, 미정인 기한을 먼저 정함', href: '/programs', tone: 'border-red-300 bg-red-50 text-red-950' },
       { slot: '마감 위험', title: '오늘·이번 주 마감 문서 1건 끝내기', reason: '결재·결과보고·제출자료 중 가장 가까운 기한 1건의 완료본을 남김', href: '/team-command', tone: 'border-red-300 bg-red-50 text-red-950' },
       { slot: '마감 위험', title: '기한 없는 업무 1건에 날짜 지정하기', reason: '수집함에서 미뤄진 업무 하나를 골라 담당자와 완료일을 확정', href: '/team-command', tone: 'border-red-300 bg-red-50 text-red-950' },
     ]
@@ -290,7 +297,7 @@ export default function HomeControlDashboard() {
       href: '/team-command', tone: 'border-amber-300 bg-amber-50 text-amber-950', item,
     }))
     const core = activeItems.filter(item => item.status === '사업에 연결' || item.status === '내가 처리'
-      || /평가|생활쿠폰|사업|결과보고/.test(item.content)).map(item => ({
+      || /축제|바자회|수성복지한마당|자원봉사자|평가|생활쿠폰|사업|결과보고/.test(item.content) || Boolean(focusProgramForContent(item.content))).map(item => ({
       slot: '내 핵심업무' as const, title: item.content,
       reason: `${item.team} · ${dueText(item, today)} · 오늘 눈에 보이는 산출물 1개를 남김`,
       href: item.status === '사업에 연결' ? '/programs' : '/team-command',
@@ -327,7 +334,7 @@ export default function HomeControlDashboard() {
       }],
     }
     return pools
-  }, [activeItems, today])
+  }, [activeItems, today, featuredPrograms])
 
   const recommendations = useMemo(() => {
     const chosen = new Set<string>()
@@ -497,7 +504,7 @@ export default function HomeControlDashboard() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-black tracking-[.16em] text-emerald-700">TODAY CONTROL</p>
-            <h1 className="mt-2 text-2xl font-black sm:text-3xl">오늘의 업무 통제실</h1>
+            <h1 className="mt-2 text-2xl font-black sm:text-3xl">행사 운영 대시보드</h1>
             <p className="mt-2 text-sm font-semibold text-slate-600">{koreanDateLabel(today)} · 지금 자료로 오늘의 3가지를 먼저 제안합니다.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -506,6 +513,11 @@ export default function HomeControlDashboard() {
           </div>
         </div>
       </header>
+
+      <section className="border-b border-slate-300 py-6" aria-labelledby="main-events-title">
+        <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-black text-emerald-700">현재 메인 업무</p><h2 id="main-events-title" className="mt-1 text-xl font-black">지금 집중할 행사 5개</h2></div><Link href="/programs" className="text-sm font-black text-slate-600 underline underline-offset-4">행사별 사업관리</Link></div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{featuredPrograms.map(program => <Link key={program.id} href={focusProgramHref(program.id)} className="flex min-h-56 flex-col rounded-lg border border-emerald-200 bg-white p-4 transition hover:border-emerald-600"><p className="text-xs font-bold text-emerald-700">{!program.period && !program.owner ? '기본정보 입력 필요' : program.status}</p><h3 className="mt-2 text-base font-black leading-6">{program.title}</h3><p className="mt-2 text-xs font-semibold leading-5 text-slate-500">{focusPrograms.find(item => item.id === program.id)?.focus}</p><dl className="mt-4 space-y-1 text-xs font-semibold text-slate-600"><div><dt className="inline">일정 </dt><dd className="inline font-bold">{program.period || '미정'}</dd></div><div><dt className="inline">담당 </dt><dd className="inline font-bold">{program.owner || '미정'}</dd></div></dl><p className="mt-3 flex-1 text-xs font-semibold leading-5 text-slate-600">{program.nextAction || '다음 준비사항 입력'}</p><span className="mt-3 text-xs font-black text-emerald-800">행사 관리 →</span></Link>)}</div>
+      </section>
 
       <section className="py-6">
         <div className="flex items-end justify-between gap-3">
