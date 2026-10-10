@@ -1,5 +1,7 @@
 'use client'
 
+import { useActivityPeriod } from '@/components/ActivityPeriod'
+
 import { useEffect, useMemo, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import Nav from '@/components/Nav'
@@ -435,6 +437,7 @@ function logFromRow(row: LogRow): ProgramLog {
 }
 
 export default function ProgramsPage() {
+  const { includesDate } = useActivityPeriod()
   const [programs, setPrograms] = useState<ProgramRecord[]>([])
   const [documents, setDocuments] = useState<ProgramDocument[]>([])
   const [logs, setLogs] = useState<ProgramLog[]>([])
@@ -481,8 +484,8 @@ export default function ProgramsPage() {
     [documents, selectedProgram.id],
   )
   const programLogs = useMemo(
-    () => logs.filter(log => log.programId === selectedProgram.id).sort((a, b) => b.date.localeCompare(a.date)),
-    [logs, selectedProgram.id],
+    () => logs.filter(log => log.programId === selectedProgram.id && includesDate(log.date)).sort((a, b) => b.date.localeCompare(a.date)),
+    [logs, selectedProgram.id, includesDate],
   )
   const completeCount = programDocuments.filter(document => document.status === '확인완료').length
   const riskCount = programDocuments.filter(document => document.status === '보완필요' || document.status === '확인필요').length

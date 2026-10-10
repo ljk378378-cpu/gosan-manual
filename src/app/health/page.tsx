@@ -1,5 +1,7 @@
 'use client'
 
+import { useActivityPeriod } from '@/components/ActivityPeriod'
+
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { User } from '@supabase/supabase-js'
@@ -139,6 +141,7 @@ function summarize(events: HealthEvent[]) {
 }
 
 export default function HealthPage() {
+  const { includesDate } = useActivityPeriod()
   const [events, setEvents] = useState<HealthEvent[]>([])
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -201,21 +204,21 @@ export default function HealthPage() {
   const calendarDates = useMemo(() => calendarDays(visibleMonth), [visibleMonth])
   const eventsByDate = useMemo(() => {
     const grouped: Record<string, HealthEvent[]> = {}
-    events.forEach(event => {
+    events.filter(event => includesDate(koreaDate(new Date(event.occurredAt)))).forEach(event => {
       const date = koreaDate(new Date(event.occurredAt))
       grouped[date] = [...(grouped[date] || []), event]
     })
     return grouped
-  }, [events])
+  }, [events, includesDate])
   const todayEvents = eventsByDate[today] || []
   const todaySummary = summarize(todayEvents)
   const selectedEvents = eventsByDate[selectedDate] || []
   const selectedSummary = summarize(selectedEvents)
-  const monthEvents = events.filter(event => koreaDate(new Date(event.occurredAt)).startsWith(visibleMonth))
+  const monthEvents = events.filter(event => koreaDate(new Date(event.occurredAt)).startsWith(visibleMonth) && includesDate(koreaDate(new Date(event.occurredAt))))
   const exerciseDays = new Set(monthEvents.filter(event => event.type === 'exercise').map(event => koreaDate(new Date(event.occurredAt)))).size
   const recordedDays = new Set(monthEvents.map(event => koreaDate(new Date(event.occurredAt)))).size
   const monthWater = monthEvents.filter(event => event.type === 'water').reduce((sum, event) => sum + waterVolume(event), 0)
-  const latestWeight = events.find(event => event.type === 'weight')
+  const latestWeight = events.find(event => event.type === 'weight' && includesDate(koreaDate(new Date(event.occurredAt))))
 
   function changeMonth(offset: number) {
     const next = monthOffset(visibleMonth, offset)

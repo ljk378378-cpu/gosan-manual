@@ -1,5 +1,7 @@
 'use client'
 
+import { useActivityPeriod } from '@/components/ActivityPeriod'
+
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import Nav from '@/components/Nav'
 import { supabase } from '@/lib/supabase'
@@ -168,6 +170,7 @@ function mergeById<T extends { id: string }>(incoming: T[], current: T[]) {
 }
 
 export default function MoneyPage() {
+  const { includesDate } = useActivityPeriod()
   const [months, setMonths] = useState<MonthRecord[]>([])
   const [leaks, setLeaks] = useState<LeakRecord[]>([])
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([])
@@ -403,12 +406,12 @@ export default function MoneyPage() {
     setCloudStatus('로컬자료 클라우드 반영됨')
   }
 
+  const visibleLeaks = leaks.filter(item => includesDate(item.date))
   const visibleMonth = monthDraft.month || currentMonth()
-  const latest = months[0]
-  const activeMonthRecord = months.find(item => item.month === visibleMonth) || latest
-  const currentLeaks = useMemo(() => leaks.filter(item => item.date.startsWith(visibleMonth)), [leaks, visibleMonth])
+  const activeMonthRecord = months.find(item => item.month === visibleMonth)
+  const currentLeaks = useMemo(() => leaks.filter(item => item.date.startsWith(visibleMonth) && includesDate(item.date)), [leaks, visibleMonth, includesDate])
   const todayLeaks = useMemo(() => leaks.filter(item => item.date === today()), [leaks])
-  const selectedLeaks = useMemo(() => leaks.filter(item => item.date === selectedDate), [leaks, selectedDate])
+  const selectedLeaks = useMemo(() => leaks.filter(item => item.date === selectedDate && includesDate(item.date)), [leaks, selectedDate, includesDate])
   const calendarDates = useMemo(() => calendarDays(visibleMonth), [visibleMonth])
   const dailyTotals = useMemo(() => {
     return currentLeaks.reduce<Record<string, Record<'total' | SpendGroup, number>>>((totals, item) => {
@@ -1166,7 +1169,7 @@ export default function MoneyPage() {
               <h2 className="text-xl font-black">최근 누수 메모</h2>
             </div>
             <div className="divide-y divide-slate-100">
-              {leaks.length ? leaks.slice(0, 10).map(item => (
+              {visibleLeaks.length ? visibleLeaks.slice(0, 10).map(item => (
                 <div key={item.id} className="grid gap-2 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-black">{item.title}</p>

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { ActivityPeriodProvider } from "@/components/ActivityPeriod";
 
 export const metadata: Metadata = {
   title: "청곡 AI 업무시스템",
@@ -27,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className="h-full">
-      <body className="min-h-full bg-gray-50">{children}</body>
+      <body className="min-h-full bg-gray-50"><ActivityPeriodProvider>{children}</ActivityPeriodProvider></body>
     </html>
   );
 }

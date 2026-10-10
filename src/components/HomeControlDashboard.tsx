@@ -1,5 +1,7 @@
 'use client'
 
+import { useActivityPeriod } from '@/components/ActivityPeriod'
+
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { User } from '@supabase/supabase-js'
@@ -15,7 +17,6 @@ import {
 } from '@/lib/work-inbox'
 
 const workAreas = [
-  { href: '/inspection-2026', label: '지도점검', title: '9.18 구청 지도점검', desc: '증빙위치·보완사항·담당자' },
   { href: '/team-command', label: '팀 운영', title: '팀 운영 컨트롤타워', desc: '수시보고·결재·판단대기' },
   { href: '/programs', label: '개별사업', title: '사업 컨트롤타워', desc: '일정·회기·참여자·증빙' },
   { href: '/evaluation-2027', label: '27년 평가', title: '평가 대비 특별반', desc: '지표·담당자·증빙준비율' },
@@ -30,14 +31,6 @@ const timeBlocks = [
   { time: '16:30', title: '익일 문서 제출 마감', desc: '다음 날 결재할 문서를 직원이 먼저 제출' },
   { time: '17:00~17:30', title: '익일 결재 사전검토', desc: '결과보고서·계획서 피드백' },
   { time: '17:30~18:00', title: '과장 정리시간', desc: '완료·위임·이월만 결정' },
-]
-
-const inspectionSteps = [
-  { date: '2026-09-14', title: '증빙 위치표 완성', done: '원본철·전자파일 위치를 30초 안에 열 수 있게 정리' },
-  { date: '2026-09-15', title: '모의점검', done: '긴급항목 질문과 자료 제시 리허설' },
-  { date: '2026-09-16', title: '최종 보완', done: '보완필요 항목만 재확인하고 출력본과 파일 일치' },
-  { date: '2026-09-17', title: '점검 전 세팅', done: '점검실·원본철·노트북·담당자 동선 확정' },
-  { date: '2026-09-18', title: '구청 지도점검', done: '확정된 자료만 제시하고 추가요청은 바로 기록' },
 ]
 
 type PrioritySlot = '마감 위험' | '팀을 움직이는 결정' | '내 핵심업무'
@@ -178,6 +171,7 @@ function dueText(item: WorkInboxItem, today: string) {
 }
 
 export default function HomeControlDashboard() {
+  const { includesDate } = useActivityPeriod()
   const [user, setUser] = useState<User | null>(null)
   const [workItems, setWorkItems] = useState<WorkInboxItem[]>([])
   const [confirmedPriorities, setConfirmedPriorities] = useState<Partial<Record<PrioritySlot, ConfirmedPriority>>>({})
@@ -273,17 +267,13 @@ export default function HomeControlDashboard() {
   }, [today])
 
   const activeItems = useMemo(
-    () => workItems.filter(item => item.status !== '완료').sort((a, b) => itemScore(b, today) - itemScore(a, today)),
-    [today, workItems],
+    () => workItems.filter(item => item.status !== '완료' && includesDate(koreaDate(new Date(item.updatedAt)))).sort((a, b) => itemScore(b, today) - itemScore(a, today)),
+    [today, workItems, includesDate],
   )
 
   const recommendationPools = useMemo(() => {
-    const nextStep = inspectionSteps.find(step => step.date >= today)
-    const inspectionDays = dayDifference(today, '2026-09-18')
     const deadlineFallbacks: Recommendation[] = [
-      nextStep && inspectionDays >= 0
-        ? { slot: '마감 위험', title: nextStep.title, reason: `${koreanDateLabel(nextStep.date)} 기준 · 완료기준: ${nextStep.done}`, href: '/inspection-2026', tone: 'border-red-300 bg-red-50 text-red-950' }
-        : { slot: '마감 위험', title: '27년 평가 증빙 1건 확인', reason: '지표를 읽는 것에서 끝내지 말고 실제 파일 위치까지 확인', href: '/evaluation-2027', tone: 'border-red-300 bg-red-50 text-red-950' },
+      { slot: '마감 위험', title: '27년 평가 증빙 1건 확인', reason: '지표를 읽는 것에서 끝내지 말고 실제 파일 위치까지 확인', href: '/evaluation-2027', tone: 'border-red-300 bg-red-50 text-red-950' },
       { slot: '마감 위험', title: '오늘·이번 주 마감 문서 1건 끝내기', reason: '결재·결과보고·제출자료 중 가장 가까운 기한 1건의 완료본을 남김', href: '/team-command', tone: 'border-red-300 bg-red-50 text-red-950' },
       { slot: '마감 위험', title: '기한 없는 업무 1건에 날짜 지정하기', reason: '수집함에서 미뤄진 업무 하나를 골라 담당자와 완료일을 확정', href: '/team-command', tone: 'border-red-300 bg-red-50 text-red-950' },
     ]
@@ -354,14 +344,13 @@ export default function HomeControlDashboard() {
   const todayCount = activeItems.filter(item => item.dueDate === today).length
   const decisionCount = activeItems.filter(item => item.status === '미확인').length
   const unsortedItems = activeItems.filter(item => item.status === '미확인' && !item.dueDate)
-  const inspectionDays = dayDifference(today, '2026-09-18')
   const weekStartDate = weekStart(today)
   const period28Start = dateOffset(today, -27)
   const historyEntries = Object.entries(priorityHistory).flatMap(([date, slots]) =>
     (Object.values(slots) as ConfirmedPriority[]).map(priority => ({ date, priority })),
   )
-  const weekEntries = historyEntries.filter(entry => entry.date >= weekStartDate && entry.date <= today)
-  const period28Entries = historyEntries.filter(entry => entry.date >= period28Start && entry.date <= today)
+  const weekEntries = historyEntries.filter(entry => entry.date >= weekStartDate && entry.date <= today && includesDate(entry.date))
+  const period28Entries = historyEntries.filter(entry => entry.date >= period28Start && entry.date <= today && includesDate(entry.date))
   const weekPlanned = weekEntries.filter(entry => entry.priority.status !== '제외')
   const weekCompleted = weekPlanned.filter(entry => entry.priority.status === '완료')
   const period28Planned = period28Entries.filter(entry => entry.priority.status !== '제외')
@@ -607,12 +596,7 @@ export default function HomeControlDashboard() {
         </div>
       </section>
 
-      <section className="grid gap-7 py-6 lg:grid-cols-[.8fr_1.2fr]">
-        <div>
-          <p className="text-xs font-black text-red-700">이번 주 위험</p><h2 className="mt-1 text-lg font-black">9월 18일 구청 지도점검</h2>
-          <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">{inspectionDays >= 0 ? `D-${inspectionDays} · 증빙 위치·담당자 답변·최종본 일치를 확인할 시점입니다.` : '점검 후 추가요청과 시정사항을 확인합니다.'}</p>
-          <Link href="/inspection-2026" className="mt-4 inline-flex rounded-md bg-red-700 px-4 py-2 text-sm font-black text-white">지도점검 열기</Link>
-        </div>
+      <section className="py-6">
         <div>
           <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-black">아직 분류하지 않은 빠른기록</h2><span className="text-xs font-black text-slate-500">{unsortedItems.length}건</span></div>
           {unsortedItems.length ? <div className="mt-3 divide-y divide-slate-200 border-y border-slate-200">{unsortedItems.slice(0, 4).map(item => <div key={item.id} className="flex items-start justify-between gap-3 py-3"><div className="min-w-0"><p className="truncate text-sm font-black">{item.content}</p><p className="mt-1 text-xs font-semibold text-slate-500">{item.category} · {item.team}</p></div><button type="button" onClick={() => updateStatus(item, '직원에게 전달')} className="shrink-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700">위임</button></div>)}</div> : <p className="mt-3 border-y border-slate-200 py-6 text-sm font-semibold text-slate-500">미분류 기록이 없습니다. 업무 중에는 판단하지 말고 빠른기록에만 남깁니다.</p>}

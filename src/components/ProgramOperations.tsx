@@ -1,5 +1,7 @@
 'use client'
 
+import { useActivityPeriod } from '@/components/ActivityPeriod'
+
 import { useEffect, useMemo, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
@@ -320,6 +322,7 @@ function loadLocalTasks() {
 }
 
 export default function ProgramOperations({ user, programId }: { user: User | null; programId: string }) {
+  const { includesDate } = useActivityPeriod()
   const [tasks, setTasks] = useState<ProgramTask[]>(loadLocalTasks)
   const [message, setMessage] = useState('')
   const [expandedSessionId, setExpandedSessionId] = useState('step-4')
@@ -354,8 +357,8 @@ export default function ProgramOperations({ user, programId }: { user: User | nu
   }, [programId, user])
 
   const programTasks = useMemo(
-    () => tasks.filter(task => task.programId === programId),
-    [programId, tasks],
+    () => tasks.filter(task => task.programId === programId && includesDate(task.dueDate)),
+    [programId, tasks, includesDate],
   )
   const activeTasks = useMemo(
     () => programTasks

@@ -1,5 +1,7 @@
 'use client'
 
+import { useActivityPeriod } from '@/components/ActivityPeriod'
+
 import { useEffect, useMemo, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
@@ -298,6 +300,7 @@ function inboxStatusTone(status: WorkInboxStatus) {
 }
 
 export default function TeamCommandPage() {
+  const { includesDate } = useActivityPeriod()
   const [records, setRecords] = useState<ReportRecord[]>([])
   const [condition, setCondition] = useState<ConditionRecord>(conditionDefaults)
   const [conditionHistory, setConditionHistory] = useState<ConditionHistory>({})
@@ -457,23 +460,26 @@ export default function TeamCommandPage() {
     }))
   }, [closingNote])
 
+  const visibleRecords = records.filter(record => includesDate(record.date))
+  const visibleInboxItems = workInboxItems.filter(item => includesDate(new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(new Date(item.updatedAt))))
+
   const stats = useMemo(() => {
     const today = todayDateString()
-    const todayRecords = records.filter(record => record.date === today)
+    const todayRecords = records.filter(record => includesDate(record.date)).filter(record => record.date === today)
     const todayTakeoverRisk = todayRecords.filter(record => record.status === '돌려보냄' || !record.staffOption || record.type === '시간외 상의' || record.type === '퇴근 이후 문의')
-    const active = records.filter(record => record.status !== '완료')
+    const active = records.filter(record => includesDate(record.date)).filter(record => record.status !== '완료')
     return {
-      total: records.length,
+      total: records.filter(record => includesDate(record.date)).length,
       today: todayRecords.length,
       active: active.length,
-      returned: records.filter(record => record.status === '돌려보냄').length,
-      tracking: records.filter(record => record.status === '추적필요').length,
-      takeoverRisk: records.filter(record => record.status === '돌려보냄' || !record.staffOption || record.type === '시간외 상의' || record.type === '퇴근 이후 문의').length,
+      returned: records.filter(record => includesDate(record.date)).filter(record => record.status === '돌려보냄').length,
+      tracking: records.filter(record => includesDate(record.date)).filter(record => record.status === '추적필요').length,
+      takeoverRisk: records.filter(record => includesDate(record.date)).filter(record => record.status === '돌려보냄' || !record.staffOption || record.type === '시간외 상의' || record.type === '퇴근 이후 문의').length,
       todayTakeoverRisk: todayTakeoverRisk.length,
       todayMinutes: todayRecords.reduce((sum, record) => sum + Number(record.minutes || 0), 0),
       todayReturned: todayRecords.filter(record => record.status === '돌려보냄').length,
     }
-  }, [records])
+  }, [records, includesDate])
 
   const todayAnalysis = useMemo(() => {
     const today = todayDateString()
@@ -544,7 +550,7 @@ export default function TeamCommandPage() {
   }, [records])
 
   const conditionTrend = useMemo(() => {
-    const dates = Array.from({ length: 7 }, (_, index) => dateStringDaysAgo(index)).reverse()
+    const dates = Array.from({ length: 7 }, (_, index) => dateStringDaysAgo(index)).reverse().filter(includesDate)
     const entries = dates.map(date => ({
       date,
       condition: conditionHistory[date] || conditionDefaults,
@@ -578,7 +584,7 @@ export default function TeamCommandPage() {
         overload: divide(totals.overload),
       },
     }
-  }, [conditionHistory])
+  }, [conditionHistory, includesDate])
 
   const saveRecord = () => {
     if (!draft.title.trim()) return
@@ -916,7 +922,7 @@ export default function TeamCommandPage() {
           <div className="grid gap-3 border-b border-slate-100 p-5 sm:grid-cols-3">
             <div className="rounded-xl border border-red-200 bg-red-50 p-4">
               <p className="text-xs font-black text-red-700">미확인</p>
-              <p className="mt-2 text-2xl font-black text-red-950">{workInboxItems.filter(item => item.status === '미확인').length}</p>
+              <p className="mt-2 text-2xl font-black text-red-950">{visibleInboxItems.filter(item => item.status === '미확인').length}</p>
             </div>
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
               <p className="text-xs font-black text-amber-700">처리 중</p>
@@ -930,7 +936,7 @@ export default function TeamCommandPage() {
           {workInboxError ? <p className="mx-5 mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-black text-red-700">{workInboxError}</p> : null}
           {!user ? <p className="mx-5 mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-600">현재 기기 자료만 표시됩니다. 휴대폰과 컴퓨터를 연결하려면 소비점검에서 로그인하세요.</p> : null}
           <div className="divide-y divide-slate-100">
-            {workInboxItems.length ? workInboxItems.slice(0, 50).map(item => (
+            {visibleInboxItems.length ? visibleInboxItems.slice(0, 50).map(item => (
               <div key={item.id} className="grid gap-3 p-5 lg:grid-cols-[150px_1fr_180px_auto] lg:items-center">
                 <div>
                   <span className={`inline-block rounded-full border px-3 py-1 text-xs font-black ${inboxStatusTone(item.status)}`}>{item.category}</span>
@@ -1422,7 +1428,7 @@ export default function TeamCommandPage() {
                 </tr>
               </thead>
               <tbody>
-                {records.length ? records.map(record => (
+                {visibleRecords.length ? visibleRecords.map(record => (
                   <tr key={record.id} className="border-t border-slate-100 align-top">
                     <td className="p-3 text-xs font-bold text-slate-500">{record.date}</td>
                     <td className="p-3 text-xs font-black text-emerald-800">{record.team || '공통'}</td>

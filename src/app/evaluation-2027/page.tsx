@@ -1,5 +1,8 @@
 'use client'
 
+import { useActivityPeriod } from '@/components/ActivityPeriod'
+import { ACTIVITY_START_DATE } from '@/lib/activity-period'
+
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import PdfCanvasReader from '@/components/PdfCanvasReader'
@@ -138,7 +141,7 @@ const DETAIL_KEY = 'cheonggok-evaluation-2027-details-v1'
 const LEARNING_KEY = 'cheonggok-evaluation-2027-learning-v1'
 const CONNECTION_KEY = 'cheonggok-evaluation-2027-connections-v1'
 const AI_TASK_KEY = 'cheonggok-evaluation-2027-ai-tasks-v1'
-const LEARNING_START_DATE = new Date('2026-08-31T00:00:00+09:00')
+const LEARNING_START_DATE = new Date(`${ACTIVITY_START_DATE}T12:00:00+09:00`)
 const connectionCategories = ['수성구청 지도점검', '운영규정', '노무규정', '개인정보·인권', '안전관리', '팀 운영'] as const
 type ConnectionCategory = typeof connectionCategories[number]
 const aiTaskLanes: AiTaskLane[] = ['Codex에게 맡길 일', '승인 후 처리할 일', '내가 직접 할 일']
@@ -180,10 +183,10 @@ function todayDateString() {
 }
 
 function weekdayLearningIndex() {
-  const today = new Date(`${todayDateString()}T00:00:00+09:00`)
+  const today = new Date(`${todayDateString()}T12:00:00+09:00`)
   let count = 0
-  for (let day = new Date(LEARNING_START_DATE); day <= today; day.setDate(day.getDate() + 1)) {
-    const weekday = day.getDay()
+  for (let day = new Date(LEARNING_START_DATE); day <= today; day.setUTCDate(day.getUTCDate() + 1)) {
+    const weekday = day.getUTCDay()
     if (weekday !== 0 && weekday !== 6) count++
   }
   return Math.max(0, count - 1) % learningOrder.length
@@ -205,6 +208,7 @@ function learningGuide(item: Indicator) {
 }
 
 export default function Evaluation2027Page() {
+  const { includesDate } = useActivityPeriod()
   const [statuses, setStatuses] = useState<StatusMap>({})
   const [evidenceChecks, setEvidenceChecks] = useState<EvidenceMap>({})
   const [notes, setNotes] = useState<NoteMap>({})
@@ -510,14 +514,17 @@ export default function Evaluation2027Page() {
   const todayLearning = indicatorByCode(learningCode)
   const todayDetail = evaluationCriteriaDetails[todayLearning.code] ?? ''
   const todayEvidence = todayLearning.evidence.join(', ')
-  const latestLearningRecords = learningRecords.slice(0, 6)
-  const latestConnectionRecords = connectionRecords.slice(0, 6)
-  const latestAiTasks = aiTasks.slice(0, 8)
+  const visibleLearningRecords = learningRecords.filter(record => includesDate(record.date))
+  const visibleConnectionRecords = connectionRecords.filter(record => includesDate(record.date))
+  const visibleAiTasks = aiTasks.filter(task => includesDate(task.date))
+  const latestLearningRecords = visibleLearningRecords.slice(0, 6)
+  const latestConnectionRecords = visibleConnectionRecords.slice(0, 6)
+  const latestAiTasks = visibleAiTasks.slice(0, 8)
   const aiTaskStats = {
-    total: aiTasks.length,
-    active: aiTasks.filter(task => task.status === '대기' || task.status === 'Codex 작업 중').length,
-    approval: aiTasks.filter(task => task.approval || task.status === '승인 필요').length,
-    done: aiTasks.filter(task => task.status === '완료').length,
+    total: visibleAiTasks.length,
+    active: visibleAiTasks.filter(task => task.status === '대기' || task.status === 'Codex 작업 중').length,
+    approval: visibleAiTasks.filter(task => task.approval || task.status === '승인 필요').length,
+    done: visibleAiTasks.filter(task => task.status === '완료').length,
   }
 
   const saveLearningRecord = () => {
@@ -906,7 +913,7 @@ export default function Evaluation2027Page() {
                 <p className="mt-1 text-sm text-slate-600">평가지표를 기관 운영규정, 노무규정, 지도점검, 개인정보·인권·안전 기준과 연결해서 기록합니다.</p>
               </div>
               <div className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700">
-                최근 연결 메모 {connectionRecords.length}건
+                최근 연결 메모 {visibleConnectionRecords.length}건
               </div>
             </div>
           </div>

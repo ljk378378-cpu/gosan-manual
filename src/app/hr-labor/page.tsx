@@ -1,5 +1,8 @@
 'use client'
 
+import { useActivityPeriod } from '@/components/ActivityPeriod'
+import { ACTIVITY_START_DATE } from '@/lib/activity-period'
+
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import PdfCanvasReader from '@/components/PdfCanvasReader'
@@ -50,7 +53,7 @@ type ChapterSection = {
 
 const STORAGE_KEY = 'cheonggok-hr-labor-learning-v1'
 const LATEST_KEY = 'cheonggok-hr-labor-latest-v1'
-const PROGRESS_KEY = 'cheonggok-hr-labor-progress-v2'
+const PROGRESS_KEY = `cheonggok-hr-labor-progress-v2-${ACTIVITY_START_DATE}`
 
 const guideRoadmap = [
   { stage: 1, phase: '1단계 · 1~30일', title: '2026 사회복지시설 관리안내', detail: '시설 현황부터 운영·종사자·전자화·안전·회계·후원금·인건비까지 전체 목차를 읽습니다.' },
@@ -647,6 +650,7 @@ function buildChapterSections(topic: Topic, material: Material): ChapterSection[
 }
 
 export default function HrLaborPage() {
+  const { includesDate } = useActivityPeriod()
   const [topicIndex, setTopicIndex] = useState(0)
   const [activeGuide, setActiveGuide] = useState<'facility' | 'labor' | 'inspection'>('facility')
   const [records, setRecords] = useState<LearningRecord[]>([])
@@ -681,7 +685,7 @@ export default function HrLaborPage() {
       setCompletedDays(Array.isArray(saved.completedDays) ? saved.completedDays : [])
       setActiveGuide(topics[nextIndex].guide)
     } else {
-      const legacyCompleted = topics.filter(item => savedRecords.some(record => record.topic === item.title)).map(item => item.day)
+      const legacyCompleted = topics.filter(item => savedRecords.some(record => record.date >= ACTIVITY_START_DATE && record.topic === item.title)).map(item => item.day)
       setCompletedDays(legacyCompleted)
     }
   }, [])
@@ -712,18 +716,20 @@ export default function HrLaborPage() {
   const activeSubtitle = activeGuide === 'facility' ? '공식 행정 기준' : activeGuide === 'labor' ? '한국사회복지관협회 노무자문 사례집' : '법인·시설 운영개선 지도점검 지적사례'
   const activePdfSrc = `${activePdf}#page=${activePage}`
   const activeBookmarks = activeGuide === 'facility' ? facilityGuideBookmarks : activeGuide === 'labor' ? laborGuideBookmarks : inspectionCasebookBookmarks
+  const visibleRecords = records.filter(record => includesDate(record.date))
+  const visibleLatestRecords = latestRecords.filter(record => includesDate(record.date))
   const todayRecords = useMemo(() => records.filter(record => record.date === todayDateString()), [records])
   const todayLatestRecords = useMemo(() => latestRecords.filter(record => record.date === todayDateString()), [latestRecords])
   const progress = Math.round(completedDays.length / topics.length * 100)
   const isTopicCompleted = completedDays.includes(topic.day)
   const areaCounts = useMemo(() => {
     const counts = new Map<string, number>()
-    records.forEach(record => {
+    records.filter(record => includesDate(record.date)).forEach(record => {
       const found = topics.find(item => item.title === record.topic)
       if (found) counts.set(found.area, (counts.get(found.area) || 0) + 1)
     })
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6)
-  }, [records])
+  }, [records, includesDate])
 
   const saveRecord = () => {
     if (!draft.learned.trim() && !draft.question.trim()) return
@@ -1171,7 +1177,7 @@ export default function HrLaborPage() {
                 </tr>
               </thead>
               <tbody>
-                {records.length ? records.map(record => (
+                {visibleRecords.length ? visibleRecords.map(record => (
                   <tr key={record.id} className="border-t border-slate-100 align-top">
                     <td className="p-3 text-xs font-bold text-slate-500">{record.date}</td>
                     <td className="p-3 font-black">{record.topic}</td>
@@ -1208,7 +1214,7 @@ export default function HrLaborPage() {
                 </tr>
               </thead>
               <tbody>
-                {latestRecords.length ? latestRecords.map(record => (
+                {visibleLatestRecords.length ? visibleLatestRecords.map(record => (
                   <tr key={record.id} className="border-t border-slate-100 align-top">
                     <td className="p-3 text-xs font-bold text-slate-500">{record.date}</td>
                     <td className="p-3 font-black">{record.title}</td>
