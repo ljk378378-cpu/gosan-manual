@@ -142,7 +142,7 @@ const LEARNING_KEY = 'cheonggok-evaluation-2027-learning-v1'
 const CONNECTION_KEY = 'cheonggok-evaluation-2027-connections-v1'
 const AI_TASK_KEY = 'cheonggok-evaluation-2027-ai-tasks-v1'
 const LEARNING_START_DATE = new Date(`${ACTIVITY_START_DATE}T12:00:00+09:00`)
-const connectionCategories = ['수성구청 지도점검', '운영규정', '노무규정', '개인정보·인권', '안전관리', '팀 운영'] as const
+const connectionCategories = ['운영규정', '노무규정', '개인정보·인권', '안전관리', '팀 운영'] as const
 type ConnectionCategory = typeof connectionCategories[number]
 const aiTaskLanes: AiTaskLane[] = ['Codex에게 맡길 일', '승인 후 처리할 일', '내가 직접 할 일']
 const aiTaskStatuses: AiTaskStatus[] = ['대기', 'Codex 작업 중', '초안 완료', '승인 필요', '완료', '보류']
@@ -515,7 +515,7 @@ export default function Evaluation2027Page() {
   const todayDetail = evaluationCriteriaDetails[todayLearning.code] ?? ''
   const todayEvidence = todayLearning.evidence.join(', ')
   const visibleLearningRecords = learningRecords.filter(record => includesDate(record.date))
-  const visibleConnectionRecords = connectionRecords.filter(record => includesDate(record.date))
+  const visibleConnectionRecords = connectionRecords.filter(record => record.category !== '수성구청 지도점검' && includesDate(record.date))
   const visibleAiTasks = aiTasks.filter(task => includesDate(task.date))
   const latestLearningRecords = visibleLearningRecords.slice(0, 6)
   const latestConnectionRecords = visibleConnectionRecords.slice(0, 6)
@@ -689,7 +689,6 @@ export default function Evaluation2027Page() {
         <div className="mb-5 flex flex-wrap gap-2">
           <Link href="/" className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-slate-700 hover:text-slate-950">전체 홈</Link>
           <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white">27년 평가 특별반</button>
-          <Link href="/inspection-2026" className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-cyan-500 hover:text-cyan-700">2026 수성구청 지도점검 →</Link>
           <Link href="/team-command" className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-emerald-500 hover:text-emerald-700">팀 운영 컨트롤타워 →</Link>
         </div>
 
@@ -909,8 +908,8 @@ export default function Evaluation2027Page() {
             <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
               <div>
                 <p className="text-xs font-black tracking-[.18em] text-stone-600">MANAGER CROSS-CHECK</p>
-                <h2 className="mt-1 text-xl font-black text-slate-950">규정·지도점검 연결 메모</h2>
-                <p className="mt-1 text-sm text-slate-600">평가지표를 기관 운영규정, 노무규정, 지도점검, 개인정보·인권·안전 기준과 연결해서 기록합니다.</p>
+                <h2 className="mt-1 text-xl font-black text-slate-950">규정 연결 메모</h2>
+                <p className="mt-1 text-sm text-slate-600">평가지표를 기관 운영규정, 노무규정, 개인정보·인권·안전 기준과 연결해서 기록합니다.</p>
               </div>
               <div className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700">
                 최근 연결 메모 {visibleConnectionRecords.length}건
@@ -965,10 +964,6 @@ export default function Evaluation2027Page() {
               <p className="font-black text-slate-950">연결해서 생각할 기준</p>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
-                  <p className="text-xs font-black text-stone-600">지도점검</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-800">평가지표와 겹치는 인사, 회계, 개인정보, 안전, 이용자 권리 자료를 먼저 연결합니다.</p>
-                </div>
-                <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
                   <p className="text-xs font-black text-stone-600">운영규정</p>
                   <p className="mt-2 text-sm leading-6 text-slate-800">규정에 있는 절차가 실제 기안, 회의록, 대장, 결과보고로 남아 있는지 확인합니다.</p>
                 </div>
@@ -1005,7 +1000,7 @@ export default function Evaluation2027Page() {
                     ))}
                   </div>
                 ) : (
-                  <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">아직 연결 메모가 없습니다. 오늘 지표가 어떤 규정이나 지도점검 항목과 이어지는지 하나만 남기면 됩니다.</p>
+                  <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">아직 연결 메모가 없습니다. 오늘 지표가 어떤 규정 항목과 이어지는지 하나만 남기면 됩니다.</p>
                 )}
               </div>
             </div>

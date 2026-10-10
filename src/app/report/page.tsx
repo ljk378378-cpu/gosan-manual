@@ -11,12 +11,6 @@ const reportItems = [
     desc: '지표별 진행률, 증빙 준비상태, 미완료 항목을 확인합니다.',
   },
   {
-    href: '/inspection-2026',
-    label: '9.18 지도점검',
-    title: '구청 지도점검 준비 현황',
-    desc: '점검확정일 기준 일정표, 일일체크, 보완사항을 확인합니다.',
-  },
-  {
     href: '/programs',
     label: '사업관리',
     title: '개별사업 관리 보고',
@@ -66,7 +60,7 @@ export default function ReportPage() {
               <p className="text-xs font-black tracking-[.22em] text-emerald-300">REPORT HUB</p>
               <h1 className="mt-3 text-3xl font-black tracking-tight">청곡 AI 업무시스템 보고서 출력</h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
-                예전 매뉴얼 제작 보고서가 아니라, 현재 운영 중인 평가·지도점검·팀운영·사업관리 자료를 확인하고 출력하는 입구입니다.
+                예전 매뉴얼 제작 보고서가 아니라, 현재 운영 중인 평가·팀운영·사업관리 자료를 확인하고 출력하는 입구입니다.
               </p>
             </div>
             <button onClick={() => window.print()} className="rounded-xl bg-emerald-400 px-5 py-3 text-sm font-black text-slate-950">

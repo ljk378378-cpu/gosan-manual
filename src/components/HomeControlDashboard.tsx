@@ -290,7 +290,7 @@ export default function HomeControlDashboard() {
       href: '/team-command', tone: 'border-amber-300 bg-amber-50 text-amber-950', item,
     }))
     const core = activeItems.filter(item => item.status === '사업에 연결' || item.status === '내가 처리'
-      || /지도점검|평가|생활쿠폰|사업|결과보고/.test(item.content)).map(item => ({
+      || /평가|생활쿠폰|사업|결과보고/.test(item.content)).map(item => ({
       slot: '내 핵심업무' as const, title: item.content,
       reason: `${item.team} · ${dueText(item, today)} · 오늘 눈에 보이는 산출물 1개를 남김`,
       href: item.status === '사업에 연결' ? '/programs' : '/team-command',

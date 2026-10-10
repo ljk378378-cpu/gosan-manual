@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: '청곡 AI 업무시스템',
     short_name: '청곡AI',
-    description: '평가, 지도점검, 팀 운영, 인사노무 학습, 소비점검을 관리하는 개인 업무 대시보드',
+    description: '평가, 팀 운영, 인사노무 학습, 소비점검을 관리하는 개인 업무 대시보드',
     start_url: '/quick',
     scope: '/',
     display: 'standalone',
@@ -13,13 +13,13 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: 'any',
     icons: [
       {
-        src: '/inspection-2026-icon.png?v=3',
+        src: '/cheonggok-ai-icon.png?v=3',
         sizes: '192x192',
         type: 'image/png',
         purpose: 'any',
       },
       {
-        src: '/inspection-2026-icon.png?v=3',
+        src: '/cheonggok-ai-icon.png?v=3',
         sizes: '512x512',
         type: 'image/png',
         purpose: 'any',
