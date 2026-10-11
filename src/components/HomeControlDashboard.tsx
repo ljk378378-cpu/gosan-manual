@@ -338,7 +338,7 @@ export default function HomeControlDashboard() {
 
   const recommendations = useMemo(() => {
     const chosen = new Set<string>()
-    return (['마감 위험', '팀을 움직이는 결정', '내 핵심업무'] as PrioritySlot[]).map(slot => {
+    return (['내 핵심업무', '마감 위험', '팀을 움직이는 결정'] as PrioritySlot[]).map(slot => {
       const available = recommendationPools[slot].filter(candidate => !candidate.item || !chosen.has(candidate.item.id))
       const candidateIndex = candidateOffsets[slot] % available.length
       const candidate = available[candidateIndex]
@@ -505,7 +505,7 @@ export default function HomeControlDashboard() {
           <div>
             <p className="text-xs font-black tracking-[.16em] text-emerald-700">TODAY CONTROL</p>
             <h1 className="mt-2 text-2xl font-black sm:text-3xl">행사 운영 대시보드</h1>
-            <p className="mt-2 text-sm font-semibold text-slate-600">{koreanDateLabel(today)} · 지금 자료로 오늘의 3가지를 먼저 제안합니다.</p>
+            <p className="mt-2 text-sm font-semibold text-slate-600">{koreanDateLabel(today)} · 오늘 직접 끝낼 한 가지를 먼저 정하고, 마감과 팀 판단을 확인합니다.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-600">{syncMessage}</span>
@@ -514,14 +514,9 @@ export default function HomeControlDashboard() {
         </div>
       </header>
 
-      <section className="border-b border-slate-300 py-6" aria-labelledby="main-events-title">
-        <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-black text-emerald-700">현재 메인 업무</p><h2 id="main-events-title" className="mt-1 text-xl font-black">지금 집중할 행사 5개</h2></div><Link href="/programs" className="text-sm font-black text-slate-600 underline underline-offset-4">행사별 사업관리</Link></div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{featuredPrograms.map(program => <Link key={program.id} href={focusProgramHref(program.id)} className="flex min-h-56 flex-col rounded-lg border border-emerald-200 bg-white p-4 transition hover:border-emerald-600"><p className="text-xs font-bold text-emerald-700">{!program.period && !program.owner ? '기본정보 입력 필요' : program.status}</p><h3 className="mt-2 text-base font-black leading-6">{program.title}</h3><p className="mt-2 text-xs font-semibold leading-5 text-slate-500">{focusPrograms.find(item => item.id === program.id)?.focus}</p><dl className="mt-4 space-y-1 text-xs font-semibold text-slate-600"><div><dt className="inline">일정 </dt><dd className="inline font-bold">{program.period || '미정'}</dd></div><div><dt className="inline">담당 </dt><dd className="inline font-bold">{program.owner || '미정'}</dd></div></dl><p className="mt-3 flex-1 text-xs font-semibold leading-5 text-slate-600">{program.nextAction || '다음 준비사항 입력'}</p><span className="mt-3 text-xs font-black text-emerald-800">행사 관리 →</span></Link>)}</div>
-      </section>
-
       <section className="py-6">
         <div className="flex items-end justify-between gap-3">
-          <div><p className="text-xs font-black text-emerald-700">아침에 고르지 말고 확정하기</p><h2 className="mt-1 text-xl font-black">오늘 추천 3개</h2></div>
+          <div><p className="text-xs font-black text-emerald-700">출근 후 5분</p><h2 className="mt-1 text-xl font-black">오늘의 한 가지와 두 가지 안전장치</h2></div>
           <Link href="/team-command" className="text-sm font-black text-slate-600 underline decoration-slate-300 underline-offset-4">전체 수집함</Link>
         </div>
         <div className="mt-4 grid gap-3 lg:grid-cols-3">
@@ -532,15 +527,15 @@ export default function HomeControlDashboard() {
             const href = confirmed?.href || recommendation.href
             const badge = confirmed?.status === '완료' ? '오늘 완료' : confirmed?.status === '제외' ? '오늘 제외' : confirmed ? '오늘 확정됨' : null
             return (
-              <article key={recommendation.slot} className={`flex min-h-60 flex-col rounded-lg border p-5 ${recommendation.tone}`}>
+              <article key={recommendation.slot} className={`flex min-h-60 flex-col rounded-lg border p-5 ${recommendation.tone} ${recommendation.slot === '내 핵심업무' ? 'ring-2 ring-emerald-300' : ''}`}>
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-black opacity-70">{recommendation.slot}</p>
+                  <p className="text-xs font-black opacity-70">{recommendation.slot === '내 핵심업무' ? '오늘의 한 가지 · 내 핵심업무' : recommendation.slot}</p>
                   {badge ? <span className={`rounded-md px-2 py-1 text-[11px] font-black ${confirmed?.status === '완료' ? 'bg-emerald-700 text-white' : confirmed?.status === '제외' ? 'bg-slate-600 text-white' : 'bg-white text-slate-700'}`}>{badge}</span> : <span className="text-[11px] font-black opacity-60">추천 {(recommendation.candidateIndex ?? 0) + 1}/{recommendation.candidateTotal ?? recommendationPools[recommendation.slot].length}</span>}
                 </div>
                 <h3 className="mt-3 text-lg font-black leading-7">{title}</h3>
                 <p className="mt-3 flex-1 text-sm font-semibold leading-6 opacity-80">{reason}</p>
                 {confirmed?.status === '완료' ? <div className="mt-4 rounded-md bg-white/80 p-3"><p className="text-xs font-black opacity-60">남긴 결과</p><p className="mt-1 text-sm font-black leading-6">{confirmed.outcome}</p></div> : null}
-                {confirmed?.status === '확정' ? <input value={outcomeDrafts[recommendation.slot] ?? confirmed.outcome} onChange={event => setOutcomeDrafts(current => ({ ...current, [recommendation.slot]: event.target.value }))} placeholder="완료 결과 한 줄 (필수)" className="mt-4 w-full rounded-md border border-white/80 bg-white px-3 py-3 text-sm font-bold text-slate-950 outline-none" /> : null}
+                {confirmed?.status === '확정' ? <input value={outcomeDrafts[recommendation.slot] ?? confirmed.outcome} onChange={event => setOutcomeDrafts(current => ({ ...current, [recommendation.slot]: event.target.value }))} placeholder="퇴근 전 남길 결과 한 줄" className="mt-4 w-full rounded-md border border-white/80 bg-white px-3 py-3 text-sm font-bold text-slate-950 outline-none" /> : null}
                 <div className="mt-5 flex flex-wrap gap-2">
                   {confirmed?.status !== '제외' ? <Link href={href} className="rounded-md bg-white px-3 py-2 text-sm font-black text-slate-900 shadow-sm">열기</Link> : null}
                   {!confirmed ? <button type="button" onClick={() => confirmPriority(recommendation)} className="rounded-md bg-slate-950 px-3 py-2 text-sm font-black text-white">오늘 확정</button> : null}
@@ -562,6 +557,11 @@ export default function HomeControlDashboard() {
             </button>)}
           </div> : <p className="mt-3 py-5 text-center text-sm font-semibold text-slate-500">선택할 업무가 없습니다. 빠른기록에서 먼저 업무를 남겨주세요.</p>}
         </div> : null}
+      </section>
+
+      <section className="border-y border-slate-300 py-6" aria-labelledby="main-events-title">
+        <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-black text-emerald-700">현재 메인 업무</p><h2 id="main-events-title" className="mt-1 text-xl font-black">지금 집중할 행사 5개</h2></div><Link href="/programs" className="text-sm font-black text-slate-600 underline underline-offset-4">행사별 사업관리</Link></div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{featuredPrograms.map(program => <Link key={program.id} href={focusProgramHref(program.id)} className="flex min-h-56 flex-col rounded-lg border border-emerald-200 bg-white p-4 transition hover:border-emerald-600"><p className="text-xs font-bold text-emerald-700">{!program.period && !program.owner ? '기본정보 입력 필요' : program.status}</p><h3 className="mt-2 text-base font-black leading-6">{program.title}</h3><p className="mt-2 text-xs font-semibold leading-5 text-slate-500">{focusPrograms.find(item => item.id === program.id)?.focus}</p><dl className="mt-4 space-y-1 text-xs font-semibold text-slate-600"><div><dt className="inline">일정 </dt><dd className="inline font-bold">{program.period || '미정'}</dd></div><div><dt className="inline">담당 </dt><dd className="inline font-bold">{program.owner || '미정'}</dd></div></dl><p className="mt-3 flex-1 text-xs font-semibold leading-5 text-slate-600">{program.nextAction || '다음 준비사항 입력'}</p><span className="mt-3 text-xs font-black text-emerald-800">행사 관리 →</span></Link>)}</div>
       </section>
 
       <section className="grid gap-4 border-y border-slate-300 py-6 lg:grid-cols-[1fr_1.15fr]">
@@ -608,7 +608,16 @@ export default function HomeControlDashboard() {
         </div>
       </section>
 
-      <section className="py-6">
+      <section className="grid gap-7 py-6 lg:grid-cols-[.8fr_1.2fr]">
+        <div>
+          <p className="text-xs font-black text-emerald-700">하루에 세 번, 짧게</p><h2 className="mt-1 text-lg font-black">이 화면을 쓰는 방법</h2>
+          <div className="mt-3 space-y-2 text-sm font-semibold leading-6 text-slate-600">
+            <p><b className="text-slate-900">출근 후 5분</b> · 오늘의 한 가지를 확정합니다.</p>
+            <p><b className="text-slate-900">업무 중 1분</b> · 갑자기 생긴 일은 빠른기록에 한 줄 남깁니다.</p>
+            <p><b className="text-slate-900">퇴근 전 3분</b> · 결과 한 줄을 적고, 남은 일은 담당자와 기한을 정합니다.</p>
+          </div>
+          <Link href="/quick" className="mt-4 inline-flex rounded-md bg-slate-900 px-4 py-2 text-sm font-black text-white">갑자기 생긴 일 기록</Link>
+        </div>
         <div>
           <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-black">아직 분류하지 않은 빠른기록</h2><span className="text-xs font-black text-slate-500">{unsortedItems.length}건</span></div>
           {unsortedItems.length ? <div className="mt-3 divide-y divide-slate-200 border-y border-slate-200">{unsortedItems.slice(0, 4).map(item => <div key={item.id} className="flex items-start justify-between gap-3 py-3"><div className="min-w-0"><p className="truncate text-sm font-black">{item.content}</p><p className="mt-1 text-xs font-semibold text-slate-500">{item.category} · {item.team}</p></div><button type="button" onClick={() => updateStatus(item, '직원에게 전달')} className="shrink-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700">위임</button></div>)}</div> : <p className="mt-3 border-y border-slate-200 py-6 text-sm font-semibold text-slate-500">미분류 기록이 없습니다. 업무 중에는 판단하지 말고 빠른기록에만 남깁니다.</p>}
